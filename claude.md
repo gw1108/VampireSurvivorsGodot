@@ -29,4 +29,7 @@ Do NOT scan files under any folder named ARCHIVE unless specified.
 - Prefer **thin vertical slices** over big-bang changes.
 
 ### 3. Self-Improvement Loop
-- After any user correction or a discovered mistake: add a new entry to `tasks/lessons.md` capturing the failure mode, the detection signal, and a prevention rule.
+- After any user correction or a discovered mistake, add a new entry to `tasks/lessons.md`.
+- Keep each entry minimal: a short **category header** (e.g. `### Research scoping`) plus a **one-line prevention rule**. Nothing else.
+- The category lets future agents skim and skip entries that look unrelated without reading the body. If a rule needs more context to be actionable, the category itself is too broad.
+- Before adding a new entry, check if an existing category already covers it; extend or refine that line instead of duplicating.

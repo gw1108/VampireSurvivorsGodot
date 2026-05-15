@@ -21,5 +21,8 @@
       "Bash(echo \"Exit code: $?\")",
       "Bash(python3 *)"
     ]
+  },
+  "enabledPlugins": {
+    "taskmaster@taskmaster": true
   }
 }
