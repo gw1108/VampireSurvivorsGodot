@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(bash hack/spec_metadata.sh)",
+      "Bash(gh repo *)",
+      "Bash(python create_thought.py --help)",
+      "Bash(python *)",
+      "mcp__coplay-mcp__check_compile_errors",
+      "Bash(grep -E \"\\\\.\\(py|js|ts|sh|bat|ps1|yml|yaml\\)$|Makefile\")",
+      "Bash(bash C:/GameDev/CozySim/hack/spec_metadata.sh)",
+      "PowerShell(python hack/pipeline.py $prompt)",
+      "Bash(Get-ChildItem -Path \"C:\\\\GameDev\\\\CozySim\\\\thoughts\\\\shared\" -Recurse -Directory)",
+      "Bash(Select-Object FullName)",
+      "Bash(dotnet build *)",
+      "Bash(awk 'NR==583 { sub\\(/m_Name:$/, \"m_Name: \"\\) } { print }' \"C:/GameDev/CozySim/Assets/Prefabs/Minigame/Clothes/Shirt_White.prefab\")",
+      "Bash(mv /tmp/shirt.prefab \"C:/GameDev/CozySim/Assets/Prefabs/Minigame/Clothes/Shirt_White.prefab\")",
+      "Bash(sed -n '583p' \"C:/GameDev/CozySim/Assets/Prefabs/Minigame/Clothes/Shirt_White.prefab\")",
+      "Bash(awk '/^--- !u!1 &5732324774643088002$/,/^--- /' \"C:/GameDev/CozySim/Assets/Prefabs/Minigame/Clothes/Pants_BlueJeans.prefab\")",
+      "Bash(awk '/^--- !u!1 &5732324774643088002$/,/^--- /' \"C:/GameDev/CozySim/Assets/Prefabs/Minigame/Clothes/Shirt_White.prefab\")",
+      "Bash(echo \"Exit: $?\")",
+      "Bash(echo \"Exit code: $?\")",
+      "Bash(python3 *)"
+    ]
+  }
+}
