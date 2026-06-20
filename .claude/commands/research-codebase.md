@@ -123,7 +123,7 @@ After writing, your entire reply to the user is the single line:
 I have exported your research into [FULL_FILE_PATH]
 ```
 
-Replace `[FULL_FILE_PATH]` with the absolute path printed by `create_thought.py`. Do not summarize findings, list open questions, or add follow-up instructions — the user can read the document directly and run `/iterate_research_codebase [research-doc-path]` if they want follow-ups.
+Replace `[FULL_FILE_PATH]` with the absolute path printed by `create_thought.py`. Do not summarize findings, list open questions, or add follow-up instructions — the user can read the document directly and run `/iterate-research-codebase [research-doc-path]` if they want follow-ups.
 
 ## Notes
 
