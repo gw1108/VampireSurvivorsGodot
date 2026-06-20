@@ -59,4 +59,6 @@ task-master parse-prd -i .taskmaster/docs/systems.md
 
 --BEGIN VAMPIRE SURVIVORS--
 
-(I opted to start working on a vampire survivors clone because I felt like snake was a bit too simple.)
+(I opted to start working on a vampire survivors clone because I felt like snake was a bit too simple. I copy and pasted the wikipedia gameplay summary. Now I just need to know what systems the LLM needs to know more details about to continue)
+
+Read the snake-gameplay-extracted.md file and create a very simple product requirement document based off of that file. The goal is to describe a simple 2D game that will be implemented in godot. It should be 2D. If it's not clear what features should be in the final game work back and forth with me by asking clarifying questions before writing out the new snake-prd.md.
