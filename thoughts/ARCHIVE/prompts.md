@@ -61,4 +61,6 @@ task-master parse-prd -i .taskmaster/docs/systems.md
 
 (I opted to start working on a vampire survivors clone because I felt like snake was a bit too simple. I copy and pasted the wikipedia gameplay summary. Now I just need to know what systems the LLM needs to know more details about to continue)
 
-Read the snake-gameplay-extracted.md file and create a very simple product requirement document based off of that file. The goal is to describe a simple 2D game that will be implemented in godot. It should be 2D. If it's not clear what features should be in the final game work back and forth with me by asking clarifying questions before writing out the new snake-prd.md.
+Is the @.firecrawl/vampire-survivors-gameplay-extracted.md ready to be transformed into a full fledged game? Are there any systems or features that need to be described in detail more? Don't ask me to clarify any systems. Simply identify and list the features and systems that need more information.
+
+(Exported the missing details to todo-missing-details.md. There is a lot of missing gameplay and system requirements missing and that data lives in the vampire survivors wiki not the wikipedia. So I will manually scrape aka copy paste as a human to ensure I don't get IP banned.)
