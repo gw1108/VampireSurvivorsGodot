@@ -1,0 +1,14 @@
+{
+    "source":  "https://vampire.survivors.wiki",
+    "sourceFormat":  "MediaWiki action=render/raw -\u003e clean Markdown, pipe tables (pandoc + clean-wiki.lua)",
+    "generated":  "2026-06-20 13:58",
+    "pageCount":  1,
+    "pages":  [
+                  {
+                      "title":  "Weapons",
+                      "displayTitle":  "Weapons",
+                      "file":  "Weapons.md",
+                      "source":  "Weapons.htm"
+                  }
+              ]
+}
