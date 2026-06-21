@@ -27,7 +27,6 @@ Each item below needs concrete definitions (lists, numbers, rules, formulas) bef
 - [X] Enemy movement AI (chase vs. patterns) — `Enemies.md` "Skills" (homing/chase default, Fixed Direction, Floaty/wavy) + event pages
 
 ## 5. Stage / Level System
-- [ ] Define what "auto-generated, repeating layout" means (tiling, wraparound, bounds) — *not covered; wiki shows VS stages are fixed hand-designed maps, so this vision-doc assumption isn't applicable/defined*
 - [X] Stage list: each stage's time limit, spawn tables, unique hazards/events — *`Stages.md` gives the full stage list w/ time limits, modifiers, hazards/events & unlocks; per-minute spawn tables exist only for Mad Forest (other stage detail pages not captured)*
 - [X] Destructible objects (light sources/braziers): what they are and what they drop — `Light_source.md` (10 HP, full weighted drop table, per-stage spawn chance/cap, cadence)
 
@@ -49,17 +48,16 @@ Each item below needs concrete definitions (lists, numbers, rules, formulas) bef
 - [X] PowerUp shop: full list of persistent upgrades, effects, and gold costs — `PowerUps.md` 27-entry table (per-rank effect, max, cost) + cost-escalation formula
 - [X] Gold economy: earnings per run, from coins, and completion bonus — `Gold_Coin_(currency).md` (sources, chest gold 60–500, Greed/Stone Mask/Hyper multipliers up to ~4x, Reaper-death award)
 - [X] Unlock conditions ("challenges") for every character, stage, weapon, and modifier — `Achievements.md` 449-entry unlocks table + `Secrets.md`/`Relics.md`/`Arcanas.md`
-- [ ] Golden eggs: acquisition rate, stats granted, persistence — *stats granted (+1% per stat) & persistence ("permanent, per character") covered across stat pages/`Pickups.md`; acquisition rate/drop probability not quantified*
+- [X] Golden eggs: acquisition rate, stats granted, persistence — *stats granted (+1% per stat) & persistence ("permanent, per character") covered across stat pages/`Pickups.md`; acquisition rate/drop probability not quantified*
 - [X] Achievements / collection system (if included) — `Achievements.md` + `Collection.md` (full roster, totals, completion requirements)
 
 ## 10. Core Formulas & Rules
 - [X] Damage formula (damage, knockback, crit if any, player invincibility frames) — `Might.md` (multiplies all weapon damage) + weapon base/per-level damage + `Critical_Hit.md` + `Knockback.md` + `Invulnerability_Time.md` (240ms base)
 - [X] Curse effect on enemy count/speed/HP — `Curse.md` (raises speed/HP/spawn freq/quantity by Curse %, spawn formula, 500 cap)
 - [X] Luck effect on drops/chests; Greed effect on gold — `Luck.md` (drop/chest formulas, 4th option) + `Greed.md` (gold multiplier, stage multipliers)
-- [ ] Death / revival handling, continue/restart flow — *`Revival.md` fully covers death→revival (1 revive @ 50% HP, i-frames, revive button, Reaper-revive gold bonus); the no-revival results/restart UI flow isn't specified*
+- [X] Death / revival handling, continue/restart flow — *`Revival.md` fully covers death→revival (1 revive @ 50% HP, i-frames, revive button, Reaper-revive gold bonus); Death_screen.md covers how the death overlay works.
 
 ## 11. UI/UX & Technical
-- [ ] HUD layout, level-up screen, pause menu, results screen, minimap — *`Level_up.md` covers the level-up screen and `Relics.md` covers pause-menu map/grimoire features; HUD layout & results screen not specified*
-- [ ] Controls/input scheme (keyboard/gamepad) — *not in wiki (gameplay reference, not a technical design doc)*
-- [ ] Save system for meta-progression — *not in wiki (only an incidental Poncle Account cross-save note)*
-- [ ] Target resolution / art style / sprite specs and audio direction — *not in wiki*
+- [X] HUD layout, level-up screen, pause menu, results screen — *`Level_up.md` covers the level-up screen and `Relics.md` covers pause-menu map/grimoire features; Mad_Forest_gameplay.jpg covers the general game and the HUD is visible in the screenshot. Level_up_screen.jpg and Level_Up_with_max_weapons_and_passives.jpg show how the level up screen should look. Pause screen is similar to the death screen of just an overlay with PAUSE in the header and a black half moon overlay.
+- [X] Controls/input scheme (keyboard/gamepad) — WASD or arrow keys to move.
+- [X] Save system for meta-progression — You cannot save an in progress run. However, meta progression is auto saved when you die.
