@@ -20,8 +20,9 @@
     Manual workflow: in a browser open
       https://vampire.survivors.wiki/index.php?title=<Page>&action=render
     Save As -> "Web Page, HTML only" into the wiki folder. IMPORTANT: name the file
-    after the exact wiki page Title (e.g. Weapons.htm, Soul_Eater.htm) so that links
-    between pages resolve to the right <Title>.md file. Then run this script.
+    after the exact wiki page Title, with spaces replaced by underscores (the
+    "Soul Eater" page -> Soul_Eater.htm), so links between pages resolve to the right
+    <Title>.md file. Then run this script.
 
 .PARAMETER WikiDir
     Folder holding the saved pages. Defaults to '<script dir>\wiki-offline'.
@@ -178,8 +179,9 @@ This folder is a **partial, offline snapshot** of the Vampire Survivors wiki
 (https://vampire.survivors.wiki), saved manually for offline reasoning and traversal.
 
 ## Layout
-- Each wiki page is a Markdown file named `<Title>.md` (spaces become underscores).
-  Example: the "Soul Eater" page is `Soul_Eater.md`.
+- Each wiki page is a Markdown file named `<Title>.md`, where spaces in the page
+  title are replaced with underscores (`_`). Example: the "Soul Eater" page is
+  `Soul_Eater.md`, and a link to it is written `[Soul Eater](Soul_Eater.md)`.
 - `index.md` lists every page available offline - start there.
 - `manifest.json` is the machine-readable `{title -> file}` map and defines the
   **boundary** of what exists offline.
@@ -197,8 +199,8 @@ This folder is a **partial, offline snapshot** of the Vampire Survivors wiki
 - Raw HTML, sprite/icon images, and MediaWiki chrome (edit links, nav boxes, TOC)
   are stripped. Tables render as pipe tables; multi-item cells are joined inline
   with "; ".
-- Boilerplate sections are dropped (External links, Update history, Trivia), so a
-  page holds gameplay facts only.
+- Boilerplate sections are dropped (External links, Update history, Trivia, Tips,
+  Gallery), so a page holds gameplay facts only.
 '@
 $agents += "`n_Generated $stamp by Convert-Wiki.ps1._`n"
 Write-Utf8NoBom -Path (Join-Path $WikiDir 'AGENTS.md') -Content $agents

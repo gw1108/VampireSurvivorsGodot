@@ -1,14 +1,794 @@
 {
     "source":  "https://vampire.survivors.wiki",
     "sourceFormat":  "MediaWiki action=render/raw -\u003e clean Markdown, pipe tables (pandoc + clean-wiki.lua)",
-    "generated":  "2026-06-20 13:58",
-    "pageCount":  1,
+    "generated":  "2026-06-20 17:33",
+    "pageCount":  131,
     "pages":  [
+                  {
+                      "title":  "Achievements",
+                      "displayTitle":  "Achievements",
+                      "file":  "Achievements.md",
+                      "source":  "Achievements.htm"
+                  },
+                  {
+                      "title":  "Adventures",
+                      "displayTitle":  "Adventures",
+                      "file":  "Adventures.md",
+                      "source":  "Adventures.htm"
+                  },
+                  {
+                      "title":  "Amount",
+                      "displayTitle":  "Amount",
+                      "file":  "Amount.md",
+                      "source":  "Amount.htm"
+                  },
+                  {
+                      "title":  "Antonio_Belpaese",
+                      "displayTitle":  "Antonio Belpaese",
+                      "file":  "Antonio_Belpaese.md",
+                      "source":  "Antonio_Belpaese.htm"
+                  },
+                  {
+                      "title":  "Arcanas",
+                      "displayTitle":  "Arcanas",
+                      "file":  "Arcanas.md",
+                      "source":  "Arcanas.htm"
+                  },
+                  {
+                      "title":  "Area",
+                      "displayTitle":  "Area",
+                      "file":  "Area.md",
+                      "source":  "Area.htm"
+                  },
+                  {
+                      "title":  "Armor",
+                      "displayTitle":  "Armor",
+                      "file":  "Armor.md",
+                      "source":  "Armor.htm"
+                  },
+                  {
+                      "title":  "Armor_(stat)",
+                      "displayTitle":  "Armor (stat)",
+                      "file":  "Armor_(stat).md",
+                      "source":  "Armor_(stat).htm"
+                  },
+                  {
+                      "title":  "Attractorb",
+                      "displayTitle":  "Attractorb",
+                      "file":  "Attractorb.md",
+                      "source":  "Attractorb.htm"
+                  },
+                  {
+                      "title":  "Axe",
+                      "displayTitle":  "Axe",
+                      "file":  "Axe.md",
+                      "source":  "Axe.htm"
+                  },
+                  {
+                      "title":  "Banish",
+                      "displayTitle":  "Banish",
+                      "file":  "Banish.md",
+                      "source":  "Banish.htm"
+                  },
+                  {
+                      "title":  "Bat_Swarm",
+                      "displayTitle":  "Bat Swarm",
+                      "file":  "Bat_Swarm.md",
+                      "source":  "Bat_Swarm.htm"
+                  },
+                  {
+                      "title":  "Big_Mummy",
+                      "displayTitle":  "Big Mummy",
+                      "file":  "Big_Mummy.md",
+                      "source":  "Big_Mummy.htm"
+                  },
+                  {
+                      "title":  "Bloodbath",
+                      "displayTitle":  "Bloodbath",
+                      "file":  "Bloodbath.md",
+                      "source":  "Bloodbath.htm"
+                  },
+                  {
+                      "title":  "Bracer",
+                      "displayTitle":  "Bracer",
+                      "file":  "Bracer.md",
+                      "source":  "Bracer.htm"
+                  },
+                  {
+                      "title":  "Candelabrador",
+                      "displayTitle":  "Candelabrador",
+                      "file":  "Candelabrador.md",
+                      "source":  "Candelabrador.htm"
+                  },
+                  {
+                      "title":  "Candybox",
+                      "displayTitle":  "Candybox",
+                      "file":  "Candybox.md",
+                      "source":  "Candybox.htm"
+                  },
+                  {
+                      "title":  "Characters",
+                      "displayTitle":  "Characters",
+                      "file":  "Characters.md",
+                      "source":  "Characters.htm"
+                  },
+                  {
+                      "title":  "Charm",
+                      "displayTitle":  "Charm",
+                      "file":  "Charm.md",
+                      "source":  "Charm.htm"
+                  },
+                  {
+                      "title":  "Clock_Lancet",
+                      "displayTitle":  "Clock Lancet",
+                      "file":  "Clock_Lancet.md",
+                      "source":  "Clock_Lancet.htm"
+                  },
+                  {
+                      "title":  "Clover",
+                      "displayTitle":  "Clover",
+                      "file":  "Clover.md",
+                      "source":  "Clover.htm"
+                  },
+                  {
+                      "title":  "Coin_Bag",
+                      "displayTitle":  "Coin Bag",
+                      "file":  "Coin_Bag.md",
+                      "source":  "Coin_Bag.htm"
+                  },
+                  {
+                      "title":  "Collection",
+                      "displayTitle":  "Collection",
+                      "file":  "Collection.md",
+                      "source":  "Collection.htm"
+                  },
+                  {
+                      "title":  "Cooldown",
+                      "displayTitle":  "Cooldown",
+                      "file":  "Cooldown.md",
+                      "source":  "Cooldown.htm"
+                  },
+                  {
+                      "title":  "Critical_Hit",
+                      "displayTitle":  "Critical Hit",
+                      "file":  "Critical_Hit.md",
+                      "source":  "Critical_Hit.htm"
+                  },
+                  {
+                      "title":  "Cross",
+                      "displayTitle":  "Cross",
+                      "file":  "Cross.md",
+                      "source":  "Cross.htm"
+                  },
+                  {
+                      "title":  "Crown",
+                      "displayTitle":  "Crown",
+                      "file":  "Crown.md",
+                      "source":  "Crown.htm"
+                  },
+                  {
+                      "title":  "Curse",
+                      "displayTitle":  "Curse",
+                      "file":  "Curse.md",
+                      "source":  "Curse.htm"
+                  },
+                  {
+                      "title":  "Defang",
+                      "displayTitle":  "Defang",
+                      "file":  "Defang.md",
+                      "source":  "Defang.htm"
+                  },
+                  {
+                      "title":  "Duplicator",
+                      "displayTitle":  "Duplicator",
+                      "file":  "Duplicator.md",
+                      "source":  "Duplicator.htm"
+                  },
+                  {
+                      "title":  "Duration",
+                      "displayTitle":  "Duration",
+                      "file":  "Duration.md",
+                      "source":  "Duration.htm"
+                  },
+                  {
+                      "title":  "Ebony_Wings",
+                      "displayTitle":  "Ebony Wings",
+                      "file":  "Ebony_Wings.md",
+                      "source":  "Ebony_Wings.htm"
+                  },
+                  {
+                      "title":  "Eight_the_Sparrow",
+                      "displayTitle":  "Eight the Sparrow",
+                      "file":  "Eight_the_Sparrow.md",
+                      "source":  "Eight_the_Sparrow.htm"
+                  },
+                  {
+                      "title":  "Empty_Tome",
+                      "displayTitle":  "Empty Tome",
+                      "file":  "Empty_Tome.md",
+                      "source":  "Empty_Tome.htm"
+                  },
+                  {
+                      "title":  "Enemies",
+                      "displayTitle":  "Enemies",
+                      "file":  "Enemies.md",
+                      "source":  "Enemies.htm"
+                  },
+                  {
+                      "title":  "Experience_Gem",
+                      "displayTitle":  "Experience Gem",
+                      "file":  "Experience_Gem.md",
+                      "source":  "Experience_Gem.htm"
+                  },
+                  {
+                      "title":  "Fever",
+                      "displayTitle":  "Fever",
+                      "file":  "Fever.md",
+                      "source":  "Fever.htm"
+                  },
+                  {
+                      "title":  "Fire_Wand",
+                      "displayTitle":  "Fire Wand",
+                      "file":  "Fire_Wand.md",
+                      "source":  "Fire_Wand.htm"
+                  },
+                  {
+                      "title":  "Floor_Chicken",
+                      "displayTitle":  "Floor Chicken",
+                      "file":  "Floor_Chicken.md",
+                      "source":  "Floor_Chicken.htm"
+                  },
+                  {
+                      "title":  "Flower_Wall",
+                      "displayTitle":  "Flower Wall",
+                      "file":  "Flower_Wall.md",
+                      "source":  "Flower_Wall.htm"
+                  },
+                  {
+                      "title":  "Flower_Wall_(event)",
+                      "displayTitle":  "Flower Wall (event)",
+                      "file":  "Flower_Wall_(event).md",
+                      "source":  "Flower_Wall_(event).htm"
+                  },
+                  {
+                      "title":  "Forbidden_Scrolls_of_Morbane",
+                      "displayTitle":  "Forbidden Scrolls of Morbane",
+                      "file":  "Forbidden_Scrolls_of_Morbane.md",
+                      "source":  "Forbidden_Scrolls_of_Morbane.htm"
+                  },
+                  {
+                      "title":  "Garlic",
+                      "displayTitle":  "Garlic",
+                      "file":  "Garlic.md",
+                      "source":  "Garlic.htm"
+                  },
+                  {
+                      "title":  "Gatti_Amari",
+                      "displayTitle":  "Gatti Amari",
+                      "file":  "Gatti_Amari.md",
+                      "source":  "Gatti_Amari.htm"
+                  },
+                  {
+                      "title":  "Gennaro_Belpaese",
+                      "displayTitle":  "Gennaro Belpaese",
+                      "file":  "Gennaro_Belpaese.md",
+                      "source":  "Gennaro_Belpaese.htm"
+                  },
+                  {
+                      "title":  "Ghost",
+                      "displayTitle":  "Ghost",
+                      "file":  "Ghost.md",
+                      "source":  "Ghost.htm"
+                  },
+                  {
+                      "title":  "Ghost_Swarm",
+                      "displayTitle":  "Ghost Swarm",
+                      "file":  "Ghost_Swarm.md",
+                      "source":  "Ghost_Swarm.htm"
+                  },
+                  {
+                      "title":  "Giant_Bat",
+                      "displayTitle":  "Giant Bat",
+                      "file":  "Giant_Bat.md",
+                      "source":  "Giant_Bat.htm"
+                  },
+                  {
+                      "title":  "Gilded_Clover",
+                      "displayTitle":  "Gilded Clover",
+                      "file":  "Gilded_Clover.md",
+                      "source":  "Gilded_Clover.htm"
+                  },
+                  {
+                      "title":  "Gold_Coin_(currency)",
+                      "displayTitle":  "Gold Coin (currency)",
+                      "file":  "Gold_Coin_(currency).md",
+                      "source":  "Gold_Coin_(currency).htm"
+                  },
+                  {
+                      "title":  "Gold_Coin_(pickup)",
+                      "displayTitle":  "Gold Coin (pickup)",
+                      "file":  "Gold_Coin_(pickup).md",
+                      "source":  "Gold_Coin_(pickup).htm"
+                  },
+                  {
+                      "title":  "Gold_Finger",
+                      "displayTitle":  "Gold Finger",
+                      "file":  "Gold_Finger.md",
+                      "source":  "Gold_Finger.htm"
+                  },
+                  {
+                      "title":  "Greed",
+                      "displayTitle":  "Greed",
+                      "file":  "Greed.md",
+                      "source":  "Greed.htm"
+                  },
+                  {
+                      "title":  "Growth",
+                      "displayTitle":  "Growth",
+                      "file":  "Growth.md",
+                      "source":  "Growth.htm"
+                  },
+                  {
+                      "title":  "Hollow_Heart",
+                      "displayTitle":  "Hollow Heart",
+                      "file":  "Hollow_Heart.md",
+                      "source":  "Hollow_Heart.htm"
+                  },
+                  {
+                      "title":  "Imelda_Belpaese",
+                      "displayTitle":  "Imelda Belpaese",
+                      "file":  "Imelda_Belpaese.md",
+                      "source":  "Imelda_Belpaese.htm"
+                  },
+                  {
+                      "title":  "Invulnerability_Time",
+                      "displayTitle":  "Invulnerability Time",
+                      "file":  "Invulnerability_Time.md",
+                      "source":  "Invulnerability_Time.htm"
+                  },
+                  {
+                      "title":  "Karoma\u0027s_Mana",
+                      "displayTitle":  "Karoma\u0027s Mana",
+                      "file":  "Karoma\u0027s_Mana.md",
+                      "source":  "Karoma\u0027s_Mana.htm"
+                  },
+                  {
+                      "title":  "King_Bible",
+                      "displayTitle":  "King Bible",
+                      "file":  "King_Bible.md",
+                      "source":  "King_Bible.htm"
+                  },
+                  {
+                      "title":  "Knife",
+                      "displayTitle":  "Knife",
+                      "file":  "Knife.md",
+                      "source":  "Knife.htm"
+                  },
+                  {
+                      "title":  "Knockback",
+                      "displayTitle":  "Knockback",
+                      "file":  "Knockback.md",
+                      "source":  "Knockback.htm"
+                  },
+                  {
+                      "title":  "Laurel",
+                      "displayTitle":  "Laurel",
+                      "file":  "Laurel.md",
+                      "source":  "Laurel.htm"
+                  },
+                  {
+                      "title":  "Level_up",
+                      "displayTitle":  "Level up",
+                      "file":  "Level_up.md",
+                      "source":  "Level_up.htm"
+                  },
+                  {
+                      "title":  "Light_source",
+                      "displayTitle":  "Light source",
+                      "file":  "Light_source.md",
+                      "source":  "Light_source.htm"
+                  },
+                  {
+                      "title":  "Lightning_Ring",
+                      "displayTitle":  "Lightning Ring",
+                      "file":  "Lightning_Ring.md",
+                      "source":  "Lightning_Ring.htm"
+                  },
+                  {
+                      "title":  "Little_Clover",
+                      "displayTitle":  "Little Clover",
+                      "file":  "Little_Clover.md",
+                      "source":  "Little_Clover.htm"
+                  },
+                  {
+                      "title":  "Luck",
+                      "displayTitle":  "Luck",
+                      "file":  "Luck.md",
+                      "source":  "Luck.htm"
+                  },
+                  {
+                      "title":  "Mad_Forest",
+                      "displayTitle":  "Mad Forest",
+                      "file":  "Mad_Forest.md",
+                      "source":  "Mad_Forest.htm"
+                  },
+                  {
+                      "title":  "Magic_Wand",
+                      "displayTitle":  "Magic Wand",
+                      "file":  "Magic_Wand.md",
+                      "source":  "Magic_Wand.htm"
+                  },
+                  {
+                      "title":  "Magnet",
+                      "displayTitle":  "Magnet",
+                      "file":  "Magnet.md",
+                      "source":  "Magnet.htm"
+                  },
+                  {
+                      "title":  "Main_menu",
+                      "displayTitle":  "Main menu",
+                      "file":  "Main_menu.md",
+                      "source":  "Main_menu.htm"
+                  },
+                  {
+                      "title":  "Mantichana",
+                      "displayTitle":  "Mantichana",
+                      "file":  "Mantichana.md",
+                      "source":  "Mantichana.htm"
+                  },
+                  {
+                      "title":  "Max_Health",
+                      "displayTitle":  "Max Health",
+                      "file":  "Max_Health.md",
+                      "source":  "Max_Health.htm"
+                  },
+                  {
+                      "title":  "Might",
+                      "displayTitle":  "Might",
+                      "file":  "Might.md",
+                      "source":  "Might.htm"
+                  },
+                  {
+                      "title":  "Move_Speed",
+                      "displayTitle":  "Move Speed",
+                      "file":  "Move_Speed.md",
+                      "source":  "Move_Speed.htm"
+                  },
+                  {
+                      "title":  "Mudman",
+                      "displayTitle":  "Mudman",
+                      "file":  "Mudman.md",
+                      "source":  "Mudman.htm"
+                  },
+                  {
+                      "title":  "Musc_Musc",
+                      "displayTitle":  "Musc Musc",
+                      "file":  "Musc_Musc.md",
+                      "source":  "Musc_Musc.htm"
+                  },
+                  {
+                      "title":  "Nduja_Fritta_Tanto",
+                      "displayTitle":  "Nduja Fritta Tanto",
+                      "file":  "Nduja_Fritta_Tanto.md",
+                      "source":  "Nduja_Fritta_Tanto.htm"
+                  },
+                  {
+                      "title":  "Orologion",
+                      "displayTitle":  "Orologion",
+                      "file":  "Orologion.md",
+                      "source":  "Orologion.htm"
+                  },
+                  {
+                      "title":  "Parm_Aegis",
+                      "displayTitle":  "Parm Aegis",
+                      "file":  "Parm_Aegis.md",
+                      "source":  "Parm_Aegis.htm"
+                  },
+                  {
+                      "title":  "Pasqualina_Belpaese",
+                      "displayTitle":  "Pasqualina Belpaese",
+                      "file":  "Pasqualina_Belpaese.md",
+                      "source":  "Pasqualina_Belpaese.htm"
+                  },
+                  {
+                      "title":  "Passive_Items",
+                      "displayTitle":  "Passive Items",
+                      "file":  "Passive_Items.md",
+                      "source":  "Passive_Items.htm"
+                  },
+                  {
+                      "title":  "Peachone",
+                      "displayTitle":  "Peachone",
+                      "file":  "Peachone.md",
+                      "source":  "Peachone.htm"
+                  },
+                  {
+                      "title":  "Pentagram",
+                      "displayTitle":  "Pentagram",
+                      "file":  "Pentagram.md",
+                      "source":  "Pentagram.htm"
+                  },
+                  {
+                      "title":  "Phiera_Del_Tuphello",
+                      "displayTitle":  "Phiera Del Tuphello",
+                      "file":  "Phiera_Del_Tuphello.md",
+                      "source":  "Phiera_Del_Tuphello.htm"
+                  },
+                  {
+                      "title":  "Pickups",
+                      "displayTitle":  "Pickups",
+                      "file":  "Pickups.md",
+                      "source":  "Pickups.htm"
+                  },
+                  {
+                      "title":  "Pipeestrello",
+                      "displayTitle":  "Pipeestrello",
+                      "file":  "Pipeestrello.md",
+                      "source":  "Pipeestrello.htm"
+                  },
+                  {
+                      "title":  "Player_stats",
+                      "displayTitle":  "Player stats",
+                      "file":  "Player_stats.md",
+                      "source":  "Player_stats.htm"
+                  },
+                  {
+                      "title":  "PowerUps",
+                      "displayTitle":  "PowerUps",
+                      "file":  "PowerUps.md",
+                      "source":  "PowerUps.htm"
+                  },
+                  {
+                      "title":  "Preserve",
+                      "displayTitle":  "Preserve",
+                      "file":  "Preserve.md",
+                      "source":  "Preserve.htm"
+                  },
+                  {
+                      "title":  "Pummarola",
+                      "displayTitle":  "Pummarola",
+                      "file":  "Pummarola.md",
+                      "source":  "Pummarola.htm"
+                  },
+                  {
+                      "title":  "Recovery",
+                      "displayTitle":  "Recovery",
+                      "file":  "Recovery.md",
+                      "source":  "Recovery.htm"
+                  },
+                  {
+                      "title":  "Relics",
+                      "displayTitle":  "Relics",
+                      "file":  "Relics.md",
+                      "source":  "Relics.htm"
+                  },
+                  {
+                      "title":  "Reroll",
+                      "displayTitle":  "Reroll",
+                      "file":  "Reroll.md",
+                      "source":  "Reroll.htm"
+                  },
+                  {
+                      "title":  "Rerollo",
+                      "displayTitle":  "Rerollo",
+                      "file":  "Rerollo.md",
+                      "source":  "Rerollo.htm"
+                  },
+                  {
+                      "title":  "Revival",
+                      "displayTitle":  "Revival",
+                      "file":  "Revival.md",
+                      "source":  "Revival.htm"
+                  },
+                  {
+                      "title":  "Rich_Coin_Bag",
+                      "displayTitle":  "Rich Coin Bag",
+                      "file":  "Rich_Coin_Bag.md",
+                      "source":  "Rich_Coin_Bag.htm"
+                  },
+                  {
+                      "title":  "Roast_Chicken_with_a_Clock_in_the_Middle",
+                      "displayTitle":  "Roast Chicken with a Clock in the Middle",
+                      "file":  "Roast_Chicken_with_a_Clock_in_the_Middle.md",
+                      "source":  "Roast_Chicken_with_a_Clock_in_the_Middle.htm"
+                  },
+                  {
+                      "title":  "Rosary",
+                      "displayTitle":  "Rosary",
+                      "file":  "Rosary.md",
+                      "source":  "Rosary.htm"
+                  },
+                  {
+                      "title":  "Runetracer",
+                      "displayTitle":  "Runetracer",
+                      "file":  "Runetracer.md",
+                      "source":  "Runetracer.htm"
+                  },
+                  {
+                      "title":  "Santa_Water",
+                      "displayTitle":  "Santa Water",
+                      "file":  "Santa_Water.md",
+                      "source":  "Santa_Water.htm"
+                  },
+                  {
+                      "title":  "Scarleton",
+                      "displayTitle":  "Scarleton",
+                      "file":  "Scarleton.md",
+                      "source":  "Scarleton.htm"
+                  },
+                  {
+                      "title":  "Seal",
+                      "displayTitle":  "Seal",
+                      "file":  "Seal.md",
+                      "source":  "Seal.htm"
+                  },
+                  {
+                      "title":  "Secrets",
+                      "displayTitle":  "Secrets",
+                      "file":  "Secrets.md",
+                      "source":  "Secrets.htm"
+                  },
+                  {
+                      "title":  "Skeleton",
+                      "displayTitle":  "Skeleton",
+                      "file":  "Skeleton.md",
+                      "source":  "Skeleton.htm"
+                  },
+                  {
+                      "title":  "Skip",
+                      "displayTitle":  "Skip",
+                      "file":  "Skip.md",
+                      "source":  "Skip.htm"
+                  },
+                  {
+                      "title":  "Skull_O\u0027Maniac",
+                      "displayTitle":  "Skull O\u0027Maniac",
+                      "file":  "Skull_O\u0027Maniac.md",
+                      "source":  "Skull_O\u0027Maniac.htm"
+                  },
+                  {
+                      "title":  "Skullino",
+                      "displayTitle":  "Skullino",
+                      "file":  "Skullino.md",
+                      "source":  "Skullino.htm"
+                  },
+                  {
+                      "title":  "Skulorosso",
+                      "displayTitle":  "Skulorosso",
+                      "file":  "Skulorosso.md",
+                      "source":  "Skulorosso.htm"
+                  },
+                  {
+                      "title":  "Song_of_Mana",
+                      "displayTitle":  "Song of Mana",
+                      "file":  "Song_of_Mana.md",
+                      "source":  "Song_of_Mana.htm"
+                  },
+                  {
+                      "title":  "Sorbetto",
+                      "displayTitle":  "Sorbetto",
+                      "file":  "Sorbetto.md",
+                      "source":  "Sorbetto.htm"
+                  },
+                  {
+                      "title":  "Speed",
+                      "displayTitle":  "Speed",
+                      "file":  "Speed.md",
+                      "source":  "Speed.htm"
+                  },
+                  {
+                      "title":  "Spellbinder",
+                      "displayTitle":  "Spellbinder",
+                      "file":  "Spellbinder.md",
+                      "source":  "Spellbinder.htm"
+                  },
+                  {
+                      "title":  "Spinach",
+                      "displayTitle":  "Spinach",
+                      "file":  "Spinach.md",
+                      "source":  "Spinach.htm"
+                  },
+                  {
+                      "title":  "Stages",
+                      "displayTitle":  "Stages",
+                      "file":  "Stages.md",
+                      "source":  "Stages.htm"
+                  },
+                  {
+                      "title":  "Stone_Mask",
+                      "displayTitle":  "Stone Mask",
+                      "file":  "Stone_Mask.md",
+                      "source":  "Stone_Mask.htm"
+                  },
+                  {
+                      "title":  "Swarm",
+                      "displayTitle":  "Swarm",
+                      "file":  "Swarm.md",
+                      "source":  "Swarm.htm"
+                  },
+                  {
+                      "title":  "The_Reaper",
+                      "displayTitle":  "The Reaper",
+                      "file":  "The_Reaper.md",
+                      "source":  "The_Reaper.htm"
+                  },
+                  {
+                      "title":  "Thorns",
+                      "displayTitle":  "Thorns",
+                      "file":  "Thorns.md",
+                      "source":  "Thorns.htm"
+                  },
+                  {
+                      "title":  "Tirajisú",
+                      "displayTitle":  "Tirajisú",
+                      "file":  "Tirajisú.md",
+                      "source":  "Tirajisú.htm"
+                  },
+                  {
+                      "title":  "Torrona\u0027s_Box",
+                      "displayTitle":  "Torrona\u0027s Box",
+                      "file":  "Torrona\u0027s_Box.md",
+                      "source":  "Torrona\u0027s_Box.htm"
+                  },
+                  {
+                      "title":  "Treasure_Chest",
+                      "displayTitle":  "Treasure Chest",
+                      "file":  "Treasure_Chest.md",
+                      "source":  "Treasure_Chest.htm"
+                  },
+                  {
+                      "title":  "Vacuum",
+                      "displayTitle":  "Vacuum",
+                      "file":  "Vacuum.md",
+                      "source":  "Vacuum.htm"
+                  },
+                  {
+                      "title":  "Vento_Sacro",
+                      "displayTitle":  "Vento Sacro",
+                      "file":  "Vento_Sacro.md",
+                      "source":  "Vento_Sacro.htm"
+                  },
+                  {
+                      "title":  "Venus",
+                      "displayTitle":  "Venus",
+                      "file":  "Venus.md",
+                      "source":  "Venus.htm"
+                  },
                   {
                       "title":  "Weapons",
                       "displayTitle":  "Weapons",
                       "file":  "Weapons.md",
                       "source":  "Weapons.htm"
+                  },
+                  {
+                      "title":  "Werewolf",
+                      "displayTitle":  "Werewolf",
+                      "file":  "Werewolf.md",
+                      "source":  "Werewolf.htm"
+                  },
+                  {
+                      "title":  "Whip",
+                      "displayTitle":  "Whip",
+                      "file":  "Whip.md",
+                      "source":  "Whip.htm"
+                  },
+                  {
+                      "title":  "White_Hand",
+                      "displayTitle":  "White Hand",
+                      "file":  "White_Hand.md",
+                      "source":  "White_Hand.htm"
+                  },
+                  {
+                      "title":  "Wings",
+                      "displayTitle":  "Wings",
+                      "file":  "Wings.md",
+                      "source":  "Wings.htm"
+                  },
+                  {
+                      "title":  "Zombie",
+                      "displayTitle":  "Zombie",
+                      "file":  "Zombie.md",
+                      "source":  "Zombie.htm"
                   }
               ]
 }

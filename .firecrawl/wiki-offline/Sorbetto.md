@@ -1,0 +1,102 @@
+# Sorbetto {#firstHeading .firstHeading .mw-first-heading}
+
+[Jump to navigation](#mw-head) [Jump to search](#searchInput)
+
+|  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+|----|----|----|----|----|----|----|----|----|----|----|----|----|----|----|----|----|----|----|----|
+| Sorbetto | Sorbetto | Sorbetto | Sorbetto | Sorbetto | Sorbetto | Sorbetto | Sorbetto | Sorbetto | Sorbetto | Sorbetto | Sorbetto | Sorbetto | Sorbetto | Sorbetto | Sorbetto | Sorbetto | Sorbetto | Sorbetto | Sorbetto |
+| ; Temporarily emits freezing cones. Affected by player stats. | ; Temporarily emits freezing cones. Affected by player stats. | ; Temporarily emits freezing cones. Affected by player stats. | ; Temporarily emits freezing cones. Affected by player stats. | ; Temporarily emits freezing cones. Affected by player stats. | ; Temporarily emits freezing cones. Affected by player stats. | ; Temporarily emits freezing cones. Affected by player stats. | ; Temporarily emits freezing cones. Affected by player stats. | ; Temporarily emits freezing cones. Affected by player stats. | ; Temporarily emits freezing cones. Affected by player stats. | ; Temporarily emits freezing cones. Affected by player stats. | ; Temporarily emits freezing cones. Affected by player stats. | ; Temporarily emits freezing cones. Affected by player stats. | ; Temporarily emits freezing cones. Affected by player stats. | ; Temporarily emits freezing cones. Affected by player stats. | ; Temporarily emits freezing cones. Affected by player stats. | ; Temporarily emits freezing cones. Affected by player stats. | ; Temporarily emits freezing cones. Affected by player stats. | ; Temporarily emits freezing cones. Affected by player stats. | ; Temporarily emits freezing cones. Affected by player stats. |
+| Pickup | Pickup | Pickup | Pickup | Pickup | Pickup | Pickup | Pickup | Pickup | Pickup | Pickup | Pickup | Pickup | Pickup | Pickup | Pickup | Pickup | Pickup | Pickup | Pickup |
+| Release | Release | Release | Release | Release | Release | Release | Release | 10 April 2025 ([Update](/w/Updates/Vampire_Survivors:_Emerald_Diorama_is_free_and_out_now "Updates/Vampire Survivors: Emerald Diorama is free and out now")) | 10 April 2025 ([Update](/w/Updates/Vampire_Survivors:_Emerald_Diorama_is_free_and_out_now "Updates/Vampire Survivors: Emerald Diorama is free and out now")) | 10 April 2025 ([Update](/w/Updates/Vampire_Survivors:_Emerald_Diorama_is_free_and_out_now "Updates/Vampire Survivors: Emerald Diorama is free and out now")) | 10 April 2025 ([Update](/w/Updates/Vampire_Survivors:_Emerald_Diorama_is_free_and_out_now "Updates/Vampire Survivors: Emerald Diorama is free and out now")) | 10 April 2025 ([Update](/w/Updates/Vampire_Survivors:_Emerald_Diorama_is_free_and_out_now "Updates/Vampire Survivors: Emerald Diorama is free and out now")) | 10 April 2025 ([Update](/w/Updates/Vampire_Survivors:_Emerald_Diorama_is_free_and_out_now "Updates/Vampire Survivors: Emerald Diorama is free and out now")) | 10 April 2025 ([Update](/w/Updates/Vampire_Survivors:_Emerald_Diorama_is_free_and_out_now "Updates/Vampire Survivors: Emerald Diorama is free and out now")) | 10 April 2025 ([Update](/w/Updates/Vampire_Survivors:_Emerald_Diorama_is_free_and_out_now "Updates/Vampire Survivors: Emerald Diorama is free and out now")) | 10 April 2025 ([Update](/w/Updates/Vampire_Survivors:_Emerald_Diorama_is_free_and_out_now "Updates/Vampire Survivors: Emerald Diorama is free and out now")) | 10 April 2025 ([Update](/w/Updates/Vampire_Survivors:_Emerald_Diorama_is_free_and_out_now "Updates/Vampire Survivors: Emerald Diorama is free and out now")) | 10 April 2025 ([Update](/w/Updates/Vampire_Survivors:_Emerald_Diorama_is_free_and_out_now "Updates/Vampire Survivors: Emerald Diorama is free and out now")) | 10 April 2025 ([Update](/w/Updates/Vampire_Survivors:_Emerald_Diorama_is_free_and_out_now "Updates/Vampire Survivors: Emerald Diorama is free and out now")) |
+| ID | ID | ID | ID | ID | ID | ID | ID | `SORBETTO` | `SORBETTO` | `SORBETTO` | `SORBETTO` | `SORBETTO` | `SORBETTO` | `SORBETTO` | `SORBETTO` | `SORBETTO` | `SORBETTO` | `SORBETTO` | `SORBETTO` |
+| Rarity | Rarity | Rarity | Rarity | Rarity | Rarity | Rarity | Rarity | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1 |
+| Unlock level | Unlock level | Unlock level | Unlock level | Unlock level | Unlock level | Unlock level | Unlock level | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| Affected by luck | Affected by luck | Affected by luck | Affected by luck | Affected by luck | Affected by luck | Affected by luck | Affected by luck | [**?** (edit)](Sorbetto.md) | [**?** (edit)](Sorbetto.md) | [**?** (edit)](Sorbetto.md) | [**?** (edit)](Sorbetto.md) | [**?** (edit)](Sorbetto.md) | [**?** (edit)](Sorbetto.md) | [**?** (edit)](Sorbetto.md) | [**?** (edit)](Sorbetto.md) | [**?** (edit)](Sorbetto.md) | [**?** (edit)](Sorbetto.md) | [**?** (edit)](Sorbetto.md) | [**?** (edit)](Sorbetto.md) |
+| Effects | Effects | Effects | Effects | Effects | Effects | Effects | Effects | The player breathes ice in the faced direction for 10 seconds, [freezing](Freeze.md) enemies. | The player breathes ice in the faced direction for 10 seconds, [freezing](Freeze.md) enemies. | The player breathes ice in the faced direction for 10 seconds, [freezing](Freeze.md) enemies. | The player breathes ice in the faced direction for 10 seconds, [freezing](Freeze.md) enemies. | The player breathes ice in the faced direction for 10 seconds, [freezing](Freeze.md) enemies. | The player breathes ice in the faced direction for 10 seconds, [freezing](Freeze.md) enemies. | The player breathes ice in the faced direction for 10 seconds, [freezing](Freeze.md) enemies. | The player breathes ice in the faced direction for 10 seconds, [freezing](Freeze.md) enemies. | The player breathes ice in the faced direction for 10 seconds, [freezing](Freeze.md) enemies. | The player breathes ice in the faced direction for 10 seconds, [freezing](Freeze.md) enemies. | The player breathes ice in the faced direction for 10 seconds, [freezing](Freeze.md) enemies. | The player breathes ice in the faced direction for 10 seconds, [freezing](Freeze.md) enemies. |
+| Notes | Notes | Notes | Notes | Notes | Notes | Notes | Notes | Only found in [special places](Whiteout.md) and generated by [Arcana XII - Out of Bounds](Out_of_Bounds_(XII).md). | Only found in [special places](Whiteout.md) and generated by [Arcana XII - Out of Bounds](Out_of_Bounds_(XII).md). | Only found in [special places](Whiteout.md) and generated by [Arcana XII - Out of Bounds](Out_of_Bounds_(XII).md). | Only found in [special places](Whiteout.md) and generated by [Arcana XII - Out of Bounds](Out_of_Bounds_(XII).md). | Only found in [special places](Whiteout.md) and generated by [Arcana XII - Out of Bounds](Out_of_Bounds_(XII).md). | Only found in [special places](Whiteout.md) and generated by [Arcana XII - Out of Bounds](Out_of_Bounds_(XII).md). | Only found in [special places](Whiteout.md) and generated by [Arcana XII - Out of Bounds](Out_of_Bounds_(XII).md). | Only found in [special places](Whiteout.md) and generated by [Arcana XII - Out of Bounds](Out_of_Bounds_(XII).md). | Only found in [special places](Whiteout.md) and generated by [Arcana XII - Out of Bounds](Out_of_Bounds_(XII).md). | Only found in [special places](Whiteout.md) and generated by [Arcana XII - Out of Bounds](Out_of_Bounds_(XII).md). | Only found in [special places](Whiteout.md) and generated by [Arcana XII - Out of Bounds](Out_of_Bounds_(XII).md). | Only found in [special places](Whiteout.md) and generated by [Arcana XII - Out of Bounds](Out_of_Bounds_(XII).md). |
+| {\"notes\":\"\* Only found in [special places](Whiteout.md) and generated by [Arcana XII - Out of Bounds](Out_of_Bounds_(XII).md).\",\"description\":\"Temporarily emits freezing cones. Affected by player stats.\",\"id\":\"SORBETTO\",\"update\":\"Vampire Survivors: Emerald Diorama is free and out now\",\"dlc\":\"\",\"image\":\"\",\"name\":\"Sorbetto\",\"effects\":\"The player breathes ice in the faced direction for 10 seconds, [freezing](Freeze.md) enemies.\",\"release\":\"10 April 2025\",\"level\":\"0\",\"luck\":\"\",\"rarity\":\"1\"} | {\"notes\":\"\* Only found in [special places](Whiteout.md) and generated by [Arcana XII - Out of Bounds](Out_of_Bounds_(XII).md).\",\"description\":\"Temporarily emits freezing cones. Affected by player stats.\",\"id\":\"SORBETTO\",\"update\":\"Vampire Survivors: Emerald Diorama is free and out now\",\"dlc\":\"\",\"image\":\"\",\"name\":\"Sorbetto\",\"effects\":\"The player breathes ice in the faced direction for 10 seconds, [freezing](Freeze.md) enemies.\",\"release\":\"10 April 2025\",\"level\":\"0\",\"luck\":\"\",\"rarity\":\"1\"} | {\"notes\":\"\* Only found in [special places](Whiteout.md) and generated by [Arcana XII - Out of Bounds](Out_of_Bounds_(XII).md).\",\"description\":\"Temporarily emits freezing cones. Affected by player stats.\",\"id\":\"SORBETTO\",\"update\":\"Vampire Survivors: Emerald Diorama is free and out now\",\"dlc\":\"\",\"image\":\"\",\"name\":\"Sorbetto\",\"effects\":\"The player breathes ice in the faced direction for 10 seconds, [freezing](Freeze.md) enemies.\",\"release\":\"10 April 2025\",\"level\":\"0\",\"luck\":\"\",\"rarity\":\"1\"} | {\"notes\":\"\* Only found in [special places](Whiteout.md) and generated by [Arcana XII - Out of Bounds](Out_of_Bounds_(XII).md).\",\"description\":\"Temporarily emits freezing cones. Affected by player stats.\",\"id\":\"SORBETTO\",\"update\":\"Vampire Survivors: Emerald Diorama is free and out now\",\"dlc\":\"\",\"image\":\"\",\"name\":\"Sorbetto\",\"effects\":\"The player breathes ice in the faced direction for 10 seconds, [freezing](Freeze.md) enemies.\",\"release\":\"10 April 2025\",\"level\":\"0\",\"luck\":\"\",\"rarity\":\"1\"} | {\"notes\":\"\* Only found in [special places](Whiteout.md) and generated by [Arcana XII - Out of Bounds](Out_of_Bounds_(XII).md).\",\"description\":\"Temporarily emits freezing cones. Affected by player stats.\",\"id\":\"SORBETTO\",\"update\":\"Vampire Survivors: Emerald Diorama is free and out now\",\"dlc\":\"\",\"image\":\"\",\"name\":\"Sorbetto\",\"effects\":\"The player breathes ice in the faced direction for 10 seconds, [freezing](Freeze.md) enemies.\",\"release\":\"10 April 2025\",\"level\":\"0\",\"luck\":\"\",\"rarity\":\"1\"} | {\"notes\":\"\* Only found in [special places](Whiteout.md) and generated by [Arcana XII - Out of Bounds](Out_of_Bounds_(XII).md).\",\"description\":\"Temporarily emits freezing cones. Affected by player stats.\",\"id\":\"SORBETTO\",\"update\":\"Vampire Survivors: Emerald Diorama is free and out now\",\"dlc\":\"\",\"image\":\"\",\"name\":\"Sorbetto\",\"effects\":\"The player breathes ice in the faced direction for 10 seconds, [freezing](Freeze.md) enemies.\",\"release\":\"10 April 2025\",\"level\":\"0\",\"luck\":\"\",\"rarity\":\"1\"} | {\"notes\":\"\* Only found in [special places](Whiteout.md) and generated by [Arcana XII - Out of Bounds](Out_of_Bounds_(XII).md).\",\"description\":\"Temporarily emits freezing cones. Affected by player stats.\",\"id\":\"SORBETTO\",\"update\":\"Vampire Survivors: Emerald Diorama is free and out now\",\"dlc\":\"\",\"image\":\"\",\"name\":\"Sorbetto\",\"effects\":\"The player breathes ice in the faced direction for 10 seconds, [freezing](Freeze.md) enemies.\",\"release\":\"10 April 2025\",\"level\":\"0\",\"luck\":\"\",\"rarity\":\"1\"} | {\"notes\":\"\* Only found in [special places](Whiteout.md) and generated by [Arcana XII - Out of Bounds](Out_of_Bounds_(XII).md).\",\"description\":\"Temporarily emits freezing cones. Affected by player stats.\",\"id\":\"SORBETTO\",\"update\":\"Vampire Survivors: Emerald Diorama is free and out now\",\"dlc\":\"\",\"image\":\"\",\"name\":\"Sorbetto\",\"effects\":\"The player breathes ice in the faced direction for 10 seconds, [freezing](Freeze.md) enemies.\",\"release\":\"10 April 2025\",\"level\":\"0\",\"luck\":\"\",\"rarity\":\"1\"} | {\"notes\":\"\* Only found in [special places](Whiteout.md) and generated by [Arcana XII - Out of Bounds](Out_of_Bounds_(XII).md).\",\"description\":\"Temporarily emits freezing cones. Affected by player stats.\",\"id\":\"SORBETTO\",\"update\":\"Vampire Survivors: Emerald Diorama is free and out now\",\"dlc\":\"\",\"image\":\"\",\"name\":\"Sorbetto\",\"effects\":\"The player breathes ice in the faced direction for 10 seconds, [freezing](Freeze.md) enemies.\",\"release\":\"10 April 2025\",\"level\":\"0\",\"luck\":\"\",\"rarity\":\"1\"} | {\"notes\":\"\* Only found in [special places](Whiteout.md) and generated by [Arcana XII - Out of Bounds](Out_of_Bounds_(XII).md).\",\"description\":\"Temporarily emits freezing cones. Affected by player stats.\",\"id\":\"SORBETTO\",\"update\":\"Vampire Survivors: Emerald Diorama is free and out now\",\"dlc\":\"\",\"image\":\"\",\"name\":\"Sorbetto\",\"effects\":\"The player breathes ice in the faced direction for 10 seconds, [freezing](Freeze.md) enemies.\",\"release\":\"10 April 2025\",\"level\":\"0\",\"luck\":\"\",\"rarity\":\"1\"} | {\"notes\":\"\* Only found in [special places](Whiteout.md) and generated by [Arcana XII - Out of Bounds](Out_of_Bounds_(XII).md).\",\"description\":\"Temporarily emits freezing cones. Affected by player stats.\",\"id\":\"SORBETTO\",\"update\":\"Vampire Survivors: Emerald Diorama is free and out now\",\"dlc\":\"\",\"image\":\"\",\"name\":\"Sorbetto\",\"effects\":\"The player breathes ice in the faced direction for 10 seconds, [freezing](Freeze.md) enemies.\",\"release\":\"10 April 2025\",\"level\":\"0\",\"luck\":\"\",\"rarity\":\"1\"} | {\"notes\":\"\* Only found in [special places](Whiteout.md) and generated by [Arcana XII - Out of Bounds](Out_of_Bounds_(XII).md).\",\"description\":\"Temporarily emits freezing cones. Affected by player stats.\",\"id\":\"SORBETTO\",\"update\":\"Vampire Survivors: Emerald Diorama is free and out now\",\"dlc\":\"\",\"image\":\"\",\"name\":\"Sorbetto\",\"effects\":\"The player breathes ice in the faced direction for 10 seconds, [freezing](Freeze.md) enemies.\",\"release\":\"10 April 2025\",\"level\":\"0\",\"luck\":\"\",\"rarity\":\"1\"} | {\"notes\":\"\* Only found in [special places](Whiteout.md) and generated by [Arcana XII - Out of Bounds](Out_of_Bounds_(XII).md).\",\"description\":\"Temporarily emits freezing cones. Affected by player stats.\",\"id\":\"SORBETTO\",\"update\":\"Vampire Survivors: Emerald Diorama is free and out now\",\"dlc\":\"\",\"image\":\"\",\"name\":\"Sorbetto\",\"effects\":\"The player breathes ice in the faced direction for 10 seconds, [freezing](Freeze.md) enemies.\",\"release\":\"10 April 2025\",\"level\":\"0\",\"luck\":\"\",\"rarity\":\"1\"} | {\"notes\":\"\* Only found in [special places](Whiteout.md) and generated by [Arcana XII - Out of Bounds](Out_of_Bounds_(XII).md).\",\"description\":\"Temporarily emits freezing cones. Affected by player stats.\",\"id\":\"SORBETTO\",\"update\":\"Vampire Survivors: Emerald Diorama is free and out now\",\"dlc\":\"\",\"image\":\"\",\"name\":\"Sorbetto\",\"effects\":\"The player breathes ice in the faced direction for 10 seconds, [freezing](Freeze.md) enemies.\",\"release\":\"10 April 2025\",\"level\":\"0\",\"luck\":\"\",\"rarity\":\"1\"} | {\"notes\":\"\* Only found in [special places](Whiteout.md) and generated by [Arcana XII - Out of Bounds](Out_of_Bounds_(XII).md).\",\"description\":\"Temporarily emits freezing cones. Affected by player stats.\",\"id\":\"SORBETTO\",\"update\":\"Vampire Survivors: Emerald Diorama is free and out now\",\"dlc\":\"\",\"image\":\"\",\"name\":\"Sorbetto\",\"effects\":\"The player breathes ice in the faced direction for 10 seconds, [freezing](Freeze.md) enemies.\",\"release\":\"10 April 2025\",\"level\":\"0\",\"luck\":\"\",\"rarity\":\"1\"} | {\"notes\":\"\* Only found in [special places](Whiteout.md) and generated by [Arcana XII - Out of Bounds](Out_of_Bounds_(XII).md).\",\"description\":\"Temporarily emits freezing cones. Affected by player stats.\",\"id\":\"SORBETTO\",\"update\":\"Vampire Survivors: Emerald Diorama is free and out now\",\"dlc\":\"\",\"image\":\"\",\"name\":\"Sorbetto\",\"effects\":\"The player breathes ice in the faced direction for 10 seconds, [freezing](Freeze.md) enemies.\",\"release\":\"10 April 2025\",\"level\":\"0\",\"luck\":\"\",\"rarity\":\"1\"} | {\"notes\":\"\* Only found in [special places](Whiteout.md) and generated by [Arcana XII - Out of Bounds](Out_of_Bounds_(XII).md).\",\"description\":\"Temporarily emits freezing cones. Affected by player stats.\",\"id\":\"SORBETTO\",\"update\":\"Vampire Survivors: Emerald Diorama is free and out now\",\"dlc\":\"\",\"image\":\"\",\"name\":\"Sorbetto\",\"effects\":\"The player breathes ice in the faced direction for 10 seconds, [freezing](Freeze.md) enemies.\",\"release\":\"10 April 2025\",\"level\":\"0\",\"luck\":\"\",\"rarity\":\"1\"} | {\"notes\":\"\* Only found in [special places](Whiteout.md) and generated by [Arcana XII - Out of Bounds](Out_of_Bounds_(XII).md).\",\"description\":\"Temporarily emits freezing cones. Affected by player stats.\",\"id\":\"SORBETTO\",\"update\":\"Vampire Survivors: Emerald Diorama is free and out now\",\"dlc\":\"\",\"image\":\"\",\"name\":\"Sorbetto\",\"effects\":\"The player breathes ice in the faced direction for 10 seconds, [freezing](Freeze.md) enemies.\",\"release\":\"10 April 2025\",\"level\":\"0\",\"luck\":\"\",\"rarity\":\"1\"} | {\"notes\":\"\* Only found in [special places](Whiteout.md) and generated by [Arcana XII - Out of Bounds](Out_of_Bounds_(XII).md).\",\"description\":\"Temporarily emits freezing cones. Affected by player stats.\",\"id\":\"SORBETTO\",\"update\":\"Vampire Survivors: Emerald Diorama is free and out now\",\"dlc\":\"\",\"image\":\"\",\"name\":\"Sorbetto\",\"effects\":\"The player breathes ice in the faced direction for 10 seconds, [freezing](Freeze.md) enemies.\",\"release\":\"10 April 2025\",\"level\":\"0\",\"luck\":\"\",\"rarity\":\"1\"} | {\"notes\":\"\* Only found in [special places](Whiteout.md) and generated by [Arcana XII - Out of Bounds](Out_of_Bounds_(XII).md).\",\"description\":\"Temporarily emits freezing cones. Affected by player stats.\",\"id\":\"SORBETTO\",\"update\":\"Vampire Survivors: Emerald Diorama is free and out now\",\"dlc\":\"\",\"image\":\"\",\"name\":\"Sorbetto\",\"effects\":\"The player breathes ice in the faced direction for 10 seconds, [freezing](Freeze.md) enemies.\",\"release\":\"10 April 2025\",\"level\":\"0\",\"luck\":\"\",\"rarity\":\"1\"} |
+
+Sorbetto
+
+Weapon
+
+ID
+
+`CONEOFCOLD`
+
+Type
+
+Special
+
+Max level
+
+1
+
+Rarity
+
+\-
+
+Effects
+
+- Scales with all stat bonuses.
+- Freezes enemies.
+
+Stats
+
+Damage
+
+10
+
+Area
+
+200%
+
+Speed
+
+300%
+
+Amount
+
+12
+
+Duration
+
+1.0 second
+
+Pierce
+
+Area of Effect
+
+Cooldown
+
+0.5 seconds
+
+Projectile Interval
+
+0.04 seconds
+
+Knockback
+
+1
+
+Pool Limit
+
+50
+
+Blocked by walls
+
+No
+
+{\"type\":\"Special\",\"rarity\":\"-\",\"interval\":\"0.04 seconds\",\"id\":\"CONEOFCOLD\",\"duration\":\"1.0 second\",\"pool\":\"50\",\"effects\":\"\* Scales with all stat bonuses.\\n\* Freezes enemies.\",\"area\":\"200%\",\"image\":\"Sprite-Sorbetto.png\",\"title\":\"Sorbetto\",\"amount\":\"12\",\"speed\":\"300%\",\"pierce\":\"Area of Effect\",\"cooldown\":\"0.5 seconds\",\"damage\":\"10\"}
+
+**Sorbetto** is an [item pickup](Pickups.md) in *[Vampire Survivors](Vampire_Survivors.md)*. It is also a hidden weapon wielded by  [Frozenshade](Frozenshade.md).
+
+Sorbettos can be found from [light sources](Light_source.md) while the player has  [Out of Bounds (XII)](Out_of_Bounds_(XII).md). They can also be found on the [stage](Stage.md) [Whiteout](Whiteout.md), or dropped by  [Hail from the Future (X)](Hail_from_the_Future_(X).md).
+
+## Effects {#Effects}
+
+Similar to  [Nduja Fritta Tanto](Nduja_Fritta_Tanto.md), upon picking up the Sorbetto, the player\'s character begins to breathe a cone of icy wind in the direction they are facing, for 10 seconds. It also has the added effect of freezing the enemies it damaged. It is coded to be a temporary weapon, so it can be affected by different [stat](Player_stats.md) increases.
+
+Collecting  [Floor Chicken](Floor_Chicken.md) or  [Wall Chicken](Wall_Chicken.md) while  [Frozenshade](Frozenshade.md) is at max health has a chance of activating Sorbetto.
+
+Sorbetto is affected by [Gemini (I)](Gemini_(I).md), causing it to emit frozen wind behind the character in addition to in front.

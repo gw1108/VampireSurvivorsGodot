@@ -1,0 +1,80 @@
+# Venus {#firstHeading .firstHeading .mw-first-heading}
+
+[Jump to navigation](#mw-head) [Jump to search](#searchInput)
+
+|  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+|----|----|----|----|----|----|----|----|----|----|----|----|----|----|----|----|----|----|----|----|
+| Venus | Venus | Venus | Venus | Venus | Venus | Venus | Venus | Venus | Venus | Venus | Venus | Venus | Venus | Venus | Venus | Venus | Venus | Venus | Venus |
+|  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| Bestiary ?; Enemy stats as displayed in the [Bestiary](Ars_Gouda.md).  See individual variants for more detailed information. | Bestiary ?; Enemy stats as displayed in the [Bestiary](Ars_Gouda.md).  See individual variants for more detailed information. | Bestiary ?; Enemy stats as displayed in the [Bestiary](Ars_Gouda.md).  See individual variants for more detailed information. | Bestiary ?; Enemy stats as displayed in the [Bestiary](Ars_Gouda.md).  See individual variants for more detailed information. | Bestiary ?; Enemy stats as displayed in the [Bestiary](Ars_Gouda.md).  See individual variants for more detailed information. | Bestiary ?; Enemy stats as displayed in the [Bestiary](Ars_Gouda.md).  See individual variants for more detailed information. | Bestiary ?; Enemy stats as displayed in the [Bestiary](Ars_Gouda.md).  See individual variants for more detailed information. | Bestiary ?; Enemy stats as displayed in the [Bestiary](Ars_Gouda.md).  See individual variants for more detailed information. | Bestiary ?; Enemy stats as displayed in the [Bestiary](Ars_Gouda.md).  See individual variants for more detailed information. | Bestiary ?; Enemy stats as displayed in the [Bestiary](Ars_Gouda.md).  See individual variants for more detailed information. | Bestiary ?; Enemy stats as displayed in the [Bestiary](Ars_Gouda.md).  See individual variants for more detailed information. | Bestiary ?; Enemy stats as displayed in the [Bestiary](Ars_Gouda.md).  See individual variants for more detailed information. | Bestiary ?; Enemy stats as displayed in the [Bestiary](Ars_Gouda.md).  See individual variants for more detailed information. | Bestiary ?; Enemy stats as displayed in the [Bestiary](Ars_Gouda.md).  See individual variants for more detailed information. | Bestiary ?; Enemy stats as displayed in the [Bestiary](Ars_Gouda.md).  See individual variants for more detailed information. | Bestiary ?; Enemy stats as displayed in the [Bestiary](Ars_Gouda.md).  See individual variants for more detailed information. | Bestiary ?; Enemy stats as displayed in the [Bestiary](Ars_Gouda.md).  See individual variants for more detailed information. | Bestiary ?; Enemy stats as displayed in the [Bestiary](Ars_Gouda.md).  See individual variants for more detailed information. | Bestiary ?; Enemy stats as displayed in the [Bestiary](Ars_Gouda.md).  See individual variants for more detailed information. | Bestiary ?; Enemy stats as displayed in the [Bestiary](Ars_Gouda.md).  See individual variants for more detailed information. |
+| Release | Release | Release | Release | Release | Release | Release | Release | 27 October 2021 ([Update](Updates/There_exist_tales_that_don't_exist..md)) | 27 October 2021 ([Update](Updates/There_exist_tales_that_don't_exist..md)) | 27 October 2021 ([Update](Updates/There_exist_tales_that_don't_exist..md)) | 27 October 2021 ([Update](Updates/There_exist_tales_that_don't_exist..md)) | 27 October 2021 ([Update](Updates/There_exist_tales_that_don't_exist..md)) | 27 October 2021 ([Update](Updates/There_exist_tales_that_don't_exist..md)) | 27 October 2021 ([Update](Updates/There_exist_tales_that_don't_exist..md)) | 27 October 2021 ([Update](Updates/There_exist_tales_that_don't_exist..md)) | 27 October 2021 ([Update](Updates/There_exist_tales_that_don't_exist..md)) | 27 October 2021 ([Update](Updates/There_exist_tales_that_don't_exist..md)) | 27 October 2021 ([Update](Updates/There_exist_tales_that_don't_exist..md)) | 27 October 2021 ([Update](Updates/There_exist_tales_that_don't_exist..md)) |
+| [Theme](Music.md) | [Theme](Music.md) | [Theme](Music.md) | [Theme](Music.md) | [Theme](Music.md) | [Theme](Music.md) | [Theme](Music.md) | [Theme](Music.md) | No | No | No | No | No | No | No | No | No | No | No | No |
+| Bestiary \# | Bestiary \# | Bestiary \# | Bestiary \# | Bestiary \# | Bestiary \# | Bestiary \# | Bestiary \# | 037 | 037 | 037 | 037 | 037 | 037 | 037 | 037 | 037 | 037 | 037 | 037 |
+|  [HP](Max_Health.md) |  [HP](Max_Health.md) |  [HP](Max_Health.md) |  [HP](Max_Health.md) |  [HP](Max_Health.md) |  [HP](Max_Health.md) |  [HP](Max_Health.md) |  [HP](Max_Health.md) | 500 | 500 | 500 | 500 | 500 | 500 | 500 | 500 | 500 | 500 | 500 | 500 |
+|  [Power](Might.md) |  [Power](Might.md) |  [Power](Might.md) |  [Power](Might.md) |  [Power](Might.md) |  [Power](Might.md) |  [Power](Might.md) |  [Power](Might.md) | 20 | 20 | 20 | 20 | 20 | 20 | 20 | 20 | 20 | 20 | 20 | 20 |
+|  [Speed](Move_Speed.md) |  [Speed](Move_Speed.md) |  [Speed](Move_Speed.md) |  [Speed](Move_Speed.md) |  [Speed](Move_Speed.md) |  [Speed](Move_Speed.md) |  [Speed](Move_Speed.md) |  [Speed](Move_Speed.md) | 80 | 80 | 80 | 80 | 80 | 80 | 80 | 80 | 80 | 80 | 80 | 80 |
+| Resistances | Resistances | Resistances | Resistances | Resistances | Resistances | Resistances | Resistances | [**?** (edit)](Venus.md) | [**?** (edit)](Venus.md) | [**?** (edit)](Venus.md) | [**?** (edit)](Venus.md) | [**?** (edit)](Venus.md) | [**?** (edit)](Venus.md) | [**?** (edit)](Venus.md) | [**?** (edit)](Venus.md) | [**?** (edit)](Venus.md) | [**?** (edit)](Venus.md) | [**?** (edit)](Venus.md) | [**?** (edit)](Venus.md) |
+| Skills | Skills | Skills | Skills | Skills | Skills | Skills | Skills | [**?** (edit)](Venus.md) | [**?** (edit)](Venus.md) | [**?** (edit)](Venus.md) | [**?** (edit)](Venus.md) | [**?** (edit)](Venus.md) | [**?** (edit)](Venus.md) | [**?** (edit)](Venus.md) | [**?** (edit)](Venus.md) | [**?** (edit)](Venus.md) | [**?** (edit)](Venus.md) | [**?** (edit)](Venus.md) | [**?** (edit)](Venus.md) |
+| Found in | Found in | Found in | Found in | Found in | Found in | Found in | Found in | [Mad Forest](Mad_Forest.md) | [Mad Forest](Mad_Forest.md) | [Mad Forest](Mad_Forest.md) | [Mad Forest](Mad_Forest.md) | [Mad Forest](Mad_Forest.md) | [Mad Forest](Mad_Forest.md) | [Mad Forest](Mad_Forest.md) | [Mad Forest](Mad_Forest.md) | [Mad Forest](Mad_Forest.md) | [Mad Forest](Mad_Forest.md) | [Mad Forest](Mad_Forest.md) | [Mad Forest](Mad_Forest.md) |
+| {\"image\":\"Sprite-Venus.png\",\"stages\":\"[Mad Forest](Mad_Forest.md)\",\"movespeed\":\"80\",\"release\":\"27 October 2021\",\"health\":\"500\",\"update\":\"There exist tales that don\'t exist.\",\"damage\":\"20\"} | {\"image\":\"Sprite-Venus.png\",\"stages\":\"[Mad Forest](Mad_Forest.md)\",\"movespeed\":\"80\",\"release\":\"27 October 2021\",\"health\":\"500\",\"update\":\"There exist tales that don\'t exist.\",\"damage\":\"20\"} | {\"image\":\"Sprite-Venus.png\",\"stages\":\"[Mad Forest](Mad_Forest.md)\",\"movespeed\":\"80\",\"release\":\"27 October 2021\",\"health\":\"500\",\"update\":\"There exist tales that don\'t exist.\",\"damage\":\"20\"} | {\"image\":\"Sprite-Venus.png\",\"stages\":\"[Mad Forest](Mad_Forest.md)\",\"movespeed\":\"80\",\"release\":\"27 October 2021\",\"health\":\"500\",\"update\":\"There exist tales that don\'t exist.\",\"damage\":\"20\"} | {\"image\":\"Sprite-Venus.png\",\"stages\":\"[Mad Forest](Mad_Forest.md)\",\"movespeed\":\"80\",\"release\":\"27 October 2021\",\"health\":\"500\",\"update\":\"There exist tales that don\'t exist.\",\"damage\":\"20\"} | {\"image\":\"Sprite-Venus.png\",\"stages\":\"[Mad Forest](Mad_Forest.md)\",\"movespeed\":\"80\",\"release\":\"27 October 2021\",\"health\":\"500\",\"update\":\"There exist tales that don\'t exist.\",\"damage\":\"20\"} | {\"image\":\"Sprite-Venus.png\",\"stages\":\"[Mad Forest](Mad_Forest.md)\",\"movespeed\":\"80\",\"release\":\"27 October 2021\",\"health\":\"500\",\"update\":\"There exist tales that don\'t exist.\",\"damage\":\"20\"} | {\"image\":\"Sprite-Venus.png\",\"stages\":\"[Mad Forest](Mad_Forest.md)\",\"movespeed\":\"80\",\"release\":\"27 October 2021\",\"health\":\"500\",\"update\":\"There exist tales that don\'t exist.\",\"damage\":\"20\"} | {\"image\":\"Sprite-Venus.png\",\"stages\":\"[Mad Forest](Mad_Forest.md)\",\"movespeed\":\"80\",\"release\":\"27 October 2021\",\"health\":\"500\",\"update\":\"There exist tales that don\'t exist.\",\"damage\":\"20\"} | {\"image\":\"Sprite-Venus.png\",\"stages\":\"[Mad Forest](Mad_Forest.md)\",\"movespeed\":\"80\",\"release\":\"27 October 2021\",\"health\":\"500\",\"update\":\"There exist tales that don\'t exist.\",\"damage\":\"20\"} | {\"image\":\"Sprite-Venus.png\",\"stages\":\"[Mad Forest](Mad_Forest.md)\",\"movespeed\":\"80\",\"release\":\"27 October 2021\",\"health\":\"500\",\"update\":\"There exist tales that don\'t exist.\",\"damage\":\"20\"} | {\"image\":\"Sprite-Venus.png\",\"stages\":\"[Mad Forest](Mad_Forest.md)\",\"movespeed\":\"80\",\"release\":\"27 October 2021\",\"health\":\"500\",\"update\":\"There exist tales that don\'t exist.\",\"damage\":\"20\"} | {\"image\":\"Sprite-Venus.png\",\"stages\":\"[Mad Forest](Mad_Forest.md)\",\"movespeed\":\"80\",\"release\":\"27 October 2021\",\"health\":\"500\",\"update\":\"There exist tales that don\'t exist.\",\"damage\":\"20\"} | {\"image\":\"Sprite-Venus.png\",\"stages\":\"[Mad Forest](Mad_Forest.md)\",\"movespeed\":\"80\",\"release\":\"27 October 2021\",\"health\":\"500\",\"update\":\"There exist tales that don\'t exist.\",\"damage\":\"20\"} | {\"image\":\"Sprite-Venus.png\",\"stages\":\"[Mad Forest](Mad_Forest.md)\",\"movespeed\":\"80\",\"release\":\"27 October 2021\",\"health\":\"500\",\"update\":\"There exist tales that don\'t exist.\",\"damage\":\"20\"} | {\"image\":\"Sprite-Venus.png\",\"stages\":\"[Mad Forest](Mad_Forest.md)\",\"movespeed\":\"80\",\"release\":\"27 October 2021\",\"health\":\"500\",\"update\":\"There exist tales that don\'t exist.\",\"damage\":\"20\"} | {\"image\":\"Sprite-Venus.png\",\"stages\":\"[Mad Forest](Mad_Forest.md)\",\"movespeed\":\"80\",\"release\":\"27 October 2021\",\"health\":\"500\",\"update\":\"There exist tales that don\'t exist.\",\"damage\":\"20\"} | {\"image\":\"Sprite-Venus.png\",\"stages\":\"[Mad Forest](Mad_Forest.md)\",\"movespeed\":\"80\",\"release\":\"27 October 2021\",\"health\":\"500\",\"update\":\"There exist tales that don\'t exist.\",\"damage\":\"20\"} | {\"image\":\"Sprite-Venus.png\",\"stages\":\"[Mad Forest](Mad_Forest.md)\",\"movespeed\":\"80\",\"release\":\"27 October 2021\",\"health\":\"500\",\"update\":\"There exist tales that don\'t exist.\",\"damage\":\"20\"} | {\"image\":\"Sprite-Venus.png\",\"stages\":\"[Mad Forest](Mad_Forest.md)\",\"movespeed\":\"80\",\"release\":\"27 October 2021\",\"health\":\"500\",\"update\":\"There exist tales that don\'t exist.\",\"damage\":\"20\"} |
+
+[← Big Mummy](Big_Mummy.md)**Venus**[Merman →](Merman.md)
+
+> "
+>
+> The center of this flower possesses an attractive feminine form, but it's little more than a lure, cleverly folded petals puppeted by the carnivorous flower that houses it. Those prone to thinking with their britches are likely to become easy prey.
+>
+> **--- [Ars Gouda](Ars_Gouda.md), p. 37**
+
+**Venus** is an [enemy](Enemy.md) primarily encountered in [Mad Forest](Mad_Forest.md), with an additional appearance in [Boss Rash](Boss_Rash.md).
+
+In Mad Forest, it first appears as a [boss](Boss.md) and later reappears as a normal enemy in later waves. In Boss Rash, it appears exclusively as a boss.
+
+Venus is semi-resistant to knockback. Its boss variant has [health that scales with the player\'s level](HP_x_Level.md) and is partially resistant to [freeze](Freeze.md).
+
+Defeating the [Giant Blue Venus](Giant_Blue_Venus.md) that spawns at 25:00 mark in Mad Forest for the first time unlocks the stage\'s [Hyper Mode](Hyper_mode.md).
+
+## Variants {#Variants}
+
+### Venus {#Venus}
+
+|  |  |  |  |  |  |  |  |  |  |  |
+|:--:|:---|:---|:---|:---|:---|:---|:---|:---|:---|:---|
+|  | Venus | Venus | Venus | Venus | Venus | Venus | ID: `XLFLOWER` | ID: `XLFLOWER` | ID: `XLFLOWER` | ID: `XLFLOWER` |
+|  | Found in: [Mad Forest](Mad_Forest.md) | Found in: [Mad Forest](Mad_Forest.md) | Found in: [Mad Forest](Mad_Forest.md) | Found in: [Mad Forest](Mad_Forest.md) | Found in: [Mad Forest](Mad_Forest.md) | Found in: [Mad Forest](Mad_Forest.md) | Found in: [Mad Forest](Mad_Forest.md) | Found in: [Mad Forest](Mad_Forest.md) | Found in: [Mad Forest](Mad_Forest.md) |  |
+|  | Skills: - | Skills: - | Skills: - | Skills: - | Skills: - | Skills: - | Skills: - | Skills: - | Skills: - |  |
+|  | Health; ; 500 | Power; ; 20 | MSpeed; ; 80 | KB (max); ; 0 (3) | Res-F; ; [**?** (edit)](Venus.md) | Res-K; ; [**?** (edit)](Venus.md) | Res-DB; ; [**?** (edit)](Venus.md) | Res-DF; ; [**?** (edit)](Venus.md) | XP; ; 3 |  |
+
+## Unlisted variants {#Unlisted_variants}
+
+*These enemies are not listed under \"Venus\" in bestiary, but can be considered its variants.*
+
+### Giant Blue Venus {#Giant_Blue_Venus}
+
+|  |  |  |  |  |  |  |  |  |  |  |
+|:--:|:---|:---|:---|:---|:---|:---|:---|:---|:---|:---|
+|  | Giant Blue Venus | Giant Blue Venus | Giant Blue Venus | Giant Blue Venus | Giant Blue Venus | Giant Blue Venus | ID: `BOSS_XLFLOWER` | ID: `BOSS_XLFLOWER` | ID: `BOSS_XLFLOWER` | ID: `BOSS_XLFLOWER` |
+|  | Found in: [Mad Forest](Mad_Forest.md), [Boss Rash](Boss_Rash.md) | Found in: [Mad Forest](Mad_Forest.md), [Boss Rash](Boss_Rash.md) | Found in: [Mad Forest](Mad_Forest.md), [Boss Rash](Boss_Rash.md) | Found in: [Mad Forest](Mad_Forest.md), [Boss Rash](Boss_Rash.md) | Found in: [Mad Forest](Mad_Forest.md), [Boss Rash](Boss_Rash.md) | Found in: [Mad Forest](Mad_Forest.md), [Boss Rash](Boss_Rash.md) | Found in: [Mad Forest](Mad_Forest.md), [Boss Rash](Boss_Rash.md) | Found in: [Mad Forest](Mad_Forest.md), [Boss Rash](Boss_Rash.md) | Found in: [Mad Forest](Mad_Forest.md), [Boss Rash](Boss_Rash.md) |  |
+|  | Skills: [HP x Level](HP_x_Level.md) | Skills: [HP x Level](HP_x_Level.md) | Skills: [HP x Level](HP_x_Level.md) | Skills: [HP x Level](HP_x_Level.md) | Skills: [HP x Level](HP_x_Level.md) | Skills: [HP x Level](HP_x_Level.md) | Skills: [HP x Level](HP_x_Level.md) | Skills: [HP x Level](HP_x_Level.md) | Skills: [HP x Level](HP_x_Level.md) |  |
+|  | Health; ; 150★ | Power; ; 30 | MSpeed; ; 160 | KB (max); ; 0 (1) | Res-F; ; 1.1 | Res-K; ; [**?** (edit)](Venus.md) | Res-DB; ; [**?** (edit)](Venus.md) | Res-DF; ; [**?** (edit)](Venus.md) | XP; ; 50 |  |
+|  | Notes:; 50% larger in size than the primary variant (1.5x scale). | Notes:; 50% larger in size than the primary variant (1.5x scale). | Notes:; 50% larger in size than the primary variant (1.5x scale). | Notes:; 50% larger in size than the primary variant (1.5x scale). | Notes:; 50% larger in size than the primary variant (1.5x scale). | Notes:; 50% larger in size than the primary variant (1.5x scale). | Notes:; 50% larger in size than the primary variant (1.5x scale). | Notes:; 50% larger in size than the primary variant (1.5x scale). | Notes:; 50% larger in size than the primary variant (1.5x scale). |  |
+
+## Appearances {#Appearances}
+
+|                               |        |            |       |
+|-------------------------------|--------|------------|-------|
+| Stage                         | Minute | Spawn Type | Notes |
+| ; [Mad Forest](Mad_Forest.md) | 21:00  | Boss       | \-    |
+| ; [Mad Forest](Mad_Forest.md) | 24:00  | Boss       | \-    |
+| ; [Mad Forest](Mad_Forest.md) | 25:00  | Normal     | \-    |
+| ; [Mad Forest](Mad_Forest.md) | Normal | 26:00      | \-    |
+
+: Venus {.wikitable .sortable}
+
+|                               |        |            |       |
+|-------------------------------|--------|------------|-------|
+| Stage                         | Minute | Spawn Type | Notes |
+| ; [Mad Forest](Mad_Forest.md) | 25:00  | Boss       | \-    |
+| ; [Boss Rash](Boss_Rash.md)   | 1:00   | Boss       | \-    |
+
+: Giant Blue Venus {.wikitable .sortable}

@@ -4,11 +4,11 @@ Source: `vampire-survivors-gameplay-extracted.md` is a high-level vision pitch, 
 Each item below needs concrete definitions (lists, numbers, rules, formulas) before implementation.
 
 ## 1. Weapons System
-- [ ] Define the full weapon list (names + descriptions)
-- [ ] Per-weapon base stats: damage, cooldown/fire rate, area, projectile speed, duration, amount/count, pierce, knockback
-- [ ] Per-weapon behavior/pattern: movement, targeting logic (nearest/facing/random/orbiting), collision
-- [ ] Upgrade curve: what each level (~8) does to each weapon
-- [ ] Evolution recipes: weapon + required passive + condition -> evolved weapon
+- [X] Define the full weapon list (names + descriptions)
+- [X] Per-weapon base stats: damage, cooldown/fire rate, area, projectile speed, duration, amount/count, pierce, knockback
+- [X] Per-weapon behavior/pattern: movement, targeting logic (nearest/facing/random/orbiting), collision
+- [X] Upgrade curve: what each level (~8) does to each weapon
+- [X] Evolution recipes: weapon + required passive + condition -> evolved weapon
 
 ## 2. Passives / Power-Ups System
 - [ ] Define the full passive list (names + descriptions)

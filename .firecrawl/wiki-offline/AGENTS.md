@@ -4,8 +4,9 @@ This folder is a **partial, offline snapshot** of the Vampire Survivors wiki
 (https://vampire.survivors.wiki), saved manually for offline reasoning and traversal.
 
 ## Layout
-- Each wiki page is a Markdown file named `<Title>.md` (spaces become underscores).
-  Example: the "Soul Eater" page is `Soul_Eater.md`.
+- Each wiki page is a Markdown file named `<Title>.md`, where spaces in the page
+  title are replaced with underscores (`_`). Example: the "Soul Eater" page is
+  `Soul_Eater.md`, and a link to it is written `[Soul Eater](Soul_Eater.md)`.
 - `index.md` lists every page available offline - start there.
 - `manifest.json` is the machine-readable `{title -> file}` map and defines the
   **boundary** of what exists offline.
@@ -23,6 +24,6 @@ This folder is a **partial, offline snapshot** of the Vampire Survivors wiki
 - Raw HTML, sprite/icon images, and MediaWiki chrome (edit links, nav boxes, TOC)
   are stripped. Tables render as pipe tables; multi-item cells are joined inline
   with "; ".
-- Boilerplate sections are dropped (External links, Update history, Trivia), so a
-  page holds gameplay facts only.
-_Generated 2026-06-20 13:58 by Convert-Wiki.ps1._
+- Boilerplate sections are dropped (External links, Update history, Trivia, Tips,
+  Gallery), so a page holds gameplay facts only.
+_Generated 2026-06-20 17:33 by Convert-Wiki.ps1._

@@ -235,6 +235,8 @@ local DROP_SECTIONS = {
   ['external links'] = true,
   ['update history'] = true,
   ['trivia']         = true,
+  ['tips']           = true,
+  ['gallery']        = true,
 }
 
 function Pandoc(doc)
