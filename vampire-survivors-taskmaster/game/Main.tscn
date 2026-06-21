@@ -1,4 +1,4 @@
-[gd_scene load_steps=9 format=3]
+[gd_scene load_steps=11 format=3]
 
 [ext_resource type="Script" path="res://game/run_controller.gd" id="1_runctrl"]
 [ext_resource type="Script" path="res://game/presentation_layer.gd" id="2_pres"]
@@ -7,6 +7,8 @@
 [ext_resource type="Shader" path="res://game/background.gdshader" id="5_bg"]
 [ext_resource type="Texture2D" path="res://assets/sprites/grass.png" id="6_grass"]
 [ext_resource type="PackedScene" path="res://ui/hud.tscn" id="7_hud"]
+[ext_resource type="PackedScene" path="res://ui/death_screen.tscn" id="8_death"]
+[ext_resource type="PackedScene" path="res://ui/results_screen.tscn" id="9_results"]
 
 [sub_resource type="ShaderMaterial" id="BgMat"]
 shader = ExtResource("5_bg")
@@ -43,3 +45,7 @@ script = ExtResource("2_pres")
 [node name="PauseScreen" parent="UI" instance=ExtResource("3_pause")]
 
 [node name="MainMenu" parent="UI" instance=ExtResource("4_menu")]
+
+[node name="DeathScreen" parent="UI" instance=ExtResource("8_death")]
+
+[node name="ResultsScreen" parent="UI" instance=ExtResource("9_results")]

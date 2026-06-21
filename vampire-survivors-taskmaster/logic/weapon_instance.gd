@@ -8,4 +8,5 @@ class_name WeaponInstance extends RefCounted
 var def = null  # WeaponDef resource
 var level: int = 1  # 1..8
 var cooldown_timer: float = 0.0
+var damage_dealt: float = 0.0  # running total damage credited by CombatSystem (results table)
 var scratch: Dictionary = {}

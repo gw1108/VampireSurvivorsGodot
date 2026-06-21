@@ -50,7 +50,7 @@ static func _step_projectiles(state: GameState, dt: float, dead: Dictionary) -> 
 			var eid: int = enemy.get_instance_id()  # explicit: enemy is Variant (untyped array)
 			if eid in proj.hit_ids:
 				continue  # already hit this enemy with this projectile
-			_damage_enemy(state, enemy, proj.damage, proj.crit_chance, proj.crit_mult, proj.pos, dead)
+			_damage_enemy(state, enemy, proj.damage, proj.crit_chance, proj.crit_mult, proj.pos, dead, proj.source_weapon)
 			proj.hit_ids.append(eid)
 			proj.pierce_left -= 1
 			if proj.pierce_left <= 0:
@@ -92,17 +92,20 @@ static func _step_zones(state: GameState, dt: float, dead: Dictionary) -> void:
 			var eid: int = enemy.get_instance_id()  # explicit: enemy is Variant (untyped array)
 			if eid in zone.hit_ids:
 				continue
-			_damage_enemy(state, enemy, zone.damage, 0.0, 1.0, zone.pos, dead)
+			_damage_enemy(state, enemy, zone.damage, 0.0, 1.0, zone.pos, dead, zone.source_weapon)
 			zone.hit_ids.append(eid)
 	_remove_indices(state.zones, to_remove)
 
 
 ## Apply one hit to an enemy: Might-scaled + crit damage, knockback, and death.
-static func _damage_enemy(state: GameState, enemy, base_damage: float, crit_chance: float, crit_mult: float, source_pos: Vector2, dead: Dictionary) -> void:
+## Credits the final damage to source_weapon.damage_dealt (results-screen DPS table).
+static func _damage_enemy(state: GameState, enemy, base_damage: float, crit_chance: float, crit_mult: float, source_pos: Vector2, dead: Dictionary, source_weapon = null) -> void:
 	var damage := CombatMath.calc_damage(base_damage, state.player.derived.might)
 	var crit := CombatMath.roll_crit(state.rng, crit_chance, crit_mult)
 	damage *= float(crit["multiplier"])
 	enemy.hp -= damage
+	if source_weapon != null:
+		source_weapon.damage_dealt += damage
 
 	var resist: float = enemy.def.knockback_resist if enemy.def != null else 0.0
 	var kb := CombatMath.calc_knockback(source_pos, enemy.pos, CombatMath.BASE_KNOCKBACK_FORCE, resist)

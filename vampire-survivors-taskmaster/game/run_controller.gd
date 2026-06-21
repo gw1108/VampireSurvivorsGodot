@@ -34,6 +34,9 @@ var _main_menu: MainMenu = null  # optional title screen (Main.tscn: UI/)
 var _camera: Camera2D = null  # optional follow-camera (Main.tscn: World/)
 var _bg_material: ShaderMaterial = null  # optional scrolling background material
 var _hud: HUD = null  # optional heads-up display (Main.tscn: UI/)
+var _death_screen: DeathScreen = null  # optional game-over overlay (Main.tscn: UI/)
+var _results_screen: ResultsScreen = null  # optional results summary (Main.tscn: UI/)
+var _last_summary: Dictionary = {}  # stashed at run end, passed to the results screen
 
 
 func _ready() -> void:
@@ -52,6 +55,13 @@ func _ready() -> void:
 	if _main_menu != null:
 		_main_menu.start_game.connect(_on_start_requested)
 		_main_menu.quit_game.connect(_on_quit_game)
+	_death_screen = get_node_or_null("UI/DeathScreen") as DeathScreen
+	if _death_screen != null:
+		_death_screen.revive_requested.connect(_on_revive_requested)
+		_death_screen.continue_requested.connect(_on_continue_requested)
+	_results_screen = get_node_or_null("UI/ResultsScreen") as ResultsScreen
+	if _results_screen != null:
+		_results_screen.done.connect(_on_results_done)
 
 
 func _physics_process(delta: float) -> void:
@@ -194,15 +204,55 @@ func _create_player_from_def(char_def) -> PlayerState:
 
 func _end_run() -> void:
 	phase_changed.emit(GameState.Phase.GAME_OVER)  # HealthSystem set the phase directly
-	run_ended.emit(_build_summary())
+	_last_summary = _build_summary()
+	run_ended.emit(_last_summary)
+	if _death_screen != null:
+		_death_screen.show_death(state.player.revivals > 0)
+
+
+## DeathScreen Revive -> restore the player and resume. Normally unreachable
+## (HealthSystem auto-consumes revivals before GAME_OVER), but kept correct so the
+## button works if a revival ever remains.
+func _on_revive_requested() -> void:
+	if state == null or state.player.revivals <= 0:
+		return
+	state.player.revivals -= 1
+	state.player.hp = state.player.derived.max_health * 0.5
+	state.player.iframe_timer = HealthSystem.REVIVE_IFRAME_DURATION
+	_set_phase(GameState.Phase.PLAYING)
+
+
+## DeathScreen Continue -> advance to the results summary.
+func _on_continue_requested() -> void:
+	if state == null:
+		return
+	_set_phase(GameState.Phase.RESULTS)
+	if _results_screen != null:
+		_results_screen.show_results(_last_summary)
+
+
+## ResultsScreen Done -> back to the title screen, ready for a new run.
+func _on_results_done() -> void:
+	_set_phase(GameState.Phase.TITLE)
+	if _main_menu != null:
+		_main_menu.show()
 
 
 func _build_summary() -> Dictionary:
+	@warning_ignore("integer_division")
+	var minutes := int(state.time_elapsed) / 60
+	var seconds := int(state.time_elapsed) % 60
+	var weapon_stats: Array = []
+	for w in state.player.weapons:
+		var wname: String = w.def.name if w.def != null else "?"
+		weapon_stats.append({"name": wname, "total_damage": int(w.damage_dealt)})
 	return {
 		"kills": state.kills,
 		"gold": state.gold,
 		"level": state.player.level,
 		"time_survived": state.time_elapsed,
+		"time_formatted": "%02d:%02d" % [minutes, seconds],
+		"weapon_stats": weapon_stats,
 	}
 
 
