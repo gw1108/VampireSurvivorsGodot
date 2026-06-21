@@ -25,6 +25,11 @@ const PASSIVE_MAX_LEVEL_DEFAULT: int = 5
 const WEAPONS_DIR := "res://data/weapons/"
 const PASSIVES_DIR := "res://data/passives/"
 
+# Chests: the first six chests follow a fixed item-count script (the in-game
+# "beginner's luck"); afterwards the count scales with the player's Luck.
+const BEGINNER_LUCK_SEQUENCE: Array[int] = [1, 1, 3, 1, 1, 5]
+const CHEST_GOLD_REWARD: int = 25  # granted per item slot when the inventory is maxed
+
 
 ## Add XP and cross as many level-up thresholds as it covers, queueing each.
 static func add_xp(state: GameState, amount: float) -> void:
@@ -71,21 +76,77 @@ static func apply_choice(state: GameState, index: int) -> void:
 	var player: PlayerState = state.player
 	var offer: LevelUpOffer = state.current_offer
 	if offer != null and index >= 0 and index < offer.options.size():
-		var choice: Dictionary = offer.options[index]
-		if choice["is_upgrade"]:
-			choice["target"].level += 1
-		elif choice["kind"] == "weapon":
-			var w := WeaponInstance.new()
-			w.def = choice["def"]
-			w.level = 1
-			player.weapons.append(w)
-		else:
-			var p := PassiveInstance.new()
-			p.def = choice["def"]
-			p.level = 1
-			player.passives.append(p)
+		_apply_option(player, offer.options[index])
 	StatSystem.recompute_block(player, player.character_def)
 	state.pending_levelups = maxi(state.pending_levelups - 1, 0)
+
+
+## Add a new item or +1 an existing one from an option dict. Does NOT recompute
+## stats (the caller does) so it can be reused by chest opening.
+static func _apply_option(player: PlayerState, choice: Dictionary) -> void:
+	if choice["is_upgrade"]:
+		choice["target"].level += 1
+	elif choice["kind"] == "weapon":
+		var w := WeaponInstance.new()
+		w.def = choice["def"]
+		w.level = 1
+		player.weapons.append(w)
+	else:
+		var p := PassiveInstance.new()
+		p.def = choice["def"]
+		p.level = 1
+		player.passives.append(p)
+
+
+# --- chests ---
+
+## The item count a freshly-spawned chest should hold. Beginner's luck scripts the
+## first six chests; after that, higher Luck raises the odds of a 3- or 5-item haul.
+## Public (vs the task sketch's `_determine_chest_count`) so CombatSystem can pre-roll
+## the count when a boss drops the chest.
+static func determine_chest_count(state: GameState) -> int:
+	if state.chest_count < BEGINNER_LUCK_SEQUENCE.size():
+		return BEGINNER_LUCK_SEQUENCE[state.chest_count]
+	var roll: float = state.rng.randf()
+	var luck: float = state.player.derived.luck
+	if roll < 0.1 * luck:
+		return 5
+	elif roll < 0.3 * luck:
+		return 3
+	return 1
+
+
+## Open a chest: roll `rolled_count` items, applying each to the player. A maxed-out
+## inventory (no item to roll) yields gold per empty slot. Returns the result list
+## (option dicts and/or {"type":"gold","amount":N}). Caller bumps state.chest_count.
+static func open_chest(state: GameState, chest: Chest) -> Array:
+	var results: Array = []
+	var count: int = maxi(chest.rolled_count, 1)
+	for i in count:
+		var item = _roll_chest_item(state)  # untyped: Dictionary option or null
+		if item != null:
+			results.append(item)
+			_apply_item_to_player(state, item)
+		else:
+			results.append({"type": "gold", "amount": CHEST_GOLD_REWARD})
+			state.gold += CHEST_GOLD_REWARD
+	return results
+
+
+## Pick one random grantable item (reusing the level-up offer pool: upgrades of
+## owned items + brand-new items). Returns null when everything is maxed.
+static func _roll_chest_item(state: GameState):
+	var offer := build_offer(state)
+	if offer.is_max_state or offer.options.is_empty():
+		return null
+	var idx: int = state.rng.randi_range(0, offer.options.size() - 1)
+	return offer.options[idx]
+
+
+## Apply a rolled chest item (an option dict) to the player and recompute stats.
+static func _apply_item_to_player(state: GameState, item: Dictionary) -> void:
+	_apply_option(state.player, item)
+	StatSystem.recompute_block(state.player, state.player.character_def)
 
 
 # --- option gathering ---

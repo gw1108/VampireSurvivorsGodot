@@ -18,6 +18,20 @@ const WEIGHTS: Dictionary = {
 	Pickup.Type.CLOVER: 1,
 }
 
+## Default magnitude per type (heal amount / coin value); types whose effect
+## ignores `value` (vacuum/rosary/orologion/nduja/sorbetto/clover) default to 0.
+## Placeholder values pending wiki validation; the per-type mapping is the contract.
+const DEFAULT_VALUES: Dictionary = {
+	Pickup.Type.CHICKEN: 30.0,  # floor-chicken heal
+	Pickup.Type.COIN: 1.0,
+	Pickup.Type.COIN_BAG: 10.0,
+}
+
+
+## The default `value` magnitude for a rolled pickup type (0 if effect ignores it).
+static func default_value(type: int) -> float:
+	return DEFAULT_VALUES.get(type, 0.0)
+
 
 ## Sum of all relative weights.
 static func total_weight() -> int:

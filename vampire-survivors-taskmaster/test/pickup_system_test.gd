@@ -19,6 +19,14 @@ func _pickup(pos: Vector2, type: int, value := 0.0) -> Pickup:
 	return p
 
 
+func _enemy(pos: Vector2, is_boss := false) -> Enemy:
+	var e := Enemy.new()
+	e.pos = pos
+	e.hp = 1.0
+	e.is_boss = is_boss
+	return e
+
+
 # --- gems: magnet + collection ---
 
 func test_gem_within_magnet_homes_toward_player() -> void:
@@ -98,12 +106,92 @@ func test_pickup_vacuum_collects_all_gems() -> void:
 	assert_float(gs.player.xp).is_equal(3.0)  # 1 + 2, all collected
 
 
-func test_pickup_special_effect_flagged() -> void:
+# --- special pickups: board effects ---
+
+func test_pickup_rosary_kills_non_boss_enemies() -> void:
 	var gs := GameState.new()
+	gs.index = SpatialIndex.new()
+	gs.enemies = [_enemy(Vector2(100, 0)), _enemy(Vector2(50, 0), true)]  # 1 normal, 1 boss
+	SpatialIndex.rebuild(gs.index, gs.enemies, gs.gems, gs.pickups)
+	gs.pickups = [_pickup(Vector2(0, 0), Pickup.Type.ROSARY)]
+	PickupSystem.step(gs, 0.1)
+	assert_int(gs.enemies.size()).is_equal(1)        # only the boss remains
+	assert_bool(gs.enemies[0].is_boss).is_true()
+	assert_int(gs.kills).is_equal(1)                 # the non-boss was credited
+	assert_int(gs.gems.size()).is_equal(1)           # and dropped its XP gem
+
+
+func test_pickup_rosary_no_enemies_is_safe() -> void:
+	var gs := GameState.new()
+	gs.pickups = [_pickup(Vector2(0, 0), Pickup.Type.ROSARY)]
+	PickupSystem.step(gs, 0.1)
+	assert_int(gs.enemies.size()).is_equal(0)
+	assert_int(gs.kills).is_equal(0)
+
+
+func test_pickup_orologion_freezes_all_enemies() -> void:
+	var gs := GameState.new()
+	gs.enemies = [_enemy(Vector2(100, 0)), _enemy(Vector2(-100, 0), true)]
 	gs.pickups = [_pickup(Vector2(0, 0), Pickup.Type.OROLOGION)]
 	PickupSystem.step(gs, 0.1)
-	assert_bool(gs.global_effects.get("orologion", false)).is_true()
+	for e in gs.enemies:
+		assert_float(e.freeze_timer).is_equal(PickupSystem.OROLOGION_FREEZE_DURATION)
 	assert_int(gs.pickups.size()).is_equal(0)
+
+
+# --- special pickups: timed stat buffs ---
+
+func test_pickup_nduja_buffs_might() -> void:
+	var gs := GameState.new()
+	StatSystem.resolve(gs.player)
+	var base_might: float = gs.player.derived.might
+	gs.pickups = [_pickup(Vector2(0, 0), Pickup.Type.NDUJA)]
+	PickupSystem.step(gs, 0.1)
+	assert_int(gs.player.buffs.size()).is_equal(1)
+	StatSystem.resolve(gs.player)  # re-resolve with the buff active
+	assert_float(gs.player.derived.might).is_equal(base_might * PickupSystem.NDUJA_MIGHT_MULT)
+
+
+func test_pickup_clover_buffs_luck() -> void:
+	var gs := GameState.new()
+	StatSystem.resolve(gs.player)
+	var base_luck: float = gs.player.derived.luck
+	gs.pickups = [_pickup(Vector2(0, 0), Pickup.Type.CLOVER)]
+	PickupSystem.step(gs, 0.1)
+	StatSystem.resolve(gs.player)
+	assert_float(gs.player.derived.luck).is_equal(base_luck * PickupSystem.CLOVER_LUCK_MULT)
+
+
+func test_pickup_sorbetto_buffs_move_speed() -> void:
+	var gs := GameState.new()
+	StatSystem.resolve(gs.player)
+	var base_speed: float = gs.player.derived.move_speed
+	gs.pickups = [_pickup(Vector2(0, 0), Pickup.Type.SORBETTO)]
+	PickupSystem.step(gs, 0.1)
+	StatSystem.resolve(gs.player)
+	assert_float(gs.player.derived.move_speed).is_equal(base_speed * PickupSystem.SORBETTO_SPEED_MULT)
+
+
+func test_temp_buff_expires_after_duration() -> void:
+	var gs := GameState.new()
+	StatSystem.resolve(gs.player)
+	var base_might: float = gs.player.derived.might
+	gs.pickups = [_pickup(Vector2(0, 0), Pickup.Type.NDUJA)]
+	PickupSystem.step(gs, 0.1)  # collect -> buff added (full duration)
+	# Tick past the buff duration; the empty pickup list makes this a pure buff tick.
+	PickupSystem.step(gs, PickupSystem.TEMP_BUFF_DURATION + 1.0)
+	assert_int(gs.player.buffs.size()).is_equal(0)
+	StatSystem.resolve(gs.player)
+	assert_float(gs.player.derived.might).is_equal(base_might)
+
+
+func test_temp_buff_recollect_refreshes_not_stacks() -> void:
+	var gs := GameState.new()
+	gs.pickups = [_pickup(Vector2(0, 0), Pickup.Type.NDUJA)]
+	PickupSystem.step(gs, 0.1)
+	gs.pickups = [_pickup(Vector2(0, 0), Pickup.Type.NDUJA)]  # collect a second one
+	PickupSystem.step(gs, 0.1)
+	assert_int(gs.player.buffs.size()).is_equal(1)  # refreshed, not stacked
 
 
 # --- chests ---

@@ -1,21 +1,34 @@
 class_name PickupSystem extends RefCounted
 
 ## Magnetize and collect gems, pickups, and chests. Pure; direct distance loops
-## (entity counts are small enough that the SpatialIndex isn't needed here).
+## (entity counts are small enough that the SpatialIndex isn't needed for collection).
 ##   - gems within COLLECTION_RADIUS are collected -> XP (xGrowth) to Progression;
 ##     gems within the player's magnet range home toward the player;
-##   - pickups apply their effect by type (chicken heal, coins xGreed -> gold,
-##     vacuum -> collect all gems); effects owned by other systems are flagged
-##     in global_effects for later;
-##   - chests are collected (count incremented; content resolution is task 14);
+##   - pickups apply their effect by type:
+##       chicken -> heal (value), coin/coin_bag -> gold (xGreed), vacuum -> collect
+##       all gems, rosary -> kill every non-boss enemy, orologion -> freeze every
+##       enemy, nduja/clover/sorbetto -> a timed stat buff (Might/Luck/Move Speed);
+##   - chests are opened (items applied; count incremented);
 ##   - the 400-gem cap merges surplus into a single red gem.
+##
+## Timed buffs live on PlayerState.buffs and are *applied* in StatSystem.resolve (so
+## they survive the per-tick stat reset); they are added here on collection and
+## counted down each step by _tick_buffs.
 
 const COLLECTION_RADIUS: float = 16.0
 const MAGNET_SPEED: float = 300.0
 const GEM_CAP: int = 400
 
+# Special-pickup tuning.
+const OROLOGION_FREEZE_DURATION: float = 8.0  # seconds every enemy stays frozen
+const TEMP_BUFF_DURATION: float = 10.0        # seconds a collected stat buff lasts
+const NDUJA_MIGHT_MULT: float = 2.0
+const CLOVER_LUCK_MULT: float = 2.0
+const SORBETTO_SPEED_MULT: float = 1.5  # placeholder magnitude; systems.md pairs nduja/sorbetto
+
 
 static func step(state: GameState, dt: float) -> void:
+	_tick_buffs(state, dt)
 	var player_pos: Vector2 = state.player.pos
 	_step_gems(state, player_pos, dt)
 	_step_pickups(state, player_pos)
@@ -60,17 +73,18 @@ static func _apply_pickup(state: GameState, pk, greed: float, growth: float) -> 
 		Pickup.Type.VACUUM:
 			_collect_all_gems(state, growth)
 		Pickup.Type.ROSARY:
-			state.global_effects["rosary"] = true
+			_kill_all_enemies(state)
 		Pickup.Type.OROLOGION:
-			state.global_effects["orologion"] = true
+			_freeze_all_enemies(state, OROLOGION_FREEZE_DURATION)
 		Pickup.Type.NDUJA:
-			state.global_effects["nduja"] = true
-		Pickup.Type.SORBETTO:
-			state.global_effects["sorbetto"] = true
+			_apply_temp_buff(state, "might", NDUJA_MIGHT_MULT, TEMP_BUFF_DURATION)
 		Pickup.Type.CLOVER:
-			state.global_effects["clover"] = true
+			_apply_temp_buff(state, "luck", CLOVER_LUCK_MULT, TEMP_BUFF_DURATION)
+		Pickup.Type.SORBETTO:
+			_apply_temp_buff(state, "move_speed", SORBETTO_SPEED_MULT, TEMP_BUFF_DURATION)
 
 
+## Vacuum: bank every gem's XP at once and clear the field.
 static func _collect_all_gems(state: GameState, growth: float) -> void:
 	var total: float = 0.0
 	for gem in state.gems:
@@ -80,11 +94,56 @@ static func _collect_all_gems(state: GameState, growth: float) -> void:
 		ProgressionSystem.add_xp(state, total)
 
 
+## Rosary: kill every non-boss enemy (each counts as a kill and drops its XP gem),
+## then drop them from the board. Reuses CombatSystem's death handler so kill/gem
+## logic stays in one place. The SpatialIndex is rebuilt afterward because
+## HealthSystem (next in the tick) broadphases against it — a now-stale index would
+## map to removed / out-of-range enemy slots.
+static func _kill_all_enemies(state: GameState) -> void:
+	var killed_any := false
+	for enemy in state.enemies:
+		if not enemy.is_boss:
+			CombatSystem._on_enemy_death(state, enemy)
+			killed_any = true
+	if not killed_any:
+		return
+	state.enemies = state.enemies.filter(func(e): return e.is_boss)
+	if state.index != null:
+		SpatialIndex.rebuild(state.index, state.enemies, state.gems, state.pickups)
+
+
+## Orologion: freeze every enemy. MovementSystem holds an enemy still while its
+## freeze_timer is positive and ticks it down. Bosses included, as in the source game.
+static func _freeze_all_enemies(state: GameState, duration: float) -> void:
+	for enemy in state.enemies:
+		enemy.freeze_timer = duration
+
+
+## Add a timed multiplicative stat buff, refreshing any existing buff on the same
+## stat (re-collecting resets the timer rather than stacking the multiplier).
+static func _apply_temp_buff(state: GameState, stat: String, mult: float, duration: float) -> void:
+	var buffs: Array = state.player.buffs
+	for i in range(buffs.size() - 1, -1, -1):
+		if buffs[i].get("stat") == stat:
+			buffs.remove_at(i)
+	buffs.append({"stat": stat, "mult": mult, "time_left": duration})
+
+
+## Count active buffs down and drop the expired ones.
+static func _tick_buffs(state: GameState, dt: float) -> void:
+	var buffs: Array = state.player.buffs
+	for i in range(buffs.size() - 1, -1, -1):
+		buffs[i]["time_left"] -= dt
+		if buffs[i]["time_left"] <= 0.0:
+			buffs.remove_at(i)
+
+
 static func _step_chests(state: GameState, player_pos: Vector2) -> void:
 	var collected: Array[int] = []
 	for i in state.chests.size():
 		if player_pos.distance_to(state.chests[i].pos) <= COLLECTION_RADIUS:
-			state.chest_count += 1  # content resolution -> ProgressionSystem (task 14)
+			ProgressionSystem.open_chest(state, state.chests[i])  # rolls + applies items
+			state.chest_count += 1
 			collected.append(i)
 	_remove_indices(state.chests, collected)
 

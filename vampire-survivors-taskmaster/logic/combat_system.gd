@@ -26,6 +26,7 @@ static func step(state: GameState, dt: float) -> void:
 	var dead: Dictionary = {}  # enemy ref -> true; deduped deaths, reaped at end
 	_step_projectiles(state, dt, dead)
 	_step_zones(state, dt, dead)
+	_damage_light_sources(state)
 	_reap_dead(state, dead)
 
 
@@ -149,6 +150,12 @@ static func _on_enemy_death(state: GameState, enemy) -> void:
 	gem.tier = _gem_tier_for_xp(gem.xp)
 	state.gems.append(gem)
 	# Pickup (chicken/coin) drops come from braziers, not normal kills, so none here.
+	# Bosses additionally drop a treasure chest with a pre-rolled item count.
+	if enemy.is_boss:
+		var chest := Chest.new()
+		chest.pos = enemy.pos
+		chest.rolled_count = ProgressionSystem.determine_chest_count(state)
+		state.chests.append(chest)
 
 
 ## Bracket the dropped gem's color by XP value. Thresholds are placeholder/cosmetic.
@@ -158,6 +165,50 @@ static func _gem_tier_for_xp(xp: float) -> int:
 	if xp < 25.0:
 		return Gem.Tier.GREEN
 	return Gem.Tier.RED
+
+
+## Damage breakable light sources (braziers) caught inside any zone or projectile,
+## and drop a weighted pickup where each breaks. Direct distance loops (brazier and
+## emission counts are tiny); braziers aren't in the SpatialIndex. Damage is raw
+## (no Might/crit) — braziers are environmental and only need to break.
+static func _damage_light_sources(state: GameState) -> void:
+	if state.light_sources.is_empty():
+		return
+	var to_remove: Array[int] = []
+	for i in state.light_sources.size():
+		var light = state.light_sources[i]
+		var dmg := _incoming_light_damage(state, light)
+		if dmg > 0.0:
+			light.hp -= dmg
+		if light.hp <= 0.0:
+			_on_light_break(state, light)
+			to_remove.append(i)
+	_remove_indices(state.light_sources, to_remove)
+
+
+## Total damage reaching a light this tick from overlapping zones + projectiles.
+## Projectiles pass through (no pierce consumed): braziers are environmental, not
+## enemies, so they don't perturb the weapon-vs-enemy pierce/hit_ids logic.
+static func _incoming_light_damage(state: GameState, light) -> float:
+	var total: float = 0.0
+	for zone in state.zones:
+		if light.pos.distance_to(zone.pos) < zone.radius:
+			total += zone.damage
+	for proj in state.projectiles:
+		if light.pos.distance_to(proj.pos) < PROJECTILE_HIT_RADIUS:
+			total += proj.damage
+	return total
+
+
+## A broken brazier drops one pickup rolled from the weighted PickupTable, seeded
+## with a sensible per-type value (so a dropped chicken/coin isn't inert).
+static func _on_light_break(state: GameState, light) -> void:
+	var drop_type: int = PickupTable.roll(state.rng)
+	var pickup := Pickup.new()
+	pickup.pos = light.pos
+	pickup.type = drop_type
+	pickup.value = PickupTable.default_value(drop_type)
+	state.pickups.append(pickup)
 
 
 ## Swap-remove all enemies flagged dead, high index -> low so indices stay valid.

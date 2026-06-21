@@ -363,8 +363,9 @@
         "details": "Create `res://autoload/audio_service.gd`:\n\n```gdscript\nextends Node\n\nconst POOL_SIZE: int = 8\nvar _sfx_pool: Array[AudioStreamPlayer] = []\nvar _pool_index: int = 0\n\n# Placeholder - actual sounds loaded when available\nvar _sounds: Dictionary = {\n    \"hit\": null,\n    \"death\": null,\n    \"level_up\": null,\n    \"pickup\": null,\n    \"heal\": null,\n    \"chest\": null,\n    \"hurt\": null,\n    \"weapon_fire\": null\n}\n\nfunc _ready() -> void:\n    for i in POOL_SIZE:\n        var player = AudioStreamPlayer.new()\n        add_child(player)\n        _sfx_pool.append(player)\n\nfunc play(sound_name: String) -> void:\n    var sound = _sounds.get(sound_name)\n    if sound == null:\n        return  # No sound loaded yet\n    \n    var player = _sfx_pool[_pool_index]\n    player.stream = sound\n    player.play()\n    _pool_index = (_pool_index + 1) % POOL_SIZE\n\nfunc set_sound(name: String, stream: AudioStream) -> void:\n    _sounds[name] = stream\n```\n\nRegister as autoload in project.godot. Called from systems when events occur.",
         "priority": "low",
         "dependencies": [],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-06-21T20:19:30.009Z"
       },
       {
         "id": "27",
@@ -419,8 +420,9 @@
           "14",
           "27"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-06-21T20:15:38.708Z"
       },
       {
         "id": "31",
@@ -433,8 +435,9 @@
           "11",
           "12"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-06-21T20:35:28.736Z"
       },
       {
         "id": "32",
@@ -445,8 +448,9 @@
         "dependencies": [
           "13"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-06-21T20:28:57.404Z"
       },
       {
         "id": "33",
@@ -522,9 +526,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-06-21T20:09:23.711Z",
+      "lastModified": "2026-06-21T20:35:28.737Z",
       "taskCount": 37,
-      "completedCount": 33,
+      "completedCount": 37,
       "tags": [
         "master"
       ]

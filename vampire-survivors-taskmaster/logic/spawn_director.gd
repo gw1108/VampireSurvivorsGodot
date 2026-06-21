@@ -8,6 +8,9 @@ class_name SpawnDirector extends RefCounted
 
 const SPAWN_RING_MIN: float = 400.0  # min distance from player for off-screen spawns
 const SPAWN_RING_MAX: float = 500.0
+# Braziers spawn nearer the screen edge so the player can actually reach and break them.
+const BRAZIER_RING_MIN: float = 200.0
+const BRAZIER_RING_MAX: float = 350.0
 const PERIODIC_HALT_CAP: int = 300  # default soft cap (periodic spawns halt)
 const HARD_CAP: int = 500  # default absolute cap
 const SWARM_SPACING: float = 24.0
@@ -25,6 +28,8 @@ static func step(state: GameState, stage: StageDef, dt: float) -> void:
 	# After the Reaper minute the board is Reaper-only; no normal top-ups.
 	if state.current_minute >= stage.reaper_minute:
 		return
+
+	_step_braziers(state, stage, dt)
 
 	var wave := _get_current_wave(stage, state.current_minute)
 	if wave.is_empty():
@@ -64,6 +69,20 @@ static func _spawn_wave_topup(state: GameState, wave: Dictionary, soft_cap: int)
 	var target: int = mini(int(wave["min_alive"]), soft_cap)
 	while state.enemies.size() < target:
 		_spawn_one(state, _pick(ids, state.rng))
+
+
+## Periodically drop a breakable brazier near the screen edge (boundless map ->
+## ring-positioned, not the StageDef's fixed brazier_positions). Off when the
+## stage's brazier_interval is 0. CombatSystem breaks them; they drop a pickup.
+static func _step_braziers(state: GameState, stage: StageDef, dt: float) -> void:
+	if stage.brazier_interval <= 0.0:
+		return
+	state.brazier_timer += dt
+	if state.brazier_timer >= stage.brazier_interval:
+		state.brazier_timer -= stage.brazier_interval
+		var light := LightSource.new()
+		light.pos = _random_ring_pos(state.player.pos, BRAZIER_RING_MIN, BRAZIER_RING_MAX, state.rng)
+		state.light_sources.append(light)
 
 
 static func _spawn_bosses(state: GameState, stage: StageDef, minute: int) -> void:

@@ -19,6 +19,7 @@ config/icon="res://icon.svg"
 [autoload]
 
 GameData="*res://autoload/game_data.gd"
+AudioService="*res://autoload/audio_service.gd"
 
 [display]
 

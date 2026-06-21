@@ -41,6 +41,15 @@ static func resolve(player: PlayerState, stage_def = null) -> void:
 		if stage_def.stat_modifiers.has("curse"):
 			derived.curse *= stage_def.stat_modifiers["curse"]
 
+	# Timed special-pickup buffs (Nduja->Might, Clover->Luck, Sorbetto->Move Speed).
+	# Applied here, after the block->derived copy, so they survive the per-tick reset;
+	# PickupSystem adds them and ticks their timers down. Before caps so a buffed
+	# capped stat (e.g. move_speed) still clamps.
+	for buff in player.buffs:
+		var bstat: String = buff.get("stat", "")
+		if bstat != "" and bstat in STAT_FIELDS:
+			derived.set(bstat, float(derived.get(bstat)) * float(buff.get("mult", 1.0)))
+
 	# Caps.
 	derived.cooldown = maxf(MIN_COOLDOWN_MULT, derived.cooldown)
 	derived.move_speed = minf(derived.move_speed, MAX_MOVE_SPEED_MULT)

@@ -18,3 +18,7 @@ var passives: Array = []  # Array[PassiveInstance] (≤6)
 var stats: StatBlock = StatBlock.new()
 var derived: ResolvedStats = ResolvedStats.new()
 var character_def = null  # CharacterDef this player was built from (for stat recompute)
+# Timed multiplicative stat buffs from special pickups (Nduja/Clover/Sorbetto).
+# Each is {stat: String, mult: float, time_left: float}; StatSystem.resolve applies
+# them onto derived each tick (so they survive the reset), PickupSystem ticks them.
+var buffs: Array = []
