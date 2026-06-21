@@ -64,3 +64,6 @@ task-master parse-prd -i .taskmaster/docs/systems.md
 Is the @.firecrawl/vampire-survivors-gameplay-extracted.md ready to be transformed into a full fledged game? Are there any systems or features that need to be described in detail more? Don't ask me to clarify any systems. Simply identify and list the features and systems that need more information.
 
 (Exported the missing details to todo-missing-details.md. There is a lot of missing gameplay and system requirements missing and that data lives in the vampire survivors wiki not the wikipedia. So I will manually scrape aka copy paste as a human to ensure I don't get IP banned.)
+
+(Actually, didn't do anything special. Just hit CTRL+S to save out every page I thought was relevent as a Web Page, HTML only. Then used some random claude code scripts to convert them to .md and strip out stuff that was probably not needed. We should now be ready to make a /clarify_game_design call and reference the wiki as the source of truth)
+
