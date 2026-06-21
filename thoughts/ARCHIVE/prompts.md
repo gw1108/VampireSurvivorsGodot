@@ -84,3 +84,11 @@ task-master loop --tracelevel trace
 [Loop Error] MCP config not found at C:\GameDev\VampireSurvivorsGodot\.mcp.json. Add a .mcp.json with a "task-master-ai" mcpServers entry.
 
 Solution: Need to copy the mcp.json from snake taskmaster into the generic project.)
+
+(Was done in about 4 hours. Which is a bit too long... I think we have to split the tasks up into achievable milestones. So the main architect systems has to be parsed by ANOTHER milestone splitter that splits the games major systems and features into bare bone milestones of roughly equal size.
+
+The enemies are a bit too fast... the overarching enemy design needs to showcase how fast a piranha plant should be.
+
+Player is too big... need to explicitly call out the resolution of the game and roughly how big the player is. And call out most normal enemies should be about his size.
+
+Need to explicitly call out there is no audio.)
