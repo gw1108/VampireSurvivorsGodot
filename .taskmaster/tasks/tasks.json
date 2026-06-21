@@ -8,7 +8,7 @@
         "details": "1. Download gdUnit4 from Godot Asset Library or GitHub (https://github.com/MikeSchulze/gdUnit4)\n2. Extract to `res://addons/gdUnit4/`\n3. Enable the plugin in Project Settings → Plugins\n4. Create `res://test/` directory for test files\n5. Create a `TESTING.md` documenting the test approach\n6. Verify installation by running gdUnit4 from the Godot editor\n\nPseudo-code for verification:\n```gdscript\n# res://test/sanity_test.gd\nextends GdUnitTestSuite\n\nfunc test_sanity() -> void:\n    assert_bool(true).is_true()\n```",
         "priority": "high",
         "dependencies": [],
-        "status": "pending",
+        "status": "done",
         "subtasks": []
       },
       {

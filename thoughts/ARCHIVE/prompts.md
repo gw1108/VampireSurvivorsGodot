@@ -78,3 +78,9 @@ task-master parse-prd .taskmaster/docs/systems.md -n 0 --tracelevel trace
 (Then ran the loop)
 
 task-master loop --tracelevel trace
+
+(Immediately hit error. Also realized I need to install GDUnit4. Need to add that to the documentation setup process. Also hit this error:
+
+[Loop Error] MCP config not found at C:\GameDev\VampireSurvivorsGodot\.mcp.json. Add a .mcp.json with a "task-master-ai" mcpServers entry.
+
+Solution: Need to copy the mcp.json from snake taskmaster into the generic project.)
