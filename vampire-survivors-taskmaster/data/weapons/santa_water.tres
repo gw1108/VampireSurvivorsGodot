@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="WeaponDef" format=3]
+
+[ext_resource type="Script" path="res://data/defs/weapon_def.gd" id="1_def"]
+
+[resource]
+script = ExtResource("1_def")
+id = "santa_water"
+name = "Santa Water"
+description = "Drops puddles of holy water that linger and burn enemies."
+base_damage = 10.0
+cooldown = 2.5
+amount = 1
+duration = 3.0
+levels = Array[Dictionary]([{
+"amount": 1,
+"level": 2
+}, {
+"damage": 10.0,
+"level": 3
+}, {
+"amount": 1,
+"level": 4
+}, {
+"area": 0.2,
+"level": 5
+}])

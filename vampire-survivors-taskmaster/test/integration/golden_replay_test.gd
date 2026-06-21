@@ -34,11 +34,11 @@ const GOLDEN_INPUT_SEQUENCE: Array = [
 # --- frozen golden outcome (captured from a real run of this seed+sequence) ---
 # If an INTENTIONAL system change moves these, re-capture from the [golden] print
 # line below and update them in the same commit.
-const EXPECTED_KILLS: int = 60
+const EXPECTED_KILLS: int = 65
 const EXPECTED_LEVEL: int = 4
 const EXPECTED_GOLD: int = 0
-const EXPECTED_WEAPONS: int = 1
-const EXPECTED_PASSIVES: int = 0
+const EXPECTED_WEAPONS: int = 2  # task-29: some level-ups now grant passives instead
+const EXPECTED_PASSIVES: int = 1
 const EXPECTED_PENDING_LEVELUPS: int = 0
 
 

@@ -10,8 +10,9 @@ enum Anchor { FOLLOW_PLAYER, WORLD, ORBIT }
 var source_weapon = null
 var anchor: int = Anchor.WORLD
 var pos: Vector2 = Vector2.ZERO
-var offset: Vector2 = Vector2.ZERO
+var offset: Vector2 = Vector2.ZERO  # ORBIT/FOLLOW_PLAYER: position relative to the player
 var angle: float = 0.0
+var orbit_speed: float = 0.0  # rad/sec the offset rotates around the player (King Bible)
 var radius: float = 32.0
 var damage: float = 0.0
 var tick_interval: float = 0.5

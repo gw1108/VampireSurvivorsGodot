@@ -18,6 +18,16 @@ func _synthetic_weapon(id: String, level := 1) -> WeaponInstance:
 	w.level = level
 	return w
 
+
+func _synthetic_passive(id: String, level := 5) -> PassiveInstance:
+	var p := PassiveInstance.new()
+	var d := PassiveDef.new()
+	d.id = id
+	d.max_level = level  # level == max_level -> not upgradeable
+	p.def = d
+	p.level = level
+	return p
+
 func test_add_xp_below_threshold() -> void:
 	var gs := GameState.new()
 	ProgressionSystem.add_xp(gs, 3.0)
@@ -65,29 +75,35 @@ func test_add_xp_to_level_20_uses_baked_special() -> void:
 
 # --- build_offer ---
 
-func test_offer_new_weapon_when_not_owned() -> void:
-	var gs := GameState.new()  # empty inventory; catalog has whip
+func test_offer_new_items_when_nothing_owned() -> void:
+	# Empty inventory -> every option is a NEW (non-upgrade) item. Seed-independent:
+	# with weapons AND passives in the pool the shown subset may be any mix, so we
+	# assert the invariant (nothing owned -> nothing to upgrade) rather than a
+	# specific weapon appearing.
+	var gs := GameState.new()
 	var offer := ProgressionSystem.build_offer(gs)
 	assert_int(offer.options.size()).is_greater_equal(1)
-	var whip_new := false
 	for opt: Dictionary in offer.options:
-		if opt["kind"] == "weapon" and opt["def"].id == "whip" and not opt["is_upgrade"]:
-			whip_new = true
-	assert_bool(whip_new).is_true()
+		assert_bool(opt["is_upgrade"]).is_false()
 
 
 func test_offer_upgrade_when_owned() -> void:
 	var gs := GameState.new()
 	gs.player.weapons = [_whip_inst(1)]
-	var offer := ProgressionSystem.build_offer(gs)
-	# Whip is owned -> offered as an upgrade (to level 2), not as a new item.
+	# The owned whip must produce an upgrade option (to level 2) in the full pool.
+	# (With many catalog weapons it may not land in the shown subset, so check the
+	# upgradeable pool directly rather than the shuffled offer.)
 	var found := false
-	for opt: Dictionary in offer.options:
+	for opt: Dictionary in ProgressionSystem._get_upgradeable_weapons(gs.player):
 		if opt["def"].id == "whip":
 			assert_bool(opt["is_upgrade"]).is_true()
 			assert_int(opt["target_level"]).is_equal(2)
 			found = true
 	assert_bool(found).is_true()
+	# And it is never surfaced as a NEW pickup in a built offer.
+	for opt: Dictionary in ProgressionSystem.build_offer(gs).options:
+		if opt["def"].id == "whip":
+			assert_bool(opt["is_upgrade"]).is_true()
 
 
 func test_maxed_weapon_not_offered_as_upgrade() -> void:
@@ -130,7 +146,10 @@ func test_full_maxed_inventory_is_max_state() -> void:
 	var gs := GameState.new()
 	for i in ProgressionSystem.MAX_WEAPONS:
 		gs.player.weapons.append(_synthetic_weapon("w%d" % i, ProgressionSystem.WEAPON_MAX_LEVEL))
-	# 6 maxed weapons, no passives authored -> nothing to offer.
+	# Passives are now authored, so a maxed inventory must also fill (and max) the
+	# passive slots for the pool to be empty.
+	for i in ProgressionSystem.MAX_PASSIVES:
+		gs.player.passives.append(_synthetic_passive("p%d" % i))
 	var offer := ProgressionSystem.build_offer(gs)
 	assert_bool(offer.is_max_state).is_true()
 	assert_int(offer.options.size()).is_equal(0)
@@ -141,7 +160,14 @@ func test_full_maxed_inventory_is_max_state() -> void:
 func test_apply_choice_adds_new_weapon() -> void:
 	var gs := GameState.new()
 	gs.pending_levelups = 1
-	gs.current_offer = ProgressionSystem.build_offer(gs)  # whip as new
+	# Controlled new-weapon option (a random build_offer subset may surface a passive
+	# at index 0 now that both weapons and passives are authored).
+	var offer := LevelUpOffer.new()
+	offer.options = [{
+		"kind": "weapon", "def": GameData.get_weapon("whip"), "is_upgrade": false,
+		"target": null, "target_level": 1,
+	}]
+	gs.current_offer = offer
 	ProgressionSystem.apply_choice(gs, 0)
 	assert_int(gs.player.weapons.size()).is_equal(1)
 	assert_int(gs.player.weapons[0].level).is_equal(1)
@@ -150,9 +176,17 @@ func test_apply_choice_adds_new_weapon() -> void:
 
 func test_apply_choice_upgrades_existing() -> void:
 	var gs := GameState.new()
-	gs.player.weapons = [_whip_inst(1)]
+	var whip := _whip_inst(1)
+	gs.player.weapons = [whip]
 	gs.pending_levelups = 1
-	gs.current_offer = ProgressionSystem.build_offer(gs)
+	# Controlled single-option offer (the shuffled build_offer may not surface the
+	# whip upgrade now that the catalog has many weapons).
+	var offer := LevelUpOffer.new()
+	offer.options = [{
+		"kind": "weapon", "def": whip.def, "is_upgrade": true,
+		"target": whip, "target_level": 2,
+	}]
+	gs.current_offer = offer
 	ProgressionSystem.apply_choice(gs, 0)
 	assert_int(gs.player.weapons[0].level).is_equal(2)  # upgraded in place
 	assert_int(gs.player.weapons.size()).is_equal(1)  # not duplicated
@@ -162,9 +196,17 @@ func test_apply_choice_preserves_character_base_stats() -> void:
 	# Regression: recompute must NOT wipe Antonio's +1 armor / 120 HP on level-up.
 	var gs := GameState.new()
 	gs.player.character_def = GameData.get_character("antonio")
-	gs.player.weapons = [_whip_inst(1)]
+	var whip := _whip_inst(1)
+	gs.player.weapons = [whip]
 	gs.pending_levelups = 1
-	gs.current_offer = ProgressionSystem.build_offer(gs)
+	# Controlled whip-upgrade option: deterministic and does not itself touch armor
+	# or max_health (a random stat passive at index 0 would).
+	var offer := LevelUpOffer.new()
+	offer.options = [{
+		"kind": "weapon", "def": whip.def, "is_upgrade": true,
+		"target": whip, "target_level": 2,
+	}]
+	gs.current_offer = offer
 	ProgressionSystem.apply_choice(gs, 0)
 	assert_float(gs.player.stats.armor).is_equal(1.0)
 	assert_float(gs.player.stats.max_health).is_equal(120.0)

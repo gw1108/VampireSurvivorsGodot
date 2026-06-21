@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="WeaponDef" format=3]
+
+[ext_resource type="Script" path="res://data/defs/weapon_def.gd" id="1_def"]
+
+[resource]
+script = ExtResource("1_def")
+id = "knife"
+name = "Knife"
+description = "Fires quickly in the facing direction, high speed."
+base_damage = 6.0
+cooldown = 1.0
+pierce = 1
+projectile_speed = 380.0
+amount = 1
+levels = Array[Dictionary]([{
+"amount": 1,
+"level": 2
+}, {
+"damage": 6.0,
+"level": 3
+}, {
+"pierce": 1,
+"level": 4
+}, {
+"amount": 1,
+"level": 5
+}])

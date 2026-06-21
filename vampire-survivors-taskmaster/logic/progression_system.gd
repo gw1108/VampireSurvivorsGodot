@@ -154,6 +154,9 @@ static func _load_defs(dir_path: String) -> Array:
 				out.append(res)
 		f = dir.get_next()
 	dir.list_dir_end()
+	# Sort by id so the offer pool order is independent of filesystem iteration
+	# order — offers (and the golden run) stay deterministic across machines.
+	out.sort_custom(func(a, b): return String(a.id) < String(b.id))
 	return out
 
 

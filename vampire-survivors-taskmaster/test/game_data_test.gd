@@ -52,9 +52,14 @@ func test_get_all_enemies() -> void:
 	assert_int(GameData.get_all_enemies().size()).is_equal(6)
 
 
-func test_get_all_passives_empty_but_typed() -> void:
-	# No passives authored yet; must return an (empty) array without error.
-	assert_int(GameData.get_all_passives().size()).is_equal(0)
+func test_get_all_passives_loads_authored() -> void:
+	# The 16 passive items (task 29) are authored under data/passives/.
+	var all := GameData.get_all_passives()
+	assert_int(all.size()).is_equal(16)
+	var ids: Array = []
+	for p in all:
+		ids.append(p.id)
+	assert_array(ids).contains(["spinach", "armor", "tiragisu"])
 
 
 func test_level_curve_delegation() -> void:

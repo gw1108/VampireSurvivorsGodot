@@ -29,7 +29,11 @@ static func step(state: GameState, dt: float) -> void:
 	_reap_dead(state, dead)
 
 
+const BOOMERANG_CATCH_RADIUS: float = 12.0  # a returning Cross is caught this close to the player
+
+
 static func _step_projectiles(state: GameState, dt: float, dead: Dictionary) -> void:
+	var player_pos: Vector2 = state.player.pos
 	var to_remove: Array[int] = []
 	for i in state.projectiles.size():
 		var proj = state.projectiles[i]
@@ -37,6 +41,21 @@ static func _step_projectiles(state: GameState, dt: float, dead: Dictionary) -> 
 		if proj.lifetime <= 0.0:
 			to_remove.append(i)
 			continue
+		# Acceleration (Axe's gravity arc); ZERO for straight-line shots.
+		if proj.accel != Vector2.ZERO:
+			proj.velocity += proj.accel * dt
+		# Boomerang (Cross): fly out to boomerang_range, then home back to the player
+		# and despawn when caught.
+		if proj.is_boomerang:
+			if not proj.is_returning and proj.pos.distance_to(player_pos) >= proj.boomerang_range:
+				proj.is_returning = true
+			if proj.is_returning:
+				var to_player: Vector2 = player_pos - proj.pos
+				if to_player.length_squared() > 0.0:
+					proj.velocity = to_player.normalized() * proj.velocity.length()
+				if proj.pos.distance_to(player_pos) <= BOOMERANG_CATCH_RADIUS:
+					to_remove.append(i)
+					continue
 		proj.pos += proj.velocity * dt
 		if state.index == null:
 			continue
@@ -69,6 +88,10 @@ static func _step_zones(state: GameState, dt: float, dead: Dictionary) -> void:
 			to_remove.append(i)
 			continue
 		if zone.anchor == DamageZone.Anchor.FOLLOW_PLAYER:
+			zone.pos = player.pos + zone.offset
+		elif zone.anchor == DamageZone.Anchor.ORBIT:
+			# King Bible: spin the offset around the player, then follow it.
+			zone.offset = zone.offset.rotated(zone.orbit_speed * dt)
 			zone.pos = player.pos + zone.offset
 		# Decide whether this zone deals damage this tick.
 		var do_tick := false

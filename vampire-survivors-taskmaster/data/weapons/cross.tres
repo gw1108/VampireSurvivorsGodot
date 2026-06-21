@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="WeaponDef" format=3]
+
+[ext_resource type="Script" path="res://data/defs/weapon_def.gd" id="1_def"]
+
+[resource]
+script = ExtResource("1_def")
+id = "cross"
+name = "Cross"
+description = "Boomerang that flies out and returns to the player."
+base_damage = 10.0
+cooldown = 1.3
+pierce = 99
+projectile_speed = 250.0
+amount = 1
+crit_chance = 0.1
+levels = Array[Dictionary]([{
+"amount": 1,
+"level": 2
+}, {
+"damage": 10.0,
+"level": 3
+}, {
+"amount": 1,
+"level": 4
+}, {
+"damage": 10.0,
+"level": 5
+}])

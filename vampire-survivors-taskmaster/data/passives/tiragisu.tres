@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="PassiveDef" format=3]
+
+[ext_resource type="Script" path="res://data/defs/passive_def.gd" id="1_def"]
+
+[resource]
+script = ExtResource("1_def")
+id = "tiragisu"
+name = "Tiragisu"
+description = "Grants 1 extra Revival per level (revive on death at half health)."
+max_level = 2
+stat_bonuses = {
+"revival": [1, 2]
+}
