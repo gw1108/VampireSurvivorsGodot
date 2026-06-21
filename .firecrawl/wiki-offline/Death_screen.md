@@ -1,0 +1,3 @@
+# Death Screen
+
+More of an overlay than a screen. When the player dies they will have a death animation play. After a short delay a death sfx will play, fade in a red half moon overlay, and display Game Over text in the middle. There will be a quit button to navigate to the Run_summary screen which has a Done button to navigate back to the Main_menu. Optionally, there will be a revive button if the player has 1 or more revives left.

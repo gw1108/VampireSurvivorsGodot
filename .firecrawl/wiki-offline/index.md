@@ -1,7 +1,8 @@
 # Vampire Survivors Wiki - Offline Index
 
-_131 page(s) available offline. Generated 2026-06-20 17:33._
+_139 page(s) available offline. Generated 2026-06-20 19:25._
 
+- [Academy Badge](Academy_Badge.md)
 - [Achievements](Achievements.md)
 - [Adventures](Adventures.md)
 - [Amount](Amount.md)
@@ -30,10 +31,12 @@ _131 page(s) available offline. Generated 2026-06-20 17:33._
 - [Cross](Cross.md)
 - [Crown](Crown.md)
 - [Curse](Curse.md)
+- [Death screen](Death_screen.md)
 - [Defang](Defang.md)
 - [Duplicator](Duplicator.md)
 - [Duration](Duration.md)
 - [Ebony Wings](Ebony_Wings.md)
+- [Eggman](Eggman.md)
 - [Eight the Sparrow](Eight_the_Sparrow.md)
 - [Empty Tome](Empty_Tome.md)
 - [Enemies](Enemies.md)
@@ -54,6 +57,7 @@ _131 page(s) available offline. Generated 2026-06-20 17:33._
 - [Gold Coin (currency)](Gold_Coin_(currency).md)
 - [Gold Coin (pickup)](Gold_Coin_(pickup).md)
 - [Gold Finger](Gold_Finger.md)
+- [Golden Egg](Golden_Egg.md)
 - [Greed](Greed.md)
 - [Growth](Growth.md)
 - [Hollow Heart](Hollow_Heart.md)
@@ -75,6 +79,7 @@ _131 page(s) available offline. Generated 2026-06-20 17:33._
 - [Main menu](Main_menu.md)
 - [Mantichana](Mantichana.md)
 - [Max Health](Max_Health.md)
+- [Merchant](Merchant.md)
 - [Might](Might.md)
 - [Move Speed](Move_Speed.md)
 - [Mudman](Mudman.md)
@@ -101,6 +106,7 @@ _131 page(s) available offline. Generated 2026-06-20 17:33._
 - [Rich Coin Bag](Rich_Coin_Bag.md)
 - [Roast Chicken with a Clock in the Middle](Roast_Chicken_with_a_Clock_in_the_Middle.md)
 - [Rosary](Rosary.md)
+- [Run summary](Run_summary.md)
 - [Runetracer](Runetracer.md)
 - [Santa Water](Santa_Water.md)
 - [Scarleton](Scarleton.md)
@@ -121,8 +127,10 @@ _131 page(s) available offline. Generated 2026-06-20 17:33._
 - [Swarm](Swarm.md)
 - [The Reaper](The_Reaper.md)
 - [Thorns](Thorns.md)
+- [Thunderous Oni](Thunderous_Oni.md)
 - [Tirajisú](Tirajisú.md)
 - [Torrona's Box](Torrona's_Box.md)
+- [Treant](Treant.md)
 - [Treasure Chest](Treasure_Chest.md)
 - [Vacuum](Vacuum.md)
 - [Vento Sacro](Vento_Sacro.md)

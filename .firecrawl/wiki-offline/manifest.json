@@ -1,9 +1,15 @@
 {
     "source":  "https://vampire.survivors.wiki",
     "sourceFormat":  "MediaWiki action=render/raw -\u003e clean Markdown, pipe tables (pandoc + clean-wiki.lua)",
-    "generated":  "2026-06-20 17:33",
-    "pageCount":  131,
+    "generated":  "2026-06-20 19:25",
+    "pageCount":  139,
     "pages":  [
+                  {
+                      "title":  "Academy_Badge",
+                      "displayTitle":  "Academy Badge",
+                      "file":  "Academy_Badge.md",
+                      "source":  "Academy_Badge.htm"
+                  },
                   {
                       "title":  "Achievements",
                       "displayTitle":  "Achievements",
@@ -173,6 +179,12 @@
                       "source":  "Curse.htm"
                   },
                   {
+                      "title":  "Death_screen",
+                      "displayTitle":  "Death screen",
+                      "file":  "Death_screen.md",
+                      "source":  null
+                  },
+                  {
                       "title":  "Defang",
                       "displayTitle":  "Defang",
                       "file":  "Defang.md",
@@ -195,6 +207,12 @@
                       "displayTitle":  "Ebony Wings",
                       "file":  "Ebony_Wings.md",
                       "source":  "Ebony_Wings.htm"
+                  },
+                  {
+                      "title":  "Eggman",
+                      "displayTitle":  "Eggman",
+                      "file":  "Eggman.md",
+                      "source":  "Eggman.htm"
                   },
                   {
                       "title":  "Eight_the_Sparrow",
@@ -315,6 +333,12 @@
                       "displayTitle":  "Gold Finger",
                       "file":  "Gold_Finger.md",
                       "source":  "Gold_Finger.htm"
+                  },
+                  {
+                      "title":  "Golden_Egg",
+                      "displayTitle":  "Golden Egg",
+                      "file":  "Golden_Egg.md",
+                      "source":  "Golden_Egg.htm"
                   },
                   {
                       "title":  "Greed",
@@ -441,6 +465,12 @@
                       "displayTitle":  "Max Health",
                       "file":  "Max_Health.md",
                       "source":  "Max_Health.htm"
+                  },
+                  {
+                      "title":  "Merchant",
+                      "displayTitle":  "Merchant",
+                      "file":  "Merchant.md",
+                      "source":  "Merchant.htm"
                   },
                   {
                       "title":  "Might",
@@ -599,6 +629,12 @@
                       "source":  "Rosary.htm"
                   },
                   {
+                      "title":  "Run_summary",
+                      "displayTitle":  "Run summary",
+                      "file":  "Run_summary.md",
+                      "source":  null
+                  },
+                  {
                       "title":  "Runetracer",
                       "displayTitle":  "Runetracer",
                       "file":  "Runetracer.md",
@@ -719,6 +755,12 @@
                       "source":  "Thorns.htm"
                   },
                   {
+                      "title":  "Thunderous_Oni",
+                      "displayTitle":  "Thunderous Oni",
+                      "file":  "Thunderous_Oni.md",
+                      "source":  "Thunderous_Oni.htm"
+                  },
+                  {
                       "title":  "Tirajisú",
                       "displayTitle":  "Tirajisú",
                       "file":  "Tirajisú.md",
@@ -729,6 +771,12 @@
                       "displayTitle":  "Torrona\u0027s Box",
                       "file":  "Torrona\u0027s_Box.md",
                       "source":  "Torrona\u0027s_Box.htm"
+                  },
+                  {
+                      "title":  "Treant",
+                      "displayTitle":  "Treant",
+                      "file":  "Treant.md",
+                      "source":  "Treant.htm"
                   },
                   {
                       "title":  "Treasure_Chest",

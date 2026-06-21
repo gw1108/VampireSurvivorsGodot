@@ -26,4 +26,4 @@ This folder is a **partial, offline snapshot** of the Vampire Survivors wiki
   with "; ".
 - Boilerplate sections are dropped (External links, Update history, Trivia, Tips,
   Gallery), so a page holds gameplay facts only.
-_Generated 2026-06-20 17:33 by Convert-Wiki.ps1._
+_Generated 2026-06-20 19:25 by Convert-Wiki.ps1._
