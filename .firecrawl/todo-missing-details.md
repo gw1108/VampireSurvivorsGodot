@@ -8,7 +8,6 @@ Each item below needs concrete definitions (lists, numbers, rules, formulas) bef
 - [X] Per-weapon base stats: damage, cooldown/fire rate, area, projectile speed, duration, amount/count, pierce, knockback
 - [X] Per-weapon behavior/pattern: movement, targeting logic (nearest/facing/random/orbiting), collision
 - [X] Upgrade curve: what each level (~8) does to each weapon
-- [X] Evolution recipes: weapon + required passive + condition -> evolved weapon
 
 ## 2. Passives / Power-Ups System
 - [ ] Define the full passive list (names + descriptions)
@@ -53,18 +52,14 @@ Each item below needs concrete definitions (lists, numbers, rules, formulas) bef
 - [ ] Golden eggs: acquisition rate, stats granted, persistence
 - [ ] Achievements / collection system (if included)
 
-## 10. Game Modes & Modifiers
-- [ ] Define exact rules for Endless, Hyper, and Limit Break (and any Arcade/Hurry modes)
-
-## 11. Core Formulas & Rules
+## 10. Core Formulas & Rules
 - [ ] Damage formula (damage, knockback, crit if any, player invincibility frames)
 - [ ] Curse effect on enemy count/speed/HP
 - [ ] Luck effect on drops/chests; Greed effect on gold
 - [ ] Death / revival handling, continue/restart flow
 
-## 12. UI/UX & Technical
+## 11. UI/UX & Technical
 - [ ] HUD layout, level-up screen, pause menu, results screen, minimap
 - [ ] Controls/input scheme (keyboard/gamepad)
 - [ ] Save system for meta-progression
 - [ ] Target resolution / art style / sprite specs and audio direction
-- [ ] Scope decision: MVP-for-jam vs. cut features
