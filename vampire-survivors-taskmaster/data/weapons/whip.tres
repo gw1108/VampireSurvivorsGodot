@@ -1,0 +1,38 @@
+[gd_resource type="Resource" script_class="WeaponDef" format=3]
+
+[ext_resource type="Script" path="res://data/defs/weapon_def.gd" id="1_mbmpw"]
+
+[resource]
+script = ExtResource("1_mbmpw")
+id = "whip"
+name = "Whip"
+description = "Attacks horizontally, passes through enemies."
+base_damage = 10.0
+cooldown = 1.35
+pierce = -1
+projectile_speed = 0.0
+knockback = 1.0
+levels = Array[Dictionary]([{
+"amount": 1,
+"level": 2
+}, {
+"damage": 5.0,
+"level": 3
+}, {
+"area": 0.1,
+"damage": 5.0,
+"level": 4
+}, {
+"damage": 5.0,
+"level": 5
+}, {
+"area": 0.1,
+"damage": 5.0,
+"level": 6
+}, {
+"damage": 5.0,
+"level": 7
+}, {
+"damage": 5.0,
+"level": 8
+}])

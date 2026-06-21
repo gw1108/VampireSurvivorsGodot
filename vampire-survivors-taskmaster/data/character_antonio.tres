@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="CharacterDef" format=3]
+
+[ext_resource type="Script" path="res://data/defs/character_def.gd" id="1_fj231"]
+
+[resource]
+script = ExtResource("1_fj231")
+id = "antonio"
+name = "Antonio Belpaese"
+starting_weapon_id = "whip"
+base_stats = {
+"armor": 1.0
+}
+growth_bonuses = {
+"might": 0.1
+}
+growth_interval = 10
+growth_cap = {
+"might": 0.5
+}
+max_health = 120.0
