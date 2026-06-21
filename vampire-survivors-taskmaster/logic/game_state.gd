@@ -18,8 +18,7 @@ var gems: Array = []  # Array[Gem]
 var pickups: Array = []  # Array[Pickup]
 var chests: Array = []  # Array[Chest]
 var light_sources: Array = []  # Array[LightSource]
-# Untyped: SpatialIndex is created in a later task. Set after SpatialIndex exists.
-var index = null
+var index: SpatialIndex = null  # rebuilt each tick by SpatialIndex.rebuild()
 var spawn_cursor: int = 0
 var event_cursor: int = 0
 var chest_count: int = 0

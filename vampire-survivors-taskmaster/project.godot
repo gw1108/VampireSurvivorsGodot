@@ -8,6 +8,10 @@
 
 config_version=5
 
+[autoload]
+
+GameData="*res://autoload/game_data.gd"
+
 [application]
 
 config/name="VampireSurvivorsTaskmaster"

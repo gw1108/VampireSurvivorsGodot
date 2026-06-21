@@ -11,6 +11,7 @@ func test_defaults() -> void:
 	assert_array(s.bosses).is_empty()
 	assert_array(s.events).is_empty()
 	assert_array(s.brazier_positions).is_empty()
+	assert_float(s.brazier_interval).is_equal(0.0)
 	assert_int(s.starting_spawn_count).is_equal(10)
 	assert_int(s.max_alive_soft).is_equal(300)
 	assert_int(s.max_alive_hard).is_equal(500)

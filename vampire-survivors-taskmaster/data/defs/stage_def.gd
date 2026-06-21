@@ -15,7 +15,8 @@ class_name StageDef extends Resource
 @export var waves: Array[Dictionary] = []
 @export var bosses: Array[Dictionary] = []
 @export var events: Array[Dictionary] = []
-@export var brazier_positions: Array[Vector2] = []
+@export var brazier_positions: Array[Vector2] = []  # fixed placements (unused on boundless maps)
+@export var brazier_interval: float = 0.0  # seconds between periodic brazier spawns; 0 = off
 @export var starting_spawn_count: int = 10  # spawned on the first frame
 @export var max_alive_soft: int = 300  # periodic-spawn halt
 @export var max_alive_hard: int = 500  # absolute cap
