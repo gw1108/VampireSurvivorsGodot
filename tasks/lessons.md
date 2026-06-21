@@ -13,7 +13,7 @@ The Godot 4.6 project is in `vampire-survivors-taskmaster/`, not the repo root �
 Bundled gdUnit4 needed a vendored patch to compile against 4.6.2 (`get_as_text(true)`→`get_as_text()`); see AgentMD.md before reinstalling the addon.
 
 ### Shell CWD per loop turn
-Bash CWD resets to repo root each iteration (not the Godot subdir) — use absolute `--path` and `cmd //d //c "cd /d <projdir> && ..."`, else commands silently run in the wrong place.
+Bash CWD resets to repo root each iteration (not the Godot subdir), and BACKGROUNDED bash runs do not inherit a foreground `cd` either — use absolute `--path C:/.../vampire-survivors-taskmaster` and `cmd //d //c "cd /d <projdir> && ..."`, else commands silently run in the wrong place (symptom: `godot -s res://addons/gdUnit4/bin/GdUnitCmdTool.gd` → "Attempt to open script ... File not found").
 
 ### GDScript :=  inference on Variant fields hangs test runner
 `var x := obj.field` OR `var x := obj.method()` where `obj` is untyped/Variant (e.g. an element from an untyped Array, or WeaponInstance.def) is a parse error; gdUnit4's `-d` flag turns it into an interactive Debugger Break that HANGS the run (and `--import` doesn't catch it). Use `var x = obj.field` (untyped) or `var x: int = obj.method()` (explicit type). Validate func-body parse errors with `godot --headless --check-only --script res://...` BEFORE the suite (catches what --import misses); always run the suite under `timeout 150 ...`; kill stray `godot.exe`/`Godot_*_console.exe` if it hangs.

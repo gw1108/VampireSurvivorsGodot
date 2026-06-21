@@ -34,6 +34,7 @@ var _main_menu: MainMenu = null  # optional title screen (Main.tscn: UI/)
 var _camera: Camera2D = null  # optional follow-camera (Main.tscn: World/)
 var _bg_material: ShaderMaterial = null  # optional scrolling background material
 var _hud: HUD = null  # optional heads-up display (Main.tscn: UI/)
+var _level_up_screen: LevelUpScreen = null  # optional level-up overlay (Main.tscn: UI/)
 var _death_screen: DeathScreen = null  # optional game-over overlay (Main.tscn: UI/)
 var _results_screen: ResultsScreen = null  # optional results summary (Main.tscn: UI/)
 var _last_summary: Dictionary = {}  # stashed at run end, passed to the results screen
@@ -62,6 +63,18 @@ func _ready() -> void:
 	_results_screen = get_node_or_null("UI/ResultsScreen") as ResultsScreen
 	if _results_screen != null:
 		_results_screen.done.connect(_on_results_done)
+	_level_up_screen = get_node_or_null("UI/LevelUpScreen") as LevelUpScreen
+	if _level_up_screen != null:
+		level_up_started.connect(_level_up_screen.show_offer)
+		_level_up_screen.option_chosen.connect(on_option_chosen)
+
+	# Drive persistent-widget visibility from the phase, then enter TITLE. state is
+	# null at boot so _set_phase can't run yet; set the title look directly.
+	phase_changed.connect(_on_phase_changed)
+	if _main_menu != null:
+		_main_menu.show()
+	if _hud != null:
+		_hud.hide()
 
 
 func _physics_process(delta: float) -> void:
@@ -254,6 +267,18 @@ func _build_summary() -> Dictionary:
 		"time_formatted": "%02d:%02d" % [minutes, seconds],
 		"weapon_stats": weapon_stats,
 	}
+
+
+## Keep the persistent widgets (title menu + in-run HUD) in sync with the phase.
+## The transient overlays (pause/level-up/death/results) show & hide themselves
+## via their own methods/signals, so they are deliberately not touched here.
+func _on_phase_changed(phase: int) -> void:
+	if _main_menu != null:
+		_main_menu.visible = phase == GameState.Phase.TITLE
+	if _hud != null:
+		_hud.visible = (phase == GameState.Phase.PLAYING
+			or phase == GameState.Phase.PAUSED
+			or phase == GameState.Phase.LEVEL_UP)
 
 
 func _set_phase(phase: int) -> void:
