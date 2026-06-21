@@ -67,3 +67,14 @@ Is the @.firecrawl/vampire-survivors-gameplay-extracted.md ready to be transform
 
 (Actually, didn't do anything special. Just hit CTRL+S to save out every page I thought was relevent as a Web Page, HTML only. Then used some random claude code scripts to convert them to .md and strip out stuff that was probably not needed. We should now be ready to make a /clarify_game_design call and reference the wiki as the source of truth)
 
+(Then ran architect)
+
+/architect_game_systems thoughts/shared/game-design/2026-06-21-ENG-vampire-survivors-vertical-slice.md
+
+(Then ran task-master parse-prd -n 0)
+
+task-master parse-prd .taskmaster/docs/systems.md -n 0 --tracelevel trace
+
+(Then ran the loop)
+
+task-master loop --tracelevel trace
