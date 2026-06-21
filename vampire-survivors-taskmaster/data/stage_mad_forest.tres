@@ -1,0 +1,191 @@
+[gd_resource type="Resource" script_class="StageDef" format=3]
+
+[ext_resource type="Script" path="res://data/defs/stage_def.gd" id="1_du8xd"]
+
+[resource]
+script = ExtResource("1_du8xd")
+id = "mad_forest"
+name = "Mad Forest"
+stat_modifiers = {
+"curse": 1.0,
+"enemy_health": 1.0,
+"enemy_move_speed": 1.1
+}
+waves = Array[Dictionary]([{
+"enemy_ids": ["bat"],
+"interval": 1.5,
+"min_alive": 20,
+"minute": 0
+}, {
+"enemy_ids": ["bat"],
+"interval": 1.4,
+"min_alive": 25,
+"minute": 1
+}, {
+"enemy_ids": ["bat"],
+"interval": 0.5,
+"min_alive": 50,
+"minute": 2
+}, {
+"enemy_ids": ["skeleton"],
+"interval": 0.25,
+"min_alive": 40,
+"minute": 3
+}, {
+"enemy_ids": ["skeleton", "ghost"],
+"interval": 1.0,
+"min_alive": 30,
+"minute": 4
+}, {
+"enemy_ids": ["skeleton"],
+"interval": 1.0,
+"min_alive": 10,
+"minute": 5
+}, {
+"enemy_ids": ["skeleton", "ghost"],
+"interval": 0.5,
+"min_alive": 20,
+"minute": 6
+}, {
+"enemy_ids": ["bat", "skeleton"],
+"interval": 0.5,
+"min_alive": 80,
+"minute": 7
+}, {
+"enemy_ids": ["skeleton"],
+"interval": 1.5,
+"min_alive": 100,
+"minute": 8
+}, {
+"enemy_ids": ["giant_bat", "skeleton"],
+"interval": 0.5,
+"min_alive": 30,
+"minute": 9
+}, {
+"enemy_ids": ["skeleton", "ghost"],
+"interval": 0.5,
+"min_alive": 10,
+"minute": 10
+}, {
+"enemy_ids": ["skeleton"],
+"interval": 0.1,
+"min_alive": 300,
+"minute": 11
+}, {
+"enemy_ids": ["werewolf", "ghost", "skeleton"],
+"interval": 0.25,
+"min_alive": 20,
+"minute": 12
+}, {
+"enemy_ids": ["werewolf", "ghost"],
+"interval": 0.5,
+"min_alive": 150,
+"minute": 13
+}, {
+"enemy_ids": ["werewolf", "ghost"],
+"interval": 0.3,
+"min_alive": 80,
+"minute": 14
+}, {
+"enemy_ids": ["werewolf", "giant_bat", "skeleton"],
+"interval": 0.1,
+"min_alive": 100,
+"minute": 15
+}, {
+"enemy_ids": ["werewolf", "giant_bat"],
+"interval": 0.2,
+"min_alive": 120,
+"minute": 16
+}, {
+"enemy_ids": ["werewolf", "ghost", "skeleton"],
+"interval": 0.2,
+"min_alive": 150,
+"minute": 17
+}, {
+"enemy_ids": ["werewolf", "giant_bat"],
+"interval": 0.15,
+"min_alive": 180,
+"minute": 18
+}, {
+"enemy_ids": ["skeleton", "ghost", "bat"],
+"interval": 0.15,
+"min_alive": 200,
+"minute": 19
+}, {
+"enemy_ids": ["werewolf", "skeleton", "giant_bat"],
+"interval": 0.1,
+"min_alive": 100,
+"minute": 20
+}, {
+"enemy_ids": ["skeleton"],
+"interval": 0.1,
+"min_alive": 300,
+"minute": 21
+}, {
+"enemy_ids": ["werewolf", "skeleton"],
+"interval": 0.1,
+"min_alive": 200,
+"minute": 22
+}, {
+"enemy_ids": ["werewolf", "skeleton"],
+"interval": 0.1,
+"min_alive": 300,
+"minute": 23
+}, {
+"enemy_ids": ["werewolf", "skeleton"],
+"interval": 0.1,
+"min_alive": 300,
+"minute": 24
+}, {
+"enemy_ids": ["werewolf"],
+"interval": 0.1,
+"min_alive": 100,
+"minute": 25
+}, {
+"enemy_ids": ["werewolf", "skeleton"],
+"interval": 0.1,
+"min_alive": 150,
+"minute": 26
+}, {
+"enemy_ids": ["werewolf", "skeleton", "ghost"],
+"interval": 0.1,
+"min_alive": 300,
+"minute": 27
+}, {
+"enemy_ids": ["werewolf", "giant_bat", "skeleton"],
+"interval": 0.1,
+"min_alive": 300,
+"minute": 28
+}, {
+"enemy_ids": ["bat", "giant_bat"],
+"interval": 0.1,
+"min_alive": 300,
+"minute": 29
+}])
+bosses = Array[Dictionary]([{
+"count": 1,
+"enemy_id": "giant_bat",
+"minute": 8
+}, {
+"count": 1,
+"enemy_id": "werewolf",
+"minute": 15
+}])
+events = Array[Dictionary]([{
+"count": 20,
+"kind": "bat_swarm",
+"minute": 3
+}, {
+"count": 1,
+"kind": "flower_wall",
+"minute": 5
+}, {
+"count": 20,
+"kind": "ghost_swarm",
+"minute": 13
+}, {
+"count": 20,
+"kind": "ghost_swarm",
+"minute": 27
+}])
+brazier_interval = 60.0

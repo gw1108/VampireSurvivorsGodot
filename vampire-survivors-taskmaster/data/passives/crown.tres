@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="PassiveDef" format=3]
+
+[ext_resource type="Script" path="res://data/defs/passive_def.gd" id="1_def"]
+
+[resource]
+script = ExtResource("1_def")
+id = "crown"
+name = "Crown"
+description = "Increases experience gained (Growth) by 8% per level."
+max_level = 5
+stat_bonuses = {
+"growth": [0.08, 0.16, 0.24, 0.32, 0.4]
+}

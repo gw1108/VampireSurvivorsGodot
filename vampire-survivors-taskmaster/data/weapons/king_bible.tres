@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="WeaponDef" format=3]
+
+[ext_resource type="Script" path="res://data/defs/weapon_def.gd" id="1_def"]
+
+[resource]
+script = ExtResource("1_def")
+id = "king_bible"
+name = "King Bible"
+description = "Holy tomes orbit the player, damaging what they pass through."
+base_damage = 10.0
+cooldown = 3.0
+amount = 1
+duration = 3.0
+levels = Array[Dictionary]([{
+"amount": 1,
+"level": 2
+}, {
+"damage": 10.0,
+"level": 3
+}, {
+"amount": 1,
+"level": 4
+}, {
+"duration": 0.5,
+"level": 5
+}])

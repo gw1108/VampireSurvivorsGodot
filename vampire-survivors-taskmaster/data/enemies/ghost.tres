@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="EnemyDef" format=3]
+
+[ext_resource type="Script" path="res://data/defs/enemy_def.gd" id="1_lidie"]
+
+[resource]
+script = ExtResource("1_lidie")
+id = "ghost"
+name = "Ghost"
+hp = 10.0
+power = 5.0
+speed = 200.0
+xp_value = 1.5

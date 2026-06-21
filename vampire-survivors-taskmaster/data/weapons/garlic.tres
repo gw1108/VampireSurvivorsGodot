@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="WeaponDef" format=3]
+
+[ext_resource type="Script" path="res://data/defs/weapon_def.gd" id="1_def"]
+
+[resource]
+script = ExtResource("1_def")
+id = "garlic"
+name = "Garlic"
+description = "A damaging aura around the player that repels enemies."
+base_damage = 5.0
+cooldown = 0.7
+area = 1.0
+levels = Array[Dictionary]([{
+"area": 0.1,
+"damage": 2.0,
+"level": 2
+}, {
+"damage": 3.0,
+"level": 3
+}, {
+"area": 0.1,
+"level": 4
+}, {
+"damage": 3.0,
+"level": 5
+}])

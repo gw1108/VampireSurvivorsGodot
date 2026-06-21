@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="PassiveDef" format=3]
+
+[ext_resource type="Script" path="res://data/defs/passive_def.gd" id="1_def"]
+
+[resource]
+script = ExtResource("1_def")
+id = "duplicator"
+name = "Duplicator"
+description = "Weapons fire +1 additional projectile per level."
+max_level = 2
+stat_bonuses = {
+"amount": [1, 2]
+}

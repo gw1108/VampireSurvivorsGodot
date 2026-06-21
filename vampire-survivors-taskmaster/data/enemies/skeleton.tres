@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="EnemyDef" format=3]
+
+[ext_resource type="Script" path="res://data/defs/enemy_def.gd" id="1_k7ddm"]
+
+[resource]
+script = ExtResource("1_k7ddm")
+id = "skeleton"
+name = "Skeleton"
+hp = 15.0
+power = 10.0
+speed = 100.0
+xp_value = 2.0

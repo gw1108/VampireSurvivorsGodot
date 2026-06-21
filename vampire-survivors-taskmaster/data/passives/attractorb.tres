@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="PassiveDef" format=3]
+
+[ext_resource type="Script" path="res://data/defs/passive_def.gd" id="1_def"]
+
+[resource]
+script = ExtResource("1_def")
+id = "attractorb"
+name = "Attractorb"
+description = "Increases pickup magnet range by 25% of base (+16) per level."
+max_level = 5
+stat_bonuses = {
+"magnet": [16.0, 32.0, 48.0, 64.0, 80.0]
+}

@@ -67,3 +67,28 @@ Is the @.firecrawl/vampire-survivors-gameplay-extracted.md ready to be transform
 
 (Actually, didn't do anything special. Just hit CTRL+S to save out every page I thought was relevent as a Web Page, HTML only. Then used some random claude code scripts to convert them to .md and strip out stuff that was probably not needed. We should now be ready to make a /clarify_game_design call and reference the wiki as the source of truth)
 
+(Then ran architect)
+
+/architect_game_systems thoughts/shared/game-design/2026-06-21-ENG-vampire-survivors-vertical-slice.md
+
+(Then ran task-master parse-prd -n 0)
+
+task-master parse-prd .taskmaster/docs/systems.md -n 0 --tracelevel trace
+
+(Then ran the loop)
+
+task-master loop --tracelevel trace
+
+(Immediately hit error. Also realized I need to install GDUnit4. Need to add that to the documentation setup process. Also hit this error:
+
+[Loop Error] MCP config not found at C:\GameDev\VampireSurvivorsGodot\.mcp.json. Add a .mcp.json with a "task-master-ai" mcpServers entry.
+
+Solution: Need to copy the mcp.json from snake taskmaster into the generic project.)
+
+(Was done in about 4 hours. Which is a bit too long... I think we have to split the tasks up into achievable milestones. So the main architect systems has to be parsed by ANOTHER milestone splitter that splits the games major systems and features into bare bone milestones of roughly equal size.
+
+The enemies are a bit too fast... the overarching enemy design needs to showcase how fast a piranha plant should be.
+
+Player is too big... need to explicitly call out the resolution of the game and roughly how big the player is. And call out most normal enemies should be about his size.
+
+Need to explicitly call out there is no audio.)
