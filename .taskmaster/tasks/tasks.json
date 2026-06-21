@@ -114,8 +114,9 @@
         "dependencies": [
           "2"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-06-21T17:36:16.242Z"
       },
       {
         "id": "10",
@@ -145,8 +146,9 @@
           "9",
           "10"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-06-21T17:46:48.884Z"
       },
       {
         "id": "12",
@@ -191,8 +193,9 @@
           "5",
           "7"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-06-21T17:31:08.612Z"
       },
       {
         "id": "15",
@@ -250,8 +253,9 @@
         "details": "Update `project.godot` to add input actions:\n\n```ini\n[input]\nmove_left={\n\"deadzone\": 0.5,\n\"events\": [Object(InputEventKey,\"resource_local_to_scene\":false,\"resource_name\":\"\",\"device\":-1,\"window_id\":0,\"alt_pressed\":false,\"shift_pressed\":false,\"ctrl_pressed\":false,\"meta_pressed\":false,\"pressed\":false,\"keycode\":65,\"physical_keycode\":0,\"key_label\":0,\"unicode\":97,\"location\":0,\"echo\":false,\"script\":null), Object(InputEventKey,\"resource_local_to_scene\":false,\"resource_name\":\"\",\"device\":-1,\"window_id\":0,\"alt_pressed\":false,\"shift_pressed\":false,\"ctrl_pressed\":false,\"meta_pressed\":false,\"pressed\":false,\"keycode\":4194319,\"physical_keycode\":0,\"key_label\":0,\"unicode\":0,\"location\":0,\"echo\":false,\"script\":null)]\n}\nmove_right={\n\"deadzone\": 0.5,\n\"events\": [Object(InputEventKey,\"resource_local_to_scene\":false,\"resource_name\":\"\",\"device\":-1,\"window_id\":0,\"alt_pressed\":false,\"shift_pressed\":false,\"ctrl_pressed\":false,\"meta_pressed\":false,\"pressed\":false,\"keycode\":68,\"physical_keycode\":0,\"key_label\":0,\"unicode\":100,\"location\":0,\"echo\":false,\"script\":null), Object(InputEventKey,\"resource_local_to_scene\":false,\"resource_name\":\"\",\"device\":-1,\"window_id\":0,\"alt_pressed\":false,\"shift_pressed\":false,\"ctrl_pressed\":false,\"meta_pressed\":false,\"pressed\":false,\"keycode\":4194321,\"physical_keycode\":0,\"key_label\":0,\"unicode\":0,\"location\":0,\"echo\":false,\"script\":null)]\n}\nmove_up={\n# W and Up arrow\n}\nmove_down={\n# S and Down arrow\n}\npause={\n# Escape key\n}\nui_accept={\n# Enter/Space for menu selection\n}\n```\n\nActions: move_left (A, Left), move_right (D, Right), move_up (W, Up), move_down (S, Down), pause (Escape)",
         "priority": "medium",
         "dependencies": [],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-06-21T17:33:49.173Z"
       },
       {
         "id": "19",
@@ -502,9 +506,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-06-21T17:26:08.614Z",
+      "lastModified": "2026-06-21T17:46:48.884Z",
       "taskCount": 37,
-      "completedCount": 13,
+      "completedCount": 17,
       "tags": [
         "master"
       ]
