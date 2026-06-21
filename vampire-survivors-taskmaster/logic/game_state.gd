@@ -20,6 +20,7 @@ var chests: Array = []  # Array[Chest]
 var light_sources: Array = []  # Array[LightSource]
 var index: SpatialIndex = null  # rebuilt each tick by SpatialIndex.rebuild()
 var spawn_cursor: int = 0
+var spawn_timer: float = 0.0  # accumulator for wave-interval top-ups
 var event_cursor: int = 0
 var chest_count: int = 0
 var kills: int = 0

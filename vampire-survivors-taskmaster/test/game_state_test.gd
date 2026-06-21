@@ -8,6 +8,7 @@ func test_defaults() -> void:
 	assert_int(g.current_minute).is_equal(0)
 	assert_int(g.phase).is_equal(GameState.Phase.TITLE)
 	assert_int(g.spawn_cursor).is_equal(0)
+	assert_float(g.spawn_timer).is_equal(0.0)
 	assert_int(g.event_cursor).is_equal(0)
 	assert_int(g.chest_count).is_equal(0)
 	assert_int(g.kills).is_equal(0)
