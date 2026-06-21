@@ -23,7 +23,7 @@ Bash CWD resets to repo root each iteration (not the Godot subdir) — use absol
 CAVEAT: `--check-only --script X.gd` also does NOT load the cache, so it FALSELY reports "Could not find type <OtherClass>" when X references ANOTHER class_name that exists but isn't registered yet — a false alarm, not a real error. Use check-only only for errors WITHIN the single file; trust `--import` (full cache) for cross-class type resolution (re-running check-only after import clears the false alarm).
 
 ### Don't name vars/params after base-class properties
-In a script that extends a class (e.g. gdUnit4 test suites extend Node), a local var/param named `name`/`position`/`scale`/etc. shadows the base property → "shadowing an already-declared property" warning (noisy, not fatal). Use distinct names (`display_name`, etc.).
+In ANY script that extends a class (gdUnit4 test suites AND production Node/Node2D/Control scripts), a local var/param named `name`/`position`/`scale`/etc. shadows the base property → "shadowing an already-declared property" warning (noisy, not fatal). Use distinct names (`display_name`, `base_name`, etc.).
 
 ### Autoloads not usable from class_name scripts
 A `class_name` pure-logic script CANNOT reference an autoload singleton (e.g. `GameData`) — it fails global-class registration ("Identifier not declared"), which the gdUnit4 runner reports only as a cascade ("<Class> not declared"). Load resources directly by path (`load("res://data/...")`, Godot-cached) or pass data in. After fixing such a registration error, run a clean `godot --headless --path <proj> --import` BEFORE the suite — the runner caches global_script_class_cache and won't re-register otherwise.

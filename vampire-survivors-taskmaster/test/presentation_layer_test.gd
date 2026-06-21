@@ -85,23 +85,45 @@ func test_player_sprite_follows_and_flips() -> void:
 	assert_bool(p._player_sprite.flip_h).is_false()
 
 
-func test_gems_tinted_by_tier() -> void:
+func test_gems_textured_by_tier() -> void:
 	var p := _layer()
 	var gs := GameState.new()
 	gs.gems = [_gem(Vector2.ZERO, Gem.Tier.BLUE), _gem(Vector2.ONE, Gem.Tier.GREEN), _gem(Vector2(2, 2), Gem.Tier.RED)]
 	p.sync(gs)
-	assert_object(p._gem_pool[0].modulate).is_equal(PresentationLayer.GEM_COLORS[Gem.Tier.BLUE])
-	assert_object(p._gem_pool[1].modulate).is_equal(PresentationLayer.GEM_COLORS[Gem.Tier.GREEN])
-	assert_object(p._gem_pool[2].modulate).is_equal(PresentationLayer.GEM_COLORS[Gem.Tier.RED])
+	assert_object(p._gem_pool[0].texture).is_equal(p._tex_gems[Gem.Tier.BLUE])
+	assert_object(p._gem_pool[1].texture).is_equal(p._tex_gems[Gem.Tier.GREEN])
+	assert_object(p._gem_pool[2].texture).is_equal(p._tex_gems[Gem.Tier.RED])
 
 
-func test_boss_tint_differs_from_normal_enemy() -> void:
+func test_boss_texture_differs_from_normal_enemy() -> void:
 	var p := _layer()
 	var gs := GameState.new()
 	gs.enemies = [_enemy(Vector2.ZERO, false), _enemy(Vector2.ONE, true)]
 	p.sync(gs)
-	assert_object(p._enemy_pool[0].modulate).is_equal(PresentationLayer.ENEMY_COLOR)
-	assert_object(p._enemy_pool[1].modulate).is_equal(PresentationLayer.BOSS_COLOR)
+	assert_object(p._enemy_pool[0].texture).is_equal(p._tex_enemy)
+	assert_object(p._enemy_pool[1].texture).is_equal(p._tex_boss)
+
+
+func test_placeholder_textures_loaded() -> void:
+	var p := _layer()
+	# Real placeholder art is present, so textures must not be the icon fallback.
+	assert_object(p._tex_player).is_not_equal(PresentationLayer.FALLBACK)
+	assert_object(p._tex_enemy).is_not_equal(PresentationLayer.FALLBACK)
+	assert_object(p._tex_gems[Gem.Tier.RED]).is_not_equal(PresentationLayer.FALLBACK)
+	assert_object(p._player_sprite.texture).is_equal(p._tex_player)
+
+
+func test_reaper_uses_distinct_texture() -> void:
+	var p := _layer()
+	var gs := GameState.new()
+	var e := Enemy.new()
+	var d := EnemyDef.new()
+	d.id = "reaper"
+	e.def = d
+	e.is_boss = true
+	gs.enemies = [e]
+	p.sync(gs)
+	assert_object(p._enemy_pool[0].texture).is_equal(p._tex_reaper)
 
 
 func test_null_def_enemy_does_not_crash() -> void:

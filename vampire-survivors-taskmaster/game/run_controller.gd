@@ -28,17 +28,30 @@ const DEFAULT_STAGE_ID: String = "mad_forest"
 
 var state: GameState = null
 var _stage_def: StageDef = null
-var _presentation: PresentationLayer = null  # optional sibling view (Main.tscn)
-var _pause_screen: PauseScreen = null  # optional sibling menu (Main.tscn)
+var _presentation: PresentationLayer = null  # optional view (Main.tscn: World/)
+var _pause_screen: PauseScreen = null  # optional menu (Main.tscn: UI/)
+var _main_menu: MainMenu = null  # optional title screen (Main.tscn: UI/)
+var _camera: Camera2D = null  # optional follow-camera (Main.tscn: World/)
+var _bg_material: ShaderMaterial = null  # optional scrolling background material
+var _hud: HUD = null  # optional heads-up display (Main.tscn: UI/)
 
 
 func _ready() -> void:
 	_ensure_stage()
-	_presentation = get_node_or_null("PresentationLayer") as PresentationLayer
-	_pause_screen = get_node_or_null("PauseScreen") as PauseScreen
+	_presentation = get_node_or_null("World/PresentationLayer") as PresentationLayer
+	_camera = get_node_or_null("World/Camera2D") as Camera2D
+	_hud = get_node_or_null("UI/HUD") as HUD
+	var bg := get_node_or_null("Background/BackgroundRect") as CanvasItem
+	if bg != null and bg.material is ShaderMaterial:
+		_bg_material = bg.material
+	_pause_screen = get_node_or_null("UI/PauseScreen") as PauseScreen
 	if _pause_screen != null:
 		_pause_screen.resume_requested.connect(_on_resume_requested)
 		_pause_screen.quit_requested.connect(_on_quit_requested)
+	_main_menu = get_node_or_null("UI/MainMenu") as MainMenu
+	if _main_menu != null:
+		_main_menu.start_game.connect(_on_start_requested)
+		_main_menu.quit_game.connect(_on_quit_game)
 
 
 func _physics_process(delta: float) -> void:
@@ -72,11 +85,36 @@ func _on_quit_requested() -> void:
 	run_ended.emit(_build_summary())
 
 
+## Main menu Start -> begin a run and hide the title screen.
+func _on_start_requested() -> void:
+	start_run()
+	if _main_menu != null:
+		_main_menu.hide()
+
+
+## Main menu Quit -> exit the application.
+func _on_quit_game() -> void:
+	get_tree().quit()
+
+
 ## Render step: mirror the current state onto the view every frame (runs in all
 ## phases so the frozen frame still renders during LEVEL_UP / GAME_OVER).
 func _process(_delta: float) -> void:
-	if state != null and _presentation != null:
+	if state == null:
+		return
+	if _presentation != null:
 		_presentation.sync(state)
+	if _hud != null:
+		_hud.update_from_state(state)
+	_follow_camera(state.player.pos)
+
+
+## Center the camera on the player and scroll the tiled background to match.
+func _follow_camera(target: Vector2) -> void:
+	if _camera != null:
+		_camera.position = target
+	if _bg_material != null:
+		_bg_material.set_shader_parameter("camera_pos", target)
 
 
 ## The ordered system pipeline for one simulation step. Split out from
