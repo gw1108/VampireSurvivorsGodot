@@ -6,6 +6,9 @@ Canonical VS numbers (weapon per-level curves, Mad Forest wave table, enemy/boss
 ### Task-spec code is illustrative, not authoritative
 Taskmaster `details` often contain example GDScript that is subtly wrong vs the GDD/wiki data — reconcile, don't copy. Seen so far: StatSystem spec applied Hollow Heart as additive `*=(1+per_level*level)` (=+100% @L5) but the wiki is multiplicative `*=(1+per_level)^level` (=+149%); and it used `cooldown -= value` assuming a positive per_level, but GameDatabase stores Empty Tome's per_level already-signed (-0.08), so additive `+=` is correct. Cross-check spec formulas against the data before trusting them.
 
+### RunState pool fields are untyped
+RunState's enemies/projectiles/pickups/floaters/grid/spawn fields are untyped (Task 1 forward-refs), so `var x := state.enemies.spawn(...)` fails type inference everywhere downstream — annotate the result (`var x: int = ...`), and in system code cast pools to typed locals (`var enemies: EnemyPool = state.enemies`) for clean access. (A future cleanup could add the annotations to run_state.gd now that the classes exist.)
+
 ### Float32 test comparisons
 Values in a `PackedFloat32Array` are stored as 32-bit, so reading back e.g. `0.8` yields `0.80000001…`; assert with `is_equal_approx(...)`, not `==`. Integers and power-of-two fractions (1.0, 0.25, 12.5) round-trip exactly and compare fine with `==`.
 
