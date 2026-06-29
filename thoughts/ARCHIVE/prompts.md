@@ -122,3 +122,5 @@ task-master parse-prd .taskmaster/docs/systems.md -n 0 --tracelevel trace
 (Then ran the loop)
 
 task-master loop --tracelevel trace
+
+(Immediately hit this error... [Loop Error] MCP config not found at C:\GameDev\VampireSurvivorsGodot\.mcp.json. Add a .mcp.json with a "task-master-ai" mcpServers entry.)
