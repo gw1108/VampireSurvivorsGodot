@@ -124,6 +124,19 @@ func _test_xp_curve() -> void:
 	for l in range(1, 20):
 		to_l20 += GDB.xp_to_next(l)
 	_check(to_l20 == 1805.0, "cumulative XP to reach L20 == 1805")
+	# cumulative to reach L40 (sum of reqs 1..39): includes the +600 lump at
+	# req(20) but not req(40)'s +2400 (that funds the 40->41 step).
+	var to_l40 := 0.0
+	for l in range(1, 40):
+		to_l40 += GDB.xp_to_next(l)
+	_check(to_l40 == 8775.0, "cumulative XP to reach L40 == 8775 (6,000+)")
+	# the three tier slopes (+10 / +13 / +16), measured away from the lump levels
+	_check(GDB.xp_to_next(11) - GDB.xp_to_next(10) == 10.0, "tier 1: +10/level (L<=20)")
+	_check(GDB.xp_to_next(22) - GDB.xp_to_next(21) == 13.0, "tier 2: +13/level (L21-40)")
+	_check(GDB.xp_to_next(42) - GDB.xp_to_next(41) == 16.0, "tier 3: +16/level (L41+)")
+	# lumps are ONE-TIME (the next level drops back to the tier slope, not +lump)
+	_check(GDB.xp_to_next(21) < GDB.xp_to_next(20), "L20 +600 lump is one-time (L21 req is far lower)")
+	_check(GDB.xp_to_next(41) < GDB.xp_to_next(40), "L40 +2400 lump is one-time (L41 req is far lower)")
 
 func _test_gem_tiers() -> void:
 	_check(GDB.gem_tier(1.0) == &"blue", "1 XP -> blue")

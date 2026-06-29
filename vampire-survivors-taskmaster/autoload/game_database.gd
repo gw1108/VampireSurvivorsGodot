@@ -286,6 +286,25 @@ const XP_FOURTH_OPTION_LUCK := true  # 4th level-up option chance = 1 - 1/totalL
 static func weapon(id: StringName) -> Dictionary:
 	return WEAPONS.get(id, {})
 
+## Resolve one weapon stat to its FULL value at a given level: the base plus every
+## per-level delta in `levels[1 .. level-1]` (the WEAPON LEVEL CONVENTION above).
+## Mirrors WeaponSystem._resolve_weapon for a single key, so UI/preview code can
+## read a stat without rebuilding the whole weapon. `stat` is a delta key
+## (dmg/amount/area/speed/cooldown/duration/pierce); damage's base lives under
+## `base_dmg`, so "dmg" is mapped to it (every other stat's base shares its key).
+## NOTE: not special-cased for infinite pierce (base -1) — a caller reading
+## `pierce` must treat a negative result as "infinite" itself.
+static func weapon_stat_at_level(id: StringName, level: int, stat: String) -> float:
+	var def := weapon(id)
+	if def.is_empty():
+		return 0.0
+	var base_key := "base_dmg" if stat == "dmg" else stat
+	var value: float = float(def.get(base_key, 0.0))
+	var levels: Array = def.get("levels", [])
+	for i in range(1, mini(level, levels.size())):
+		value += float(levels[i].get(stat, 0.0))
+	return value
+
 static func passive(id: StringName) -> Dictionary:
 	return PASSIVES.get(id, {})
 
