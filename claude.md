@@ -17,6 +17,19 @@ Do NOT scan files under any folder named ARCHIVE unless specified.
 
 ---
 
+## Testing & Verification Philosophy
+
+Tests are **not required**. Do not use TDD / test-first / red-green-refactor on this project.
+
+- **Implementation and tuning come first.** Build the feature, then tune its numbers by feel — game rules and balance are discovered by playing, not specified up front.
+- **Tests emerge from play and from regressions, not from process.** Write a test when:
+  - playtesting (with agents or with humans) surfaces behavior worth pinning down, or
+  - a regression is detected and you want to keep it from recurring.
+- **Never propose writing a test before the implementation** for this project.
+- Feel, balance, and "is it fun" are verified by running and playing the game, not by assertion.
+
+---
+
 ## Workflow Orchestration
 
 ### 1. Subagent Strategy (Parallelize Intelligently)

@@ -101,4 +101,4 @@ Need to explicitly call out there is no audio.)
 
 @thoughts/shared/game-design/2026-06-25-ENG-vampire-survivors-clone.md . I want a document in .firecrawl folder called todo-missing-art that describes all the art assets we would need to implement that game-design document. Also reference every .jpg file in .firecrawl/wiki-offline/* as reference for screenshots of this game.
 
-(Doing a big pivot. Manually creating all art assets first with antigravity subscription.)
+(Doing a big pivot. Manually creating all art assets first with antigravity subscription. Also NEED to make sure it creates a windowed version of the game that is 1445x900)
