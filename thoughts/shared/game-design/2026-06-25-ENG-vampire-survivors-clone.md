@@ -147,7 +147,7 @@ Stat model: **HP, Power (contact damage), Move Speed, Knockback resist, XP value
 Stronger, often resistant minute-marker enemies (Glowing/Silver Bat, Giant Werewolf, Giant Mummy, Giant Blue Venus, etc.) that **don't despawn** and have a chance to drop a Treasure Chest.
 
 ### The Reaper
-The run-ender. Spawns at the stage time limit (**30:00 for Mad Forest**), one additional Reaper every following minute. HP 655,350 × player level, **Power 65,535 (one-shots)**, Move Speed 1,200, negative knockback (hits drag it toward you). Resists freeze partially, immune to instant-kill/debuff. Clears the field on spawn.
+The run-ender. Spawns at the stage time limit (**30:00 for Mad Forest**), one additional Reaper every following minute. HP 655,350, **Power 65,535 (one-shots)**, Move Speed 1,200, negative knockback (hits drag it toward you). Resists freeze partially, immune to instant-kill/debuff. Clears the field on spawn.
 
 ### Light Sources (braziers)
 Destructible props (HP 10). On destruction, roll the pickup drop table (Luck-weighted). Mad Forest: 10% spawn chance, up to 10 on screen, attempts every 1s, spawned off-screen.
@@ -161,18 +161,18 @@ Gems are the progression currency; chests (boss drops) are the build-spike curre
 
 ## Progression & Difficulty
 - **In-run power:** levels → weapon/passive choices → compounding stats; boss chests deliver burst upgrades. No evolutions and no carried-over meta stats in this slice.
-- **In-run difficulty:** the **per-minute Mad Forest wave table** drives escalation — enemy minimums and cadence ramp from 15 enemies @ 1.0s intervals (0:00) to 300 enemies @ 0.1s intervals (late game), tougher enemy types and bosses introduced each minute, swarm/formation events (Bat Swarm, Ghost Swarm, Flower Wall) at set timestamps, and the Reaper wall at 30:00. The full minute-by-minute table is implemented verbatim.
-- **Balance note (known consequence of the lean scope):** real Vampire Survivors expects evolved weapons and meta-shop stats to carry the back half of a run. Without those, surviving past ~min 20 will be **very hard** — acceptable for a vertical slice whose goal is to prove the loop; the Reaper is the wall regardless. (Tuning, or an optional shorter test cutoff, can be revisited after first playtest — not part of this spec.)
+- **In-run difficulty:** the **per-minute Mad Forest wave table** drives escalation — enemy minimums and cadence ramp from 15 enemies @ 1.0s intervals (0:00) to 300 enemies @ 0.1s intervals (late game), tougher enemy types and bosses introduced each minute, swarm/formation events (Bat Swarm, Ghost Swarm, Flower Wall) at set timestamps, and the Reaper wall at 30:00. The full minute-by-minute table is implemented verbatim — **faithful and untuned**: the slice ships the real Mad Forest curve as-is.
 - **Between-run progression:** none in this slice (no shop, unlocks, or Golden Eggs).
 
 ## World / Level Structure
 - **Stage:** **Mad Forest** — an open, grassy, near-obstacle-free field; the only destructibles are braziers. Authored stage parameters (spawn table, modifiers, events), Normal modifiers only (no Hyper/Inverse).
 - **Boundaries:** effectively endless — the field repeats/extends so the player never hits a hard wall; enemies spawn just off-screen on all four sides.
-- **Camera:** follows the player, fixed integer pixel-art zoom (see Art).
+- **Camera:** follows the player at a fixed pixel-art zoom that renders Antonio at ~50×62 px on screen (see Art & Visual Direction and the Visual GDD).
 
 ## Art & Visual Direction
 - **Style:** retro **pixel art**, top-down, matching the *Vampire Survivors* look in `Mad_Forest_gameplay.jpg` — green grass tiles, gothic monster sprites, bright blue/green/red gem pickups, chunky weapon VFX (white whip arcs, lightning, fire), readable silhouettes against dense mobs.
-- **Resolution / presentation:** **1280×720 window** with an **integer-scaled pixel-art camera** (the classic VS zoomed-in field of view; camera follows the player).
+- **Resolution / presentation:** **1445×900 default window (windowed)**, **resizable**, with a **fullscreen** mode. The world is drawn through a player-following **pixel-art camera** whose zoom magnifies native pixel-art sprites to fixed on-screen sizes (the classic VS zoomed-in field of view). Pixels stay crisp via NEAREST filtering (see `VISUAL_RULES.md`); **resizing the window or going fullscreen changes how much of the field is visible, not the on-screen size of sprites** — the HUD re-anchors to the new window edges.
+- **On-screen object sizes (at the default window/zoom):** the player (Antonio) is **~50×62 px**; **XP gems are ~20×20 px** (about a third of the player's height); **most weapon projectiles, pickups, and enemies are ≈ the player's size or smaller**. Exceptions: large/boss enemies (Werewolf, Giant Bat, Big Mummy, the giant variants, the Reaper) and area-weapon VFX (whip arc, Garlic aura, Lightning, fire) may exceed player size and scale with the **Area** stat. The full size table and the in-run HUD / level-up screen layouts live in the companion **Visual GDD** (`2026-06-25-ENG-vampire-survivors-visual-gdd.md`).
 - **First-playable assets:** **programmer-art placeholders are acceptable** for the slice (the existing project already ships placeholder sprites for grass, enemy, boss, and the three gem tiers); art polish is a later pass.
 - **Readability priority:** with up to 500 enemies on screen, player position, the health bar, gems, and incoming contact must stay legible — effects and mobs must not wash out the player.
 
@@ -180,7 +180,7 @@ Gems are the progression currency; chests (boss drops) are the build-spike curre
 Looping retro **chiptune/synth** background track for the stage (energetic, gothic). Punchy, layered SFX: weapon fire (per weapon family), enemy hit/death, XP-gem absorb (rising pitch as you chain), level-up chime, chest open, and an ominous Reaper sting. Audio's role is feedback density — every kill and pickup should "pop" so the screen-filling chaos stays satisfying rather than noisy. (Placeholder audio acceptable for the slice.)
 
 ## UI / UX
-Grounded in `Mad_Forest_gameplay.jpg` and `Level_up_screen.jpg`:
+Grounded in `Mad_Forest_gameplay.jpg` and `400px-Level_up_screen.jpg`; exact relative placement and proportions are specified in the companion **Visual GDD** (`2026-06-25-ENG-vampire-survivors-visual-gdd.md`).
 - **HUD (in-run):** XP bar across the very top; weapon + passive inventory icons top-left; **survival timer** top-center; **gold** and **kill count** top-right with the level indicator; player **health bar** under the character sprite.
 - **Level-up screen:** action pauses; centered "Level Up!" panel lists 3–4 choices (icon, name, "New!"/level, description); left rail shows the full live stat readout and inventory grid; right side has **Reroll / Skip / Banish** buttons with remaining counts (Reroll usable via Rerollo pickups; Skip/Banish disabled at 0 this slice).
 - **Pause screen:** dimmed overlay with "PAUSE" header (same visual treatment as the death overlay) showing the current build.
@@ -197,7 +197,7 @@ A single-stage vertical slice that proves the full core run:
 - **Weapons (8):** Whip, Knife, Magic Wand, Runetracer, Garlic, King Bible, Fire Wand, Lightning Ring — with full per-level (2–8) upgrade curves, base forms only.
 - **Passives (8):** Spinach, Armor, Hollow Heart, Empty Tome, Candelabrador, Bracer, Wings, Duplicator.
 - **Systems:** 8-dir movement, auto-attacking weapons, the stat model, XP/leveling, the 3–4 option level-up screen (Reroll fed by Rerollo pickups; Skip/Banish present but disabled at 0 charges), enemy spawn director + bosses + swarm events, Treasure Chests (item upgrades + gold), pickups (gems, chicken, gold, Rosary, Orologion, Vacuum, Nduja, Rerollo), light sources, contact damage + i-frames, death (Revival = 0, death final), the Reaper, HUD, pause, result screen.
-- **Presentation:** 1280×720, integer pixel-art zoom; programmer-art placeholders OK; placeholder audio OK.
+- **Presentation:** 1445×900 default window (resizable + fullscreen), pixel-art camera zoom (player ~50×62, XP gems ~20×20 on screen — see Visual GDD); programmer-art placeholders OK; placeholder audio OK.
 
 ### Non-Goals
 - Weapon **evolutions** and the full Treasure Chest evolution logic.

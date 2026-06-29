@@ -101,4 +101,24 @@ Need to explicitly call out there is no audio.)
 
 @thoughts/shared/game-design/2026-06-25-ENG-vampire-survivors-clone.md . I want a document in .firecrawl folder called todo-missing-art that describes all the art assets we would need to implement that game-design document. Also reference every .jpg file in .firecrawl/wiki-offline/* as reference for screenshots of this game.
 
-(Doing a big pivot. Manually creating all art assets first with antigravity subscription.)
+(Doing a big pivot. Manually creating all art assets first with antigravity subscription. Also NEED to make sure it creates a windowed version of the game that is 1445x900. Imported a TON of asset packs and UI and VFX and art and art spritesheet import skill.)
+
+(Ran clarify_game_design first)
+
+/clarify_game_design .firecrawl/vampire-survivors-gameplay-extracted.md
+
+(Then yolo asked it to be more specific about the visual size of everything.)
+
+Can we update thoughts\shared\game-design\2026-06-25-ENG-vampire-survivors-clone.md to be more clear and specific about the game resolution and size of objects in general? The game should be 1445x900 resolution windowed. Also support a resizable window and full screen mode. The size of the player character on screen should be about 50x62. Most weapon projectiles, pickupables, and enemies should be roughly the player size or smaller. XP gems should be about 20x20 on screen. Look to the 400px-Level_up_screen.jpg and Mad_Forest_gameplay.jpg to identify the relative size and placement of those two gameplay areas and detail them in the gdd or a visual-gdd file.
+
+(Then ran architect)
+
+/architect_game_systems thoughts\shared\game-design\2026-06-25-ENG-vampire-survivors-clone.md
+
+(Then ran task-master parse-prd -n 0)
+
+task-master parse-prd .taskmaster/docs/systems.md -n 0 --tracelevel trace
+
+(Then ran the loop)
+
+task-master loop --tracelevel trace
