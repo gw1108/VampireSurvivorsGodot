@@ -15,6 +15,25 @@ The role of this file is to describe common mistakes and confusion points that a
 Do NOT scan files in the /thoughts/ folder unless specified.
 Do NOT scan files under any folder named ARCHIVE unless specified.
 
+### Where things are (Project Map)
+
+This is a Godot 4.6 reimplementation of a Vampire Survivors vertical slice.
+
+**`vampire-survivors-taskmaster/`** — the actual Godot project (open *this* folder in the editor, not the repo root).
+- `addons/*` — addons and plugins go here. Don't edit or read this unless specified.
+- `test/` — test suites live here. New `*_test.gd` go here. (See Testing philosophy below — tests are optional.)
+- `reports/*` — generated gdUnit4 HTML/XML test reports. Generated output, not source.
+- Game source (scenes `.tscn`, scripts `.gd`, resources) will live under this folder.
+
+**Design, planning & research:**
+- `thoughts/shared/game-design/` — the Game Design Document(s). Source of truth for what to build. *(Do not scan unless asked.)*
+- `.firecrawl/` — offline reference: a scraped copy of the Vampire Survivors wiki (`wiki-offline/`, `.md` + `.htm` + screenshots), `vampire-survivors-gameplay-extracted.md`.
+
+**Art:**
+- `SourceArt/extracted_clean/` — ~96 cleaned PNG sprites (characters, enemies, items, weapons) extracted from the original game. Primary art source.
+- `SourceArt/kenney_ui-pack-rpg-expansion/` — UI asset pack for UI.
+- `SourceArt/*` — Other files and folders do not need to be opened or reasoned over unless specified.
+
 ---
 
 ## Testing & Verification Philosophy
