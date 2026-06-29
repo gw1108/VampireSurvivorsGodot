@@ -34,6 +34,9 @@ This is a Godot 4.6 reimplementation of a Vampire Survivors vertical slice.
 - `SourceArt/kenney_ui-pack-rpg-expansion/` — UI asset pack for UI.
 - `SourceArt/*` — Other files and folders do not need to be opened or reasoned over unless specified.
 
+**Visual / rendering rules:**
+- `VISUAL_RULES.md` (repo root) — **this is a pixel-art game.** Read it before importing or rendering any texture, sprite, or VFX. For the step-by-step sprite-sheet → animation import procedure, use the `import_sprite_sheet_animation` skill.
+
 ---
 
 ## Testing & Verification Philosophy
