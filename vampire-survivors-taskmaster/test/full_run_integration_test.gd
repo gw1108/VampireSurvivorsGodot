@@ -10,6 +10,8 @@ extends SceneTree
 ## RunController._tick loop and asserts the systems work TOGETHER end to end:
 ##   * early game: enemies spawn, the Whip auto-fires, kills drop gems, XP
 ##     accrues, and a real level-up (UI shown, option applied) resolves;
+##   * the Mad Forest ground stays mounted and scrolls with the camera (world-
+##     locked) as the hero walks, via the live render -> camera -> ground chain;
 ##   * pause/resume via the GameManager FSM shows the pause overlay;
 ##   * a boss spawns on its minute marker and, when slain, drops a chest;
 ##   * at 30:00 the field clears and the (immune) Reaper spawns;
@@ -83,6 +85,26 @@ func _process(_delta: float) -> bool:
 	_check(levelup_ui_ok, "level-up screen shows with 3-4 options")
 	_check(gm.current_state == gm.State.PLAYING, "run resumes after the level-up is resolved")
 	_check(player.stats != null, "stats are computed during the run")
+
+	# --- Phase 1b: the Mad Forest ground scrolls with the camera as the hero moves ---
+	# Drives the real runtime chain: PlayerState.pos -> player_shell.render (camera is
+	# the player's child, so it tracks) -> GroundLayer._process/_follow (world-lock).
+	var ground = rc.get_node("World/GroundLayer")
+	var pshell = rc.player_shell
+	var cam: Camera2D = pshell.get_node("Camera2D")
+	cam.make_current()
+	_check(ground is Sprite2D and ground.texture != null, "the scrolling ground is mounted under the run")
+	var saved_pos: Vector2 = player.pos
+	player.pos = Vector2(640.0, -480.0)         # walk the hero away from spawn
+	pshell.render(player)                        # the camera (player child) tracks the hero
+	ground._process(0.0)                         # the ground runs its own per-frame follow
+	var cam_pos: Vector2 = cam.global_position
+	_check(ground.position == Vector2(roundf(cam_pos.x), roundf(cam_pos.y)),
+		"the ground follows the camera (the world scrolls under the hero)")
+	_check(ground.region_rect.position == ground.position,
+		"the ground stays world-locked as it scrolls (seamless infinite field)")
+	player.pos = saved_pos                        # restore so later phases stay deterministic
+	pshell.render(player)
 
 	# --- Phase 2: pause / resume shows the build ---
 	gm.pause()
