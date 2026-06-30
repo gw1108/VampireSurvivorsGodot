@@ -64,7 +64,8 @@ Tests are **not required**. Do not use TDD / test-first / red-green-refactor on 
 - Prefer **thin vertical slices** over big-bang changes.
 
 ### 3. Self-Improvement Loop
-- After any user correction or a discovered mistake, add a new entry to `tasks/lessons.md`.
+- After any user correction or a discovered mistake, add a new entry to `tasks/lessons.md`. `tasks/lessons.md` is the catch-all log — always record there first.
+- Then, if the lesson is durable project knowledge tied to specific code or tooling (a tool gotcha, a setup step, a convention, an API quirk), **ask the user whether it should be promoted to a more permanent home** next to what it concerns — e.g. the relevant skill, a README, or this file. Durable knowledge lives beside the code; `lessons.md` keeps the process/meta lessons. Leave it in `lessons.md` if the user declines or it's a one-off process note.
 - Keep each entry minimal: a short **category header** (e.g. `### Research scoping`) plus a **one-line prevention rule**. Nothing else.
 - The category lets future agents skim and skip entries that look unrelated without reading the body. If a rule needs more context to be actionable, the category itself is too broad.
 - Before adding a new entry, check if an existing category already covers it; extend or refine that line instead of duplicating.
