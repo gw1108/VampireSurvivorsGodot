@@ -46,3 +46,9 @@
 *.pdf filter=lfs diff=lfs merge=lfs -text
 *.bytes filter=lfs diff=lfs merge=lfs -text
 *.scenetemplate filter=lfs diff=lfs merge=lfs -text
+
+# cosmic-agent-tools: append-only fleet trail docs. Concurrent appends from parallel
+# lanes auto-concatenate instead of conflicting. Append-only logs ONLY.
+DONE.md         merge=union
+NOTES.md        merge=union
+FEEL-REVIEW.md  merge=union

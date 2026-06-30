@@ -1,0 +1,21 @@
+# Fleet lane manifest -- single source of truth for the parallel-Ralph fan-out.
+# Consumed by ralph-fleet.ps1 (spawn) + refinery.ps1 / integrate.ps1 (merge) + plan.ps1 (planner).
+#
+# THE ONE RULE: each lane must own a DISJOINT set of files no other lane edits. That disjoint
+# ownership -- not conflict resolution -- is what keeps the fleet from thrashing. Each lane needs a
+# `lane-<name>.md` scoping header (copy lane-template.md). Default agent comes from fleet.config.ps1.
+#
+# format:   <name> [agent=claude|agy] [model=<id>] [header=<file>]
+#
+# --- STARTER PARTITION for the Vampire Survivors slice ---------------------------------------------
+# Disjoint BY FOLDER under vampire-survivors-taskmaster/ (folders are disjoint by construction, so the
+# lanes can't collide). The game source tree is still thin -- treat this as a starting point and let the
+# planner (plan.ps1) grow TODO.md into these per-lane sections. The shared SEAM is the main run scene +
+# player wiring; keep cross-lane edits there to a minimum (see each lane-*.md).
+enemies  agent=claude   # owns scripts/enemies/, scenes/enemies/        -- spawning, AI, waves
+weapons  agent=claude   # owns scripts/weapons/, scenes/weapons/        -- attacks, projectiles, upgrades
+ui       agent=claude   # owns scripts/ui/, scenes/ui/                  -- HUD, level-up screen, menus
+#
+# A generic worked reference header still ships as lane-api.md (and lane-template.md). For a HYBRID run,
+# point implementation lanes at agy (Antigravity/Gemini) and keep the refinery + planner on claude:
+#   enemies agent=agy model=gemini-3.5-flash

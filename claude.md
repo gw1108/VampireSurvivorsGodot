@@ -69,3 +69,34 @@ Tests are **not required**. Do not use TDD / test-first / red-green-refactor on 
 - Keep each entry minimal: a short **category header** (e.g. `### Research scoping`) plus a **one-line prevention rule**. Nothing else.
 - The category lets future agents skim and skip entries that look unrelated without reading the body. If a rule needs more context to be actionable, the category itself is too broad.
 - Before adding a new entry, check if an existing category already covers it; extend or refine that line instead of duplicating.
+
+---
+
+## Autonomous agent tooling (cosmic-agent-tools)
+
+This repo has three installed tools for running coding agents autonomously. **Read the linked doc before
+you run, configure, or reason about any of them.**
+
+- **Fleet orchestrator — `ralph/`** — many agent loops grind in parallel, each in its own git worktree
+  with a hard file scope, while a **refinery** merges their branches under a gate and a **planner** keeps
+  the backlog file-disjoint. Read [`ralph/SETUP.md`](ralph/SETUP.md). Entry points (PowerShell, from repo
+  root): `./ralph/start-fleet.ps1 -LaneIterations 3 -RefineryIterations 12` (bounded), `-WithPlanner`
+  (open-ended), `./ralph/watch-fleet.ps1` (dashboard), `./ralph/ralph.ps1 -Random` (single loop, no
+  fan-out). Project knobs live in `ralph/fleet.config.ps1`; lanes in `ralph/lanes.txt` + `ralph/lane-*.md`.
+- **Workshop — `workshop/`** — the SINGLE-agent counterpart: one agent, fresh context each pass, draining
+  an operator-curated backlog toward `workshop/GOAL.md`, with a live web UI. Read
+  [`workshop/README.md`](workshop/README.md). Run: `node workshop/ui/server.js` → http://localhost:4455,
+  or `./workshop/start-workshop.ps1`. Knobs in `workshop/workshop.config.ps1`.
+- **Skill — `.claude/skills/2d-game-art-direction/`** — art-direction decision guide for 2D games
+  (palette, value/contrast, composition, shape language, sketch→polish). Loads on demand.
+
+**The gate** (the whole safety story for the fleet) is `ralph/gate.ps1`: headless Godot import +
+the gdUnit4 suite. Keep it honest as the game grows.
+
+### ⚠️ Sacred files — do not destroy
+- `ralph/PROMPT.md`, `ralph/PLAN-PROMPT.md`, `workshop/PROMPT.md`, `workshop/GOAL.md`,
+  `workshop/backlog.json` are the operator's REAL task files and are **gitignored — overwriting or
+  deleting them is unrecoverable**. NEVER `cp`/`Write`/`rm` them to smoke-test. Point any test at a
+  throwaway prompt: `./ralph/ralph.ps1 -Prompt "$env:TEMP/ralph-test.md" -Iterations 1 -SkipPermissions:$false`.
+- The fleet/workshop run agents UNATTENDED (`--dangerously-skip-permissions`). Only run where you can
+  fully revert via git. Start bounded and keep the gate honest.
