@@ -55,3 +55,8 @@ ExportedObj/
 
 # Python bytecode cache files (auto-generated when Python imports a module; not source)
 *.pyc
+
+# Secrets / local environment — never commit API keys
+.env
+.env.*
+!.env.example
