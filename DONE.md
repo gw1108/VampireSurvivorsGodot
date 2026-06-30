@@ -9,5 +9,5 @@ Each Ralph/Workshop pass appends `[x] <title> — <what landed>` here. Union-mer
     headless run, and a gdUnit4 smoke test (boots → spawns → makes kills) — gate green.
 [x] Periodic goal-aware playtest-review loop — tools/playtest-review.ps1 (play via agent_play →
     score vs workshop/GOAL.md → write FEEL-REVIEW.md + append backlog items); Workshop PROMPT reads
-    FEEL-REVIEW.md each pass. Play step needs ANTHROPIC_API_KEY + a Web export preset (web export
-    templates already installed; preflight auto-detects Godot's real dir incl. scoop self-contained).
+    FEEL-REVIEW.md each pass. Play step's only remaining setup is a "Web" export preset (web export
+    templates installed + ANTHROPIC_API_KEY present; preflight auto-detects Godot's real templates dir).

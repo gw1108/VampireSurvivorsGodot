@@ -93,9 +93,9 @@ you run, configure, or reason about any of them.**
   `agent_play` harness, then a goal-aware synthesis scores it against `workshop/GOAL.md`, writes the
   newest entry to `FEEL-REVIEW.md`, and appends backlog items the Workshop then implements. Run with
   `-Watch` (or `/loop 30m ./tools/playtest-review.ps1`) for the periodic "play → score → steer" loop.
-  Its PLAY step needs `ANTHROPIC_API_KEY` in `.env` + a "Web" export preset (Godot web export
-  templates are already installed — scoop self-contained, under `…\current\editor_data\export_templates\`
-  — and the preflight auto-detects them). It still scores from the latest run if the play step can't run.
+  Its PLAY step's only remaining setup is a **"Web" export preset** (add it once in the editor) — the
+  Godot web export templates (scoop self-contained, auto-detected) and `ANTHROPIC_API_KEY` in `.env` are
+  already in place. It still scores from the latest run if the play step can't run.
 
 **The gate** (the whole safety story for the fleet) is `ralph/gate.ps1`: headless Godot import +
 the gdUnit4 suite (now incl. a run-scene smoke test). Keep it honest as the game grows.

@@ -36,5 +36,7 @@ will keep adding goal-driven items here / in `workshop/backlog.json`.
 - [x] Godot 4.6 **web export templates** — already installed. scoop runs Godot self-contained (a `._sc_`
       marker by the binary), so they live at `scoop\apps\godot\current\editor_data\export_templates\4.6.2.stable`
       (junctioned to `scoop\persist\godot\…`), not `%APPDATA%`. The reviewer's preflight detects this.
+- [x] **ANTHROPIC_API_KEY** in repo-root `.env` — already set (the harness drives the game via the API).
+      (`AGENT_MODEL` and `GODOT` are set in `.env` too.)
 - [ ] Add a **"Web" export preset** in the editor (Export dialog) — ideally with Thread Support off.
-- [ ] Put a real **ANTHROPIC_API_KEY** in repo-root `.env` (the agent_play harness drives the game via the API).
+      **This is the ONLY remaining blocker for the PLAY step;** the SCORE step already works as-is.
