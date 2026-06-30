@@ -1,0 +1,22 @@
+[gd_resource type="SpriteFrames" load_steps=2 format=3 uid="uid://efbigbat"]
+
+[ext_resource type="Texture2D" uid="uid://bvxg0o23ghqb7" path="res://assets/sprites/enemies/big_bat.png" id="1_tex"]
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_tex")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 8.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_tex")
+}],
+"loop": true,
+"name": &"walk",
+"speed": 12.0
+}]

@@ -100,6 +100,12 @@ func sync_enemies(enemies: EnemyPool) -> void:
 		if enemies.alive[i]:
 			sprite.position = enemies.pos[i]
 			sprite.modulate = HIT_FLASH_MODULATE if enemies.hit_flash[i] > 0.0 else Color.WHITE
+			# Swap in the enemy's SpriteFrames (by type) only when it changes, then
+			# (re)start the walk loop. null frames (unmapped id) leaves the slot as-is.
+			var frames: SpriteFrames = game_db.enemy_sprite_frames(enemies.type_id[i])
+			if frames != null and sprite.sprite_frames != frames:
+				sprite.sprite_frames = frames
+				sprite.play(&"walk")
 			sprite.visible = true
 		else:
 			sprite.visible = false
@@ -113,6 +119,10 @@ func sync_projectiles(projectiles: ProjectilePool) -> void:
 			sprite.scale = Vector2.ONE * projectiles.area_scale[i]
 			if projectiles.vel[i].length_squared() > 0.0:
 				sprite.rotation = projectiles.vel[i].angle()
+			# Texture by owning weapon; null (unmapped) leaves the slot's last one.
+			var tex: Texture2D = game_db.projectile_sprite(projectiles.owner_weapon[i])
+			if tex != null and sprite.texture != tex:
+				sprite.texture = tex
 			sprite.visible = true
 		else:
 			sprite.visible = false
@@ -123,9 +133,31 @@ func sync_pickups(pickups: PickupPool) -> void:
 		var sprite := pickup_sprites[i]
 		if pickups.alive[i]:
 			sprite.position = pickups.pos[i]
+			# Texture by pickup kind (+ gem tier); null leaves the slot's last one.
+			var tex: Texture2D = game_db.pickup_sprite(_pickup_key(pickups.kind[i], pickups.gem_tier[i]))
+			if tex != null and sprite.texture != tex:
+				sprite.texture = tex
 			sprite.visible = true
 		else:
 			sprite.visible = false
+
+## Map a PickupPool kind (+ gem tier for gems) to its PICKUP_SPRITES view key.
+func _pickup_key(kind: int, gem_tier: int) -> StringName:
+	match kind:
+		PickupPool.Kind.GEM:
+			match gem_tier:
+				PickupPool.GemTier.GREEN: return &"gem_green"
+				PickupPool.GemTier.RED: return &"gem_red"
+				_: return &"gem_blue"
+		PickupPool.Kind.GOLD: return &"gold"
+		PickupPool.Kind.CHICKEN: return &"chicken"
+		PickupPool.Kind.ROSARY: return &"rosary"
+		PickupPool.Kind.OROLOGION: return &"orologion"
+		PickupPool.Kind.VACUUM: return &"vacuum"
+		PickupPool.Kind.NDUJA: return &"nduja"
+		PickupPool.Kind.REROLLO: return &"rerollo"
+		PickupPool.Kind.CHEST: return &"chest"
+	return &""
 
 func sync_floaters(floaters: FloatingTextPool) -> void:
 	var n := mini(floater_labels.size(), FloatingTextPool.CAPACITY)

@@ -1,0 +1,22 @@
+[gd_resource type="SpriteFrames" load_steps=2 format=3 uid="uid://efmummy"]
+
+[ext_resource type="Texture2D" uid="uid://dhtfepqcluldl" path="res://assets/sprites/enemies/mummy.png" id="1_tex"]
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_tex")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 8.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_tex")
+}],
+"loop": true,
+"name": &"walk",
+"speed": 12.0
+}]

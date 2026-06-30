@@ -193,6 +193,66 @@ const ENEMIES := {
 	&"reaper": { name = "The Reaper", hp = 655350.0, power = 65535.0, move_speed = 1200.0, knockback_resist = -0.5, xp = 0.0, ai = "homing", is_boss = true, hp_per_level = true, immune = true },
 }
 
+# ===================== Enemy view art =====================
+# SpriteFrames per enemy id, resolved by ViewSync. View-layer only: the stat
+# data above stays free of resource coupling (EnemyPool/systems never read it).
+# Visually-similar ids share one sheet -- bosses reuse their base creature and
+# swarm variants reuse the base art -- so the 22-id roster maps onto 13 imports.
+const ENEMY_SPRITE_FRAMES := {
+	&"zombie": preload("res://assets/sprites/enemies/zombie.tres"),
+	&"skeleton": preload("res://assets/sprites/enemies/skeleton.tres"),
+	&"ghost": preload("res://assets/sprites/enemies/ghost.tres"),
+	&"ghost_swarm": preload("res://assets/sprites/enemies/ghost.tres"),
+	&"mudman_gray": preload("res://assets/sprites/enemies/mudman.tres"),
+	&"mudman_green": preload("res://assets/sprites/enemies/mudman.tres"),
+	&"werewolf": preload("res://assets/sprites/enemies/werewolf.tres"),
+	&"giant_werewolf": preload("res://assets/sprites/enemies/werewolf.tres"),
+	&"giant_bat": preload("res://assets/sprites/enemies/big_bat.tres"),
+	&"glowing_bat": preload("res://assets/sprites/enemies/big_bat.tres"),
+	&"bat": preload("res://assets/sprites/enemies/bat.tres"),
+	&"bat_swarm": preload("res://assets/sprites/enemies/bat.tres"),
+	&"bat_red": preload("res://assets/sprites/enemies/bat_albino.tres"),
+	&"silver_bat": preload("res://assets/sprites/enemies/bat_albino.tres"),
+	&"big_mummy": preload("res://assets/sprites/enemies/mummy.tres"),
+	&"giant_mummy": preload("res://assets/sprites/enemies/mummy.tres"),
+	&"mantichana": preload("res://assets/sprites/enemies/mantis.tres"),
+	&"giant_mantichana": preload("res://assets/sprites/enemies/mantis_warrior.tres"),
+	&"venus": preload("res://assets/sprites/enemies/piranha_plant.tres"),
+	&"giant_blue_venus": preload("res://assets/sprites/enemies/piranha_plant.tres"),
+	&"flower_wall": preload("res://assets/sprites/enemies/piranha_plant.tres"),
+	&"reaper": preload("res://assets/sprites/enemies/grim_reaper.tres"),
+}
+
+# Pickup textures keyed by a view key (ViewSync maps PickupPool kind/gem_tier ->
+# key). Plain Texture2D (Sprite2D pool, no animation). View-layer only.
+# `chest` is a placeholder (no dedicated chest art): the large gold bag stands in.
+const PICKUP_SPRITES := {
+	&"gem_blue": preload("res://assets/sprites/pickups/gem_blue.png"),
+	&"gem_green": preload("res://assets/sprites/pickups/gem_green.png"),
+	&"gem_red": preload("res://assets/sprites/pickups/gem_red.png"),
+	&"gold": preload("res://assets/sprites/pickups/gold_coin.png"),
+	&"chicken": preload("res://assets/sprites/pickups/floor_chicken.png"),
+	&"rosary": preload("res://assets/sprites/pickups/rosary.png"),
+	&"orologion": preload("res://assets/sprites/pickups/frozen_clock.png"),
+	&"vacuum": preload("res://assets/sprites/pickups/vacuum.png"),
+	&"nduja": preload("res://assets/sprites/pickups/red_hot_chili_pepper.png"),
+	&"rerollo": preload("res://assets/sprites/pickups/dice.png"),
+	&"chest": preload("res://assets/sprites/pickups/chest.png"),
+}
+
+# Projectile textures keyed by the OWNING weapon id (ProjectilePool.owner_weapon).
+# Plain Texture2D; ViewSync rotates/scales them. View-layer only.
+const WEAPON_PROJECTILE_SPRITES := {
+	&"whip": preload("res://assets/sprites/projectiles/whip.png"),
+	&"knife": preload("res://assets/sprites/projectiles/knife.png"),
+	&"magic_wand": preload("res://assets/sprites/projectiles/magic_wand.png"),
+	&"runetracer": preload("res://assets/sprites/projectiles/runetracer.png"),
+	&"garlic": preload("res://assets/sprites/projectiles/garlic.png"),
+	&"king_bible": preload("res://assets/sprites/projectiles/king_bible.png"),
+	&"fire_wand": preload("res://assets/sprites/projectiles/fire_wand.png"),
+	&"lightning_ring": preload("res://assets/sprites/projectiles/lightning_ring.png"),
+}
+
 # ===================== Mad Forest per-minute wave table =====================
 # One entry per minute 0..30 (index == minute). `count` is the periodic spawn
 # minimum, `interval` the spawn interval in seconds. `boss` is the minute-marker
@@ -310,6 +370,18 @@ static func passive(id: StringName) -> Dictionary:
 
 static func enemy(id: StringName) -> Dictionary:
 	return ENEMIES.get(id, {})
+
+## SpriteFrames for an enemy id (view layer), or null if none is mapped.
+static func enemy_sprite_frames(id: StringName) -> SpriteFrames:
+	return ENEMY_SPRITE_FRAMES.get(id, null)
+
+## Texture for a pickup view key (see PICKUP_SPRITES), or null if none is mapped.
+static func pickup_sprite(key: StringName) -> Texture2D:
+	return PICKUP_SPRITES.get(key, null)
+
+## Texture for a weapon's projectile (by owning weapon id), or null if unmapped.
+static func projectile_sprite(weapon_id: StringName) -> Texture2D:
+	return WEAPON_PROJECTILE_SPRITES.get(weapon_id, null)
 
 ## Wave entry for the given minute. Minutes past the table clamp to the final
 ## (Reaper) entry, matching "one more Reaper every minute after 30:00".

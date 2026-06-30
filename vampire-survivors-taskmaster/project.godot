@@ -16,10 +16,22 @@ run/main_scene="res://scenes/main_menu.tscn"
 config/features=PackedStringArray("4.6", "GL Compatibility")
 config/icon="res://icon.svg"
 
+[display]
+
+window/size/viewport_width=1445
+window/size/viewport_height=900
+window/size/resizable=true
+window/stretch/mode="disabled"
+
 [autoload]
 
 GameDatabase="*res://autoload/game_database.gd"
 GameManager="*res://autoload/game_manager.gd"
+AudioManager="*res://autoload/audio_manager.gd"
+
+[audio]
+
+buses/default_bus_layout="res://default_bus_layout.tres"
 
 [input]
 

@@ -80,6 +80,10 @@ func _test_sync_enemies(vs, rs) -> void:
 	_check(vs.enemy_sprites[a].modulate == vs.HIT_FLASH_MODULATE, "hit-flash enemy uses flash modulate")
 	_check(vs.enemy_sprites[b].modulate == Color.WHITE, "non-flashing enemy uses white modulate")
 	_check(vs.enemy_sprites[2].visible == false, "unused slot stays hidden")
+	# Task 24: enemy sprites get their SpriteFrames from the db and play "walk".
+	_check(vs.enemy_sprites[a].sprite_frames == GDB.enemy_sprite_frames(&"zombie"), "enemy sprite_frames sourced from db by type")
+	_check(vs.enemy_sprites[a].sprite_frames != null, "zombie SpriteFrames resolved (non-null)")
+	_check(vs.enemy_sprites[a].animation == &"walk", "enemy plays the walk animation")
 	# despawn and re-sync -> hidden
 	e.despawn(a)
 	vs.sync_enemies(e)
@@ -94,6 +98,12 @@ func _test_sync_projectiles(vs, rs) -> void:
 	_check(vs.projectile_sprites[idx].position == Vector2(5, 5), "projectile position synced")
 	_check(vs.projectile_sprites[idx].scale == Vector2(2, 2), "projectile scale from area_scale")
 	_check(is_equal_approx(vs.projectile_sprites[idx].rotation, 0.0), "projectile rotation from velocity angle")
+	# Task 25: projectile texture sourced from db by owning weapon.
+	var widx := p.spawn(Vector2(0, 0), Vector2(0, 5), { owner_weapon = &"magic_wand" })
+	vs.sync_projectiles(p)
+	_check(vs.projectile_sprites[widx].texture == GDB.projectile_sprite(&"magic_wand"), "projectile texture sourced from db by owner weapon")
+	_check(vs.projectile_sprites[widx].texture != null, "magic_wand projectile texture resolved (non-null)")
+	p.despawn(widx)
 	p.despawn(idx)
 	vs.sync_projectiles(p)
 	_check(vs.projectile_sprites[idx].visible == false, "despawned projectile hidden")
@@ -104,6 +114,9 @@ func _test_sync_pickups(vs, rs) -> void:
 	vs.sync_pickups(p)
 	_check(vs.pickup_sprites[idx].visible, "pickup visible after sync")
 	_check(vs.pickup_sprites[idx].position == Vector2(7, 8), "pickup position synced")
+	# Task 25: pickup texture sourced from db by kind (+ gem tier).
+	_check(vs.pickup_sprites[idx].texture == GDB.pickup_sprite(&"gem_blue"), "blue gem texture sourced from db")
+	_check(vs.pickup_sprites[idx].texture != null, "blue gem texture resolved (non-null)")
 	p.despawn(idx)
 	vs.sync_pickups(p)
 	_check(vs.pickup_sprites[idx].visible == false, "despawned pickup hidden")

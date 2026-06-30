@@ -300,8 +300,9 @@
         "details": "**res://autoload/audio_manager.gd:**\n```gdscript\nextends Node\n\nvar sfx_pool: Array[AudioStreamPlayer] = []\nvar music_player: AudioStreamPlayer\n\nconst POOL_SIZE := 8\n\n# Placeholder audio references (replace with actual assets)\nvar sfx_hit: AudioStream = null\nvar sfx_death: AudioStream = null\nvar sfx_gem: AudioStream = null\nvar sfx_levelup: AudioStream = null\nvar sfx_chest: AudioStream = null\nvar music_stage: AudioStream = null\n\nfunc _ready() -> void:\n    # Create SFX pool\n    for i in range(POOL_SIZE):\n        var player := AudioStreamPlayer.new()\n        player.bus = \"SFX\"\n        add_child(player)\n        sfx_pool.append(player)\n    \n    # Create music player\n    music_player = AudioStreamPlayer.new()\n    music_player.bus = \"Music\"\n    add_child(music_player)\n\nfunc play(event: StringName) -> void:\n    var stream: AudioStream = null\n    match event:\n        &\"hit\": stream = sfx_hit\n        &\"death\": stream = sfx_death\n        &\"gem\": stream = sfx_gem\n        &\"levelup\": stream = sfx_levelup\n        &\"chest\": stream = sfx_chest\n    \n    if stream == null: return\n    \n    # Find available player\n    for player in sfx_pool:\n        if not player.playing:\n            player.stream = stream\n            player.play()\n            return\n\nfunc play_music(track: StringName) -> void:\n    match track:\n        &\"stage\":\n            if music_stage:\n                music_player.stream = music_stage\n                music_player.play()\n\nfunc stop_music() -> void:\n    music_player.stop()\n```\n\nRegister as autoload. Actual audio assets can be added later; the system is ready to hook into collision/leveling events.",
         "priority": "low",
         "dependencies": [],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-06-30T02:44:14.695Z"
       },
       {
         "id": "22",
@@ -314,8 +315,9 @@
           "12",
           "21"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-06-30T02:46:33.574Z"
       },
       {
         "id": "23",
@@ -341,8 +343,9 @@
           "15",
           "23"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-06-30T02:36:02.292Z"
       },
       {
         "id": "25",
@@ -354,8 +357,9 @@
           "15",
           "24"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-06-30T02:40:31.053Z"
       },
       {
         "id": "26",
@@ -462,15 +466,16 @@
           "20",
           "22"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-06-30T02:55:13.973Z"
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-06-30T02:29:16.419Z",
+      "lastModified": "2026-06-30T02:55:13.974Z",
       "taskCount": 32,
-      "completedCount": 25,
+      "completedCount": 30,
       "tags": [
         "master"
       ]
