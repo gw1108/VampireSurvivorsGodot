@@ -33,6 +33,8 @@ will keep adding goal-driven items here / in `workshop/backlog.json`.
 - [x] `scenes/run.tscn` + player (move, HP, XP pickup) wiring spawner + weapon. Built in code in `scripts/run/run.gd`.
 
 ## Setup prerequisites (one-time, for the playtest reviewer's PLAY step)
-- [ ] Install Godot 4.6 **web export templates** (editor → Manage Export Templates) — required to export the web build.
+- [x] Godot 4.6 **web export templates** — already installed. scoop runs Godot self-contained (a `._sc_`
+      marker by the binary), so they live at `scoop\apps\godot\current\editor_data\export_templates\4.6.2.stable`
+      (junctioned to `scoop\persist\godot\…`), not `%APPDATA%`. The reviewer's preflight detects this.
 - [ ] Add a **"Web" export preset** in the editor (Export dialog) — ideally with Thread Support off.
 - [ ] Put a real **ANTHROPIC_API_KEY** in repo-root `.env` (the agent_play harness drives the game via the API).

@@ -14,8 +14,10 @@
   feedback on how close it is to the goal" loop.
 
   PREREQUISITES for the PLAY step (the SCORE step only needs Claude Code):
-    - Godot 4.6 web export templates installed (Editor > Manage Export Templates > Download &
-      Install, or drop the matching _export_templates.tpz into %APPDATA%\Godot\export_templates\).
+    - Godot web export templates for this version. Auto-detected — incl. scoop's SELF-CONTAINED
+      layout (a ._sc_/_sc_ marker next to the real binary redirects editor data to
+      <bindir>\editor_data\export_templates, NOT %APPDATA%). Install via Editor > Manage Export
+      Templates only if the preflight reports them missing.
     - ANTHROPIC_API_KEY set in the repo-root .env  (the harness drives the game via the API).
     - A "Web" export preset in vampire-survivors-taskmaster/export_presets.cfg (the harness needs
       one named per agent_play config; default "Web"). Create it once in the editor's Export dialog.
@@ -48,18 +50,51 @@ $feelFile     = Join-Path $root 'FEEL-REVIEW.md'
 
 function Write-Note($m, $c = 'Cyan') { Write-Host "[playtest-review] $m" -ForegroundColor $c }
 
+# Resolve the export-templates dir Godot ACTUALLY uses for a given version. Godot does NOT always
+# use %APPDATA%\Godot: a scoop install is SELF-CONTAINED (a ._sc_ / _sc_ marker next to the real
+# binary redirects editor data to <bindir>\editor_data\export_templates, which scoop junctions to
+# its persist dir). And `godot` on PATH is usually a scoop SHIM, so resolve the real exe via
+# godot.shim first. Returns the version dir if found, else $null. Search order = how Godot resolves.
+function Resolve-GodotTemplatesDir {
+  param([string]$VersionDir)
+  $exe = (Get-Command godot -ErrorAction SilentlyContinue).Source
+  $realExe = $exe
+  if ($exe) {
+    $shimMeta = Join-Path (Split-Path $exe -Parent) 'godot.shim'
+    if (Test-Path $shimMeta) {
+      $pathLine = Get-Content $shimMeta | Where-Object { $_ -match '^\s*path\s*=' } | Select-Object -First 1
+      if ($pathLine) { $realExe = ($pathLine -replace '^\s*path\s*=\s*', '').Trim().Trim('"') }
+    }
+  }
+  $roots = @()
+  if ($realExe) {
+    $bindir = Split-Path $realExe -Parent
+    if ((Test-Path (Join-Path $bindir '._sc_')) -or (Test-Path (Join-Path $bindir '_sc_'))) {
+      $roots += (Join-Path $bindir 'editor_data\export_templates')                            # self-contained (scoop)
+    }
+  }
+  $roots += (Join-Path $env:APPDATA 'Godot\export_templates')                                  # OS default
+  $roots += (Join-Path $env:USERPROFILE 'scoop\persist\godot\editor_data\export_templates')    # scoop persist (fallback)
+  foreach ($r in $roots) {
+    $vdir = Join-Path $r $VersionDir
+    if (Test-Path $vdir) { return $vdir }
+  }
+  return $null
+}
+
 function Test-Prereqs {
-  $godot = (Get-Command godot -ErrorAction SilentlyContinue)
-  if (-not $godot) { Write-Note 'godot not on PATH — cannot play or score.' 'Red'; return $null }
+  if (-not (Get-Command godot -ErrorAction SilentlyContinue)) { Write-Note 'godot not on PATH — cannot play or score.' 'Red'; return $null }
   $envFile = Join-Path $root '.env'
   $hasKey = (Test-Path $envFile) -and (Select-String -Path $envFile -Pattern '^\s*ANTHROPIC_API_KEY=\S' -Quiet)
   $ver = ((& godot --version) | Select-Object -First 1).Trim()
   $m = [regex]::Match($ver, '^\d+\.\d+(?:\.\d+)?\.[a-z]+\d*')
   $tplName = if ($m.Success) { $m.Value } else { $ver }
-  $tplDir = Join-Path $env:APPDATA "Godot\export_templates\$tplName"
-  $hasTpl = (Test-Path $tplDir) -and (@(Get-ChildItem $tplDir -ErrorAction SilentlyContinue).Count -gt 0)
+  $tplDir = Resolve-GodotTemplatesDir -VersionDir $tplName
+  # PLAY needs WEB templates specifically (web_*.zip), not just any platform.
+  $hasTpl = [bool]$tplDir -and (@(Get-ChildItem (Join-Path $tplDir 'web_*.zip') -ErrorAction SilentlyContinue).Count -gt 0)
+  $tplShown = if ($tplDir) { $tplDir } else { "none found (searched self-contained editor_data, %APPDATA%, scoop persist for $tplName)" }
   $hasPreset = Test-Path (Join-Path $root 'vampire-survivors-taskmaster\export_presets.cfg')
-  [pscustomobject]@{ Key = $hasKey; Templates = $hasTpl; Preset = $hasPreset; TplDir = $tplDir }
+  [pscustomobject]@{ Key = $hasKey; Templates = $hasTpl; Preset = $hasPreset; TplDir = $tplShown }
 }
 
 function Invoke-Play {
@@ -67,7 +102,7 @@ function Invoke-Play {
   if ($SkipPlay) { Write-Note 'SkipPlay set — scoring from the latest existing run.' 'Yellow'; return }
   $blockers = @()
   if (-not $pre.Key)       { $blockers += "ANTHROPIC_API_KEY missing in .env (the harness needs it)." }
-  if (-not $pre.Templates) { $blockers += "Web export templates not installed at $($pre.TplDir)." }
+  if (-not $pre.Templates) { $blockers += "Web export templates not found ($($pre.TplDir))." }
   if (-not $pre.Preset)    { $blockers += "No export_presets.cfg with a 'Web' preset (create it once in the editor)." }
   if ($blockers.Count) {
     Write-Note 'Play step skipped — fix these once, then fresh playthroughs resume:' 'Yellow'
