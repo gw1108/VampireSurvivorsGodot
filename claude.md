@@ -94,8 +94,10 @@ you run, configure, or reason about any of them.**
   newest entry to `FEEL-REVIEW.md`, and appends backlog items the Workshop then implements. Run with
   `-Watch` (or `/loop 30m ./tools/playtest-review.ps1`) for the periodic "play → score → steer" loop.
   Its PLAY step's only remaining setup is a **"Web" export preset** (add it once in the editor) — the
-  Godot web export templates (scoop self-contained, auto-detected) and `ANTHROPIC_API_KEY` in `.env` are
-  already in place. It still scores from the latest run if the play step can't run.
+  Godot web export templates (scoop self-contained, auto-detected) are already in place. The harness
+  and SCORE step both drive the LLM through the **Claude Code CLI** (`claude -p`), billed to your
+  subscription — no `ANTHROPIC_API_KEY` needed; just stay logged in (`claude /login`). It still scores
+  from the latest run if the play step can't run.
 
 **The gate** (the whole safety story for the fleet) is `ralph/gate.ps1`: headless Godot import +
 the gdUnit4 suite (now incl. a run-scene smoke test). Keep it honest as the game grows.

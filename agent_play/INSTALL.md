@@ -12,9 +12,10 @@ That installer is **idempotent** (safe to re-run) and does:
 2. `npx playwright install chromium`
 3. Detects the Godot project (or, with several, lets you pick / `--project <dir>`) and saves the
    choice to `agent_play/agent_play.config.json`
-4. Gitignores `.env` (and drops a secret-free `.env.example`), then ensures `ANTHROPIC_API_KEY`
-   in the repo-root `.env` (prompts if run in a terminal; or pass `--api-key <key>`) — so the key
-   is never committable. If `.env` was *already* committed, it warns you to rotate + purge it.
+4. Gitignores `.env` (and drops a secret-free `.env.example`), then verifies the **Claude Code CLI**
+   is installed. The harness bills game-play LLM calls to your Pro/Max **subscription** via `claude -p`
+   (run `claude /login` once) — **no `ANTHROPIC_API_KEY` needed**. If `.env` was *already* committed
+   with a key, it warns you to rotate + purge it.
 5. Installs the `/godot_agent_play` skill into `.claude/commands/`
 6. Adds the Playwright MCP server to `.mcp.json`
 7. Wires the `AgentBridge` autoload + bridge script into the game

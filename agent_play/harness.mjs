@@ -19,7 +19,7 @@ import { installAudioProbe } from './audio_probe.mjs';
 import { loadPersonality, PERSONALITIES } from './personalities/index.mjs';
 import { createOracles } from './oracles.mjs';
 import { createReport } from './report.mjs';
-import { decide, summarize } from './anthropic.mjs';
+import { decide, summarize, checkCliAvailable } from './claude_cli.mjs';
 
 function parseArgs(argv) {
   const a = {
@@ -83,9 +83,14 @@ async function main() {
   }
   const persona = loadPersonality(args.personality);
   console.log(`[project] ${config.godotProjectName} (${config.godotProjectDir})`);
-  if (!config.apiKey) {
-    console.error('ERROR: ANTHROPIC_API_KEY is not set. Add it to .env (see .env.example).');
+  const cli = checkCliAvailable();
+  if (!cli.ok) {
+    console.error(`ERROR: ${cli.message}`);
     process.exit(1);
+  }
+  console.log(`[llm] Claude Code CLI ${cli.version} — billed to your subscription (model: ${config.model})`);
+  if (process.env.ANTHROPIC_API_KEY) {
+    console.log('[llm] note: ANTHROPIC_API_KEY is set but ignored — the CLI uses your subscription login.');
   }
 
   if (args.export) {

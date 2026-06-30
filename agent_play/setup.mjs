@@ -4,12 +4,13 @@
 //   1. npm install (toolkit deps)            5. install the /godot_agent_play skill
 //   2. playwright install chromium           6. merge the playwright MCP server into .mcp.json
 //   3. detect / configure the Godot project  7. wire the AgentBridge into the game (copy + autoload)
-//   4. gitignore .env, then ensure the key   8. report the one step left to a human/agent (the adapter)
+//   4. .env hygiene + verify the Claude CLI   8. report the one step left to a human/agent (the adapter)
 //
+// The harness drives the game through the local Claude Code CLI (subscription auth) — no API key.
 // Idempotent: re-running skips anything already done. Safe: edits are additive and guarded.
 //
 // Usage:
-//   node setup.mjs [--project <dir>] [--api-key <key>] [--skip-install] [--skip-browser]
+//   node setup.mjs [--project <dir>] [--skip-install] [--skip-browser]
 //                  [--no-wire] [--force] [--yes]
 import fs from 'node:fs';
 import path from 'node:path';
@@ -28,7 +29,6 @@ function parseArgs(argv) {
   for (let i = 2; i < argv.length; i++) {
     const k = argv[i];
     if (k === '--project') a.project = argv[++i];
-    else if (k === '--api-key') a.apiKey = argv[++i];
     else if (k === '--skip-install') a.skipInstall = true;
     else if (k === '--skip-browser') a.skipBrowser = true;
     else if (k === '--no-wire') a.noWire = true;
@@ -102,11 +102,11 @@ async function resolveProject(args) {
   }
 }
 
-// ---- 4. .env safety + ANTHROPIC_API_KEY ------------------------------------
+// ---- 4. .env hygiene + verify the Claude Code CLI (subscription auth) -------
 
-// Ensure the repo-root .gitignore keeps .env out of version control. This runs
-// BEFORE any key is written, so a freshly-installed repo can never commit the
-// secret. Idempotent + additive: only appends a block if .env isn't ignored yet.
+// Ensure the repo-root .gitignore keeps .env out of version control. The harness no longer needs
+// an API key, but a user may still keep one in .env for other tools — keep it un-committable.
+// Idempotent + additive: only appends a block if .env isn't ignored yet.
 function ensureGitignore() {
   const giPath = path.join(ROOT, '.gitignore');
   const text = fs.existsSync(giPath) ? fs.readFileSync(giPath, 'utf8') : '';
@@ -128,9 +128,10 @@ function ensureEnvExample() {
   if (fs.existsSync(exPath)) { skip('.env.example already present'); return; }
   fs.writeFileSync(
     exPath,
-    '# agent_play — copy this file to `.env` and fill in your key.\n' +
-      '# `.env` is gitignored; NEVER commit a real key, and never put one in this example.\n' +
-      'ANTHROPIC_API_KEY=\n' +
+    '# agent_play — optional local overrides. Copy to `.env` (gitignored).\n' +
+      '# NO API KEY REQUIRED: the harness drives the game through the Claude Code CLI, billed to\n' +
+      '# your Pro/Max subscription. Run `claude /login` once. ANTHROPIC_API_KEY is ignored by the\n' +
+      '# harness — set one only if OTHER tools in this repo need API-key billing.\n' +
       '\n# Optional overrides (uncomment as needed):\n' +
       '# AGENT_MODEL=claude-opus-4-8\n' +
       '# GODOT=godot\n' +
@@ -155,36 +156,30 @@ function warnIfEnvTracked() {
   );
 }
 
-async function ensureApiKey(args) {
-  // Lock the secret out of git BEFORE writing any key into .env.
+async function ensureAuth() {
+  // Keep .env un-committable (a user may still keep keys there for other tools), then verify the
+  // Claude Code CLI — the harness bills the game-play LLM calls to your subscription, not an API key.
   ensureGitignore();
   ensureEnvExample();
   warnIfEnvTracked();
 
-  const envPath = path.join(ROOT, '.env');
-  let text = fs.existsSync(envPath) ? fs.readFileSync(envPath, 'utf8') : '';
-  const hasKey = /^\s*ANTHROPIC_API_KEY\s*=\s*\S+/m.test(text) || !!process.env.ANTHROPIC_API_KEY;
-  if (hasKey) { ok('ANTHROPIC_API_KEY present'); return; }
-
-  let key = args.apiKey || '';
-  if (!key && interactive() && !args.yes) {
-    key = await ask('  Paste your ANTHROPIC_API_KEY (blank to add later): ');
+  const bin = process.platform === 'win32' ? 'claude.exe' : 'claude';
+  let version = '';
+  try {
+    version = execFileSync(bin, ['--version'], { encoding: 'utf8' }).trim();
+  } catch {
+    version = '';
   }
-  if (key) {
-    // replace an empty placeholder line if present, else append
-    if (/^\s*ANTHROPIC_API_KEY\s*=/m.test(text)) {
-      text = text.replace(/^\s*ANTHROPIC_API_KEY\s*=.*$/m, `ANTHROPIC_API_KEY=${key}`);
-    } else {
-      text += (text && !text.endsWith('\n') ? '\n' : '') + `ANTHROPIC_API_KEY=${key}\n`;
+  if (version) {
+    ok(`Claude Code CLI present (${version}) — harness uses your subscription login, no API key needed`);
+    if (process.env.ANTHROPIC_API_KEY) {
+      skip('ANTHROPIC_API_KEY is set in your env but the harness ignores it (uses the subscription)');
     }
-    fs.writeFileSync(envPath, text);
-    ok('ANTHROPIC_API_KEY written to .env');
   } else {
-    if (!/^\s*ANTHROPIC_API_KEY\s*=/m.test(text)) {
-      text += (text && !text.endsWith('\n') ? '\n' : '') + '# Add your Anthropic API key below:\nANTHROPIC_API_KEY=\n';
-      fs.writeFileSync(envPath, text);
-    }
-    warn(`ANTHROPIC_API_KEY not set — add it to ${envPath} before running the harness.`);
+    warn(
+      `Claude Code CLI ('${bin}') not found on PATH — install it and run 'claude /login' with your ` +
+        `Pro/Max subscription before running the harness.`
+    );
   }
 }
 
@@ -296,8 +291,8 @@ async function main() {
   step('3. Resolve the Godot project');
   const gameDir = await resolveProject(args);
 
-  step('4. .env safety + API key');
-  await ensureApiKey(args);
+  step('4. .env hygiene + verify the Claude Code CLI');
+  await ensureAuth();
 
   step('5. Install the /godot_agent_play skill');
   installSkill(args);

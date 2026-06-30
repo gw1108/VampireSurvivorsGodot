@@ -18,7 +18,8 @@
       layout (a ._sc_/_sc_ marker next to the real binary redirects editor data to
       <bindir>\editor_data\export_templates, NOT %APPDATA%). Install via Editor > Manage Export
       Templates only if the preflight reports them missing.
-    - ANTHROPIC_API_KEY set in the repo-root .env  (the harness drives the game via the API).
+    - The Claude Code CLI on PATH, logged in with your Pro/Max subscription ('claude /login').
+      The harness drives the game through `claude -p` (subscription billing) — no ANTHROPIC_API_KEY.
     - A "Web" export preset in vampire-survivors-taskmaster/export_presets.cfg (the harness needs
       one named per agent_play config; default "Web"). Create it once in the editor's Export dialog.
   If the play step can't run, the script still SCORES from the most recent existing run, so the
@@ -84,8 +85,8 @@ function Resolve-GodotTemplatesDir {
 
 function Test-Prereqs {
   if (-not (Get-Command godot -ErrorAction SilentlyContinue)) { Write-Note 'godot not on PATH — cannot play or score.' 'Red'; return $null }
-  $envFile = Join-Path $root '.env'
-  $hasKey = (Test-Path $envFile) -and (Select-String -Path $envFile -Pattern '^\s*ANTHROPIC_API_KEY=\S' -Quiet)
+  # The harness drives the game through the Claude Code CLI (subscription auth), not ANTHROPIC_API_KEY.
+  $hasCli = [bool](Get-Command claude -ErrorAction SilentlyContinue)
   $ver = ((& godot --version) | Select-Object -First 1).Trim()
   $m = [regex]::Match($ver, '^\d+\.\d+(?:\.\d+)?\.[a-z]+\d*')
   $tplName = if ($m.Success) { $m.Value } else { $ver }
@@ -94,7 +95,7 @@ function Test-Prereqs {
   $hasTpl = [bool]$tplDir -and (@(Get-ChildItem (Join-Path $tplDir 'web_*.zip') -ErrorAction SilentlyContinue).Count -gt 0)
   $tplShown = if ($tplDir) { $tplDir } else { "none found (searched self-contained editor_data, %APPDATA%, scoop persist for $tplName)" }
   $hasPreset = Test-Path (Join-Path $root 'vampire-survivors-taskmaster\export_presets.cfg')
-  [pscustomobject]@{ Key = $hasKey; Templates = $hasTpl; Preset = $hasPreset; TplDir = $tplShown }
+  [pscustomobject]@{ Cli = $hasCli; Templates = $hasTpl; Preset = $hasPreset; TplDir = $tplShown }
 }
 
 # Export the Web build ourselves (NOT via the harness). Godot 4.6 headless --export-release segfaults
@@ -117,7 +118,7 @@ function Invoke-Play {
   param([object]$pre)
   if ($SkipPlay) { Write-Note 'SkipPlay set — scoring from the latest existing run.' 'Yellow'; return }
   $blockers = @()
-  if (-not $pre.Key)       { $blockers += "ANTHROPIC_API_KEY missing in .env (the harness needs it)." }
+  if (-not $pre.Cli)       { $blockers += "Claude Code CLI not on PATH — run 'claude /login' with your subscription." }
   if (-not $pre.Templates) { $blockers += "Web export templates not found ($($pre.TplDir))." }
   if (-not $pre.Preset)    { $blockers += "No export_presets.cfg with a 'Web' preset (create it once in the editor)." }
   if ($blockers.Count) {

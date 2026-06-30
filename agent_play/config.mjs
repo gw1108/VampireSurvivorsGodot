@@ -1,4 +1,6 @@
-// Central config for the agent-play harness. Reads .env at repo root (ANTHROPIC_API_KEY).
+// Central config for the agent-play harness. Reads .env at repo root for optional AGENT_* / GODOT
+// overrides. The LLM is driven through the local Claude Code CLI (subscription auth) — see
+// claude_cli.mjs — so NO ANTHROPIC_API_KEY is required.
 //
 // The Godot project is AUTO-DETECTED so this toolkit drops into any repo unchanged — nothing
 // here is hardcoded to a specific game. Detection/override logic lives in project.mjs. Resolution:
@@ -36,8 +38,6 @@ export const config = {
   defaultSteps: 120,
   readyTimeoutMs: 60000, // Godot web download + boot can be slow on first load.
   tickSettleMs: 180, // wait after unfreeze so the action's consequences/events materialize.
-
-  apiKey: process.env.ANTHROPIC_API_KEY || '',
 
   // Engine hang oracle: how many consecutive steps meta.frame may be unchanged.
   hangSteps: 30,

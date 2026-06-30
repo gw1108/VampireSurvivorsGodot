@@ -13,14 +13,14 @@ step-by-step playbook. This README is the quick reference.
 
 ```
 agent_play/
-  setup.mjs         ONE-COMMAND INSTALLER (deps, browser, key, skill, MCP, bridge wiring)
+  setup.mjs         ONE-COMMAND INSTALLER (deps, browser, CLI auth, skill, MCP, bridge wiring)
   INSTALL.md        install guide (human + agent)
   templates/agent_bridge.gd          generic drop-in Godot autoload (copy into a game)
   templates/agent_adapter.example.gd  annotated per-game adapter to copy & fill in
   skill/godot_agent_play.md          bundled skill (installer copies it to .claude/commands/)
   server.mjs        static server w/ COOP/COEP + correct MIME for the web build
   harness.mjs       autonomous loop: export -> serve -> Chromium -> personality loop -> report
-  anthropic.mjs     Anthropic SDK wrapper (forced-tool action schema + final summary)
+  claude_cli.mjs    Claude Code CLI transport (subscription auth; forced-schema action + summary)
   oracles.mjs       generic invariant checks (hang/softlock/NaN-OOB/console/crash/dead-input)
   audio_probe.mjs   page init script: logs WebAudio playback attempts (works headless)
   report.mjs        writes runs/<ts>-<personality>/{session.jsonl,screenshots,findings.md}
@@ -63,7 +63,7 @@ never expose the hooks.
 ## Install (one command)
 
 ```bash
-node agent_play/setup.mjs        # deps, browser, project, API key, skill, MCP, bridge wiring
+node agent_play/setup.mjs        # deps, browser, project, CLI auth, skill, MCP, bridge wiring
 ```
 Idempotent and safe to re-run. It does everything mechanical and prints what's left (the per-game
 adapter). Full details + flags + the agent-autonomous install prompt: **`INSTALL.md`**.
@@ -72,7 +72,8 @@ adapter). Full details + flags + the agent-autonomous install prompt: **`INSTALL
 
 ```bash
 # one-time (or just run setup.mjs above): npm install && npx playwright install chromium
-# ANTHROPIC_API_KEY must be in the repo-root .env (see .env.example)
+# Auth: the Claude Code CLI must be installed + logged in (`claude /login`) with your Pro/Max
+# subscription — the harness drives the game via `claude -p`. No ANTHROPIC_API_KEY needed.
 
 node harness.mjs --personality bug-hunter --steps 120 [--seed 123] [--headed] [--no-export]
 ```
@@ -93,8 +94,9 @@ node server.mjs        # serves the web build with the right headers
 The `agent_play/` folder is self-contained (it bundles the skill in `skill/`). To port:
 
 1. Copy the whole `agent_play/` folder into the target repo's root.
-2. `node agent_play/setup.mjs` — installs deps + browser, detects the Godot project, sets up the
-   API key, installs the skill into `.claude/commands/`, adds the MCP server, and wires the bridge.
+2. `node agent_play/setup.mjs` — installs deps + browser, detects the Godot project, verifies the
+   Claude Code CLI (subscription auth), installs the skill into `.claude/commands/`, adds the MCP
+   server, and wires the bridge.
 3. Complete the one `[todo]` it prints: write the per-game adapter (see `INSTALL.md` / skill Step 1).
 
 If the repo has **no** Godot project at the auto-detect depth (repo root or one level below), or
