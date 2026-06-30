@@ -1,0 +1,23 @@
+[gd_scene load_steps=4 format=3 uid="uid://b8run0scene00001"]
+
+[ext_resource type="Script" uid="uid://bcslg5emfaj23" path="res://nodes/run_controller.gd" id="1_rc"]
+[ext_resource type="PackedScene" uid="uid://b1ps2playershell0" path="res://scenes/player_shell.tscn" id="2_ps"]
+[ext_resource type="Script" uid="uid://gmg30dixxi3j" path="res://nodes/view_sync.gd" id="3_vs"]
+
+[node name="RunController" type="Node2D"]
+script = ExtResource("1_rc")
+
+[node name="World" type="Node2D" parent="."]
+
+[node name="Player" parent="World" instance=ExtResource("2_ps")]
+
+[node name="EnemyLayer" type="Node2D" parent="World"]
+
+[node name="ProjectileLayer" type="Node2D" parent="World"]
+
+[node name="PickupLayer" type="Node2D" parent="World"]
+
+[node name="FloatingTextLayer" type="Node2D" parent="World"]
+
+[node name="ViewSync" type="Node" parent="."]
+script = ExtResource("3_vs")

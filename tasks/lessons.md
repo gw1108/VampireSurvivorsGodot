@@ -24,6 +24,9 @@ For a node-shell scene: write the script first, run an editor import to generate
 ### Headless tests that need get_tree()
 A `SceneTree` test script's `_initialize()` runs before the root window is in the tree, so a Node added to `root` there has a null `get_tree()`. Drive such tests from `_process(delta)` (guard with a `_ran` bool, `quit()` + `return true`) instead — by the first frame the tree is live.
 
+### Integration-testing a conductor node
+To test a node that drives a per-frame tick (e.g. RunController): mount its scene under `root` (so `_ready` + viewport are live), then `node.set_process(false)` and call its tick method (`_tick`/`_process`) BY HAND for deterministic stepping (otherwise the engine also auto-ticks it that frame). Build the RunState via the real autoload's `_build_run_state()` (no scene-change side effect) and set `gm.run_state`/`current_state` BEFORE `add_child` so `_ready` picks them up. Caveat: once a referenced scene (e.g. run.tscn) actually exists, `GameManager.start_run()._change_scene` stops being a no-op — adding a scene can re-activate previously-dormant code paths in OTHER tests.
+
 ### Godot headless verify
 Type-check + register class_names with `godot --headless --path <proj> --editor --quit-after 30` (grep output for `error`); run tests with a `SceneTree` script via `--script res://...` that calls `quit(failure_count)` — no gdUnit4 needed for plain-data checks. NOTE: `--check-only --script <file>` parses in isolation and does NOT load the global `class_name` registry, so a test referencing a sibling global class (e.g. `LevelingSystem`) falsely reports "Identifier not declared" — run the `--editor --quit-after` import first to refresh the class cache, then the `--script` run-mode test.
 
