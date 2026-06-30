@@ -16,12 +16,15 @@ run/main_scene="res://scenes/run.tscn"
 config/features=PackedStringArray("4.6", "GL Compatibility")
 config/icon="res://icon.svg"
 
+[autoload]
+
+AgentBridge="*res://scripts/agent/agent_bridge.gd"
+
 [display]
 
 window/size/viewport_width=800
 window/size/viewport_height=640
 window/stretch/mode="canvas_items"
-window/stretch/aspect="keep"
 
 [editor_plugins]
 
@@ -37,7 +40,3 @@ textures/canvas_textures/default_texture_filter=0
 rendering_device/driver.windows="d3d12"
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
-
-[autoload]
-
-AgentBridge="*res://scripts/agent/agent_bridge.gd"
