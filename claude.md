@@ -89,9 +89,15 @@ you run, configure, or reason about any of them.**
   or `./workshop/start-workshop.ps1`. Knobs in `workshop/workshop.config.ps1`.
 - **Skill — `.claude/skills/2d-game-art-direction/`** — art-direction decision guide for 2D games
   (palette, value/contrast, composition, shape language, sketch→polish). Loads on demand.
+- **Playtest review loop — `tools/playtest-review.ps1`** — plays the current build with the
+  `agent_play` harness, then a goal-aware synthesis scores it against `workshop/GOAL.md`, writes the
+  newest entry to `FEEL-REVIEW.md`, and appends backlog items the Workshop then implements. Run with
+  `-Watch` (or `/loop 30m ./tools/playtest-review.ps1`) for the periodic "play → score → steer" loop.
+  Its PLAY step needs web export templates + `ANTHROPIC_API_KEY` in `.env` + a "Web" export preset
+  (the script's header lists these; it still scores from the latest run if the play step can't run).
 
 **The gate** (the whole safety story for the fleet) is `ralph/gate.ps1`: headless Godot import +
-the gdUnit4 suite. Keep it honest as the game grows.
+the gdUnit4 suite (now incl. a run-scene smoke test). Keep it honest as the game grows.
 
 ### ⚠️ Sacred files — do not destroy
 - `ralph/PROMPT.md`, `ralph/PLAN-PROMPT.md`, `workshop/PROMPT.md`, `workshop/GOAL.md`,

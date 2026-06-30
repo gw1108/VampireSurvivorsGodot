@@ -12,8 +12,16 @@ config_version=5
 
 config/name="VampireSurvivorsTaskmaster"
 config/version="0.0.1"
+run/main_scene="res://scenes/run.tscn"
 config/features=PackedStringArray("4.6", "GL Compatibility")
 config/icon="res://icon.svg"
+
+[display]
+
+window/size/viewport_width=800
+window/size/viewport_height=640
+window/stretch/mode="canvas_items"
+window/stretch/aspect="keep"
 
 [editor_plugins]
 
