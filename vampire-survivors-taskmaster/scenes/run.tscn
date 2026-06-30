@@ -1,4 +1,4 @@
-[gd_scene load_steps=9 format=3 uid="uid://b8run0scene00001"]
+[gd_scene load_steps=10 format=3 uid="uid://b8run0scene00001"]
 
 [ext_resource type="Script" uid="uid://bcslg5emfaj23" path="res://nodes/run_controller.gd" id="1_rc"]
 [ext_resource type="PackedScene" uid="uid://b1ps2playershell0" path="res://scenes/player_shell.tscn" id="2_ps"]
@@ -7,9 +7,8 @@
 [ext_resource type="Script" uid="uid://b3e7t0y1la4ah" path="res://nodes/pause_screen.gd" id="5_pause"]
 [ext_resource type="Script" uid="uid://bgem4m1qd5sgs" path="res://nodes/result_screen.gd" id="6_result"]
 [ext_resource type="Script" uid="uid://cpighwebuai14" path="res://nodes/level_up_screen.gd" id="7_levelup"]
-
-[sub_resource type="PlaceholderTexture2D" id="ground_ph"]
-size = Vector2(256, 256)
+[ext_resource type="Script" uid="uid://dh7nga6q14o6e" path="res://nodes/ground_layer.gd" id="8_ground"]
+[ext_resource type="Texture2D" uid="uid://dwt8tenhmq0yw" path="res://assets/sprites/ground/grass_tile.jpg" id="9_grass"]
 
 [node name="RunController" type="Node2D"]
 script = ExtResource("1_rc")
@@ -18,9 +17,8 @@ script = ExtResource("1_rc")
 
 [node name="GroundLayer" type="Sprite2D" parent="World"]
 z_index = -100
-texture = SubResource("ground_ph")
-modulate = Color(0.21, 0.43, 0.22, 1)
-scale = Vector2(60, 60)
+texture = ExtResource("9_grass")
+script = ExtResource("8_ground")
 
 [node name="PickupLayer" type="Node2D" parent="World"]
 

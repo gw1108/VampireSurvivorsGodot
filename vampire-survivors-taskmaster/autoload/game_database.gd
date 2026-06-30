@@ -420,3 +420,24 @@ static func gem_tier(xp_value: float) -> StringName:
 	elif xp_value <= GEM_GREEN_MAX:
 		return &"green"
 	return &"red"
+
+## Roll one brazier drop pickup id from the weighted BRAZIER_DROPS table,
+## considering only entries unlocked at `player_level` (their `min_level` gate).
+## Returns the pickup id, or &"" if no entry is eligible. (Luck-gated rare drops
+## are out of scope this slice -- see the BRAZIER_DROPS comment.)
+static func roll_brazier_drop(rng: RandomNumberGenerator, player_level: int = 0) -> StringName:
+	var total := 0
+	for d in BRAZIER_DROPS:
+		if int(d.get("min_level", 0)) <= player_level:
+			total += int(d.get("weight", 0))
+	if total <= 0:
+		return &""
+	var roll := rng.randi_range(1, total)
+	var acc := 0
+	for d in BRAZIER_DROPS:
+		if int(d.get("min_level", 0)) > player_level:
+			continue
+		acc += int(d.get("weight", 0))
+		if roll <= acc:
+			return d["pickup"]
+	return &""
