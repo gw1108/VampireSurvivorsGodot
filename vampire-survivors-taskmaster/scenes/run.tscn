@@ -1,23 +1,438 @@
-[gd_scene load_steps=4 format=3 uid="uid://b8run0scene00001"]
+[gd_scene load_steps=9 format=3 uid="uid://b8run0scene00001"]
 
 [ext_resource type="Script" uid="uid://bcslg5emfaj23" path="res://nodes/run_controller.gd" id="1_rc"]
 [ext_resource type="PackedScene" uid="uid://b1ps2playershell0" path="res://scenes/player_shell.tscn" id="2_ps"]
 [ext_resource type="Script" uid="uid://gmg30dixxi3j" path="res://nodes/view_sync.gd" id="3_vs"]
+[ext_resource type="Script" uid="uid://lsh58ifn5er5" path="res://nodes/hud.gd" id="4_hud"]
+[ext_resource type="Script" uid="uid://b3e7t0y1la4ah" path="res://nodes/pause_screen.gd" id="5_pause"]
+[ext_resource type="Script" uid="uid://bgem4m1qd5sgs" path="res://nodes/result_screen.gd" id="6_result"]
+[ext_resource type="Script" uid="uid://cpighwebuai14" path="res://nodes/level_up_screen.gd" id="7_levelup"]
+
+[sub_resource type="PlaceholderTexture2D" id="ground_ph"]
+size = Vector2(256, 256)
 
 [node name="RunController" type="Node2D"]
 script = ExtResource("1_rc")
 
 [node name="World" type="Node2D" parent="."]
 
-[node name="Player" parent="World" instance=ExtResource("2_ps")]
+[node name="GroundLayer" type="Sprite2D" parent="World"]
+z_index = -100
+texture = SubResource("ground_ph")
+modulate = Color(0.21, 0.43, 0.22, 1)
+scale = Vector2(60, 60)
+
+[node name="PickupLayer" type="Node2D" parent="World"]
 
 [node name="EnemyLayer" type="Node2D" parent="World"]
 
 [node name="ProjectileLayer" type="Node2D" parent="World"]
 
-[node name="PickupLayer" type="Node2D" parent="World"]
+[node name="Player" parent="World" instance=ExtResource("2_ps")]
 
 [node name="FloatingTextLayer" type="Node2D" parent="World"]
 
 [node name="ViewSync" type="Node" parent="."]
 script = ExtResource("3_vs")
+
+[node name="HUDLayer" type="CanvasLayer" parent="."]
+layer = 1
+
+[node name="HUD" type="Control" parent="HUDLayer"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("4_hud")
+
+[node name="XPBar" type="ProgressBar" parent="HUDLayer/HUD"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 16.0
+grow_horizontal = 2
+max_value = 100.0
+value = 0.0
+show_percentage = false
+
+[node name="TimerLabel" type="Label" parent="HUDLayer/HUD"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -48.0
+offset_top = 20.0
+offset_right = 48.0
+offset_bottom = 50.0
+grow_horizontal = 2
+text = "00:00"
+horizontal_alignment = 1
+
+[node name="LevelLabel" type="Label" parent="HUDLayer/HUD"]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -120.0
+offset_top = 20.0
+offset_right = -8.0
+offset_bottom = 50.0
+grow_horizontal = 0
+text = "LV 1"
+horizontal_alignment = 2
+
+[node name="GoldLabel" type="Label" parent="HUDLayer/HUD"]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -120.0
+offset_top = 52.0
+offset_right = -8.0
+offset_bottom = 82.0
+grow_horizontal = 0
+text = "0"
+horizontal_alignment = 2
+
+[node name="KillsLabel" type="Label" parent="HUDLayer/HUD"]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -120.0
+offset_top = 84.0
+offset_right = -8.0
+offset_bottom = 114.0
+grow_horizontal = 0
+text = "0"
+horizontal_alignment = 2
+
+[node name="WeaponContainer" type="HBoxContainer" parent="HUDLayer/HUD"]
+layout_mode = 1
+anchors_preset = 0
+offset_left = 8.0
+offset_top = 20.0
+offset_right = 208.0
+offset_bottom = 52.0
+
+[node name="PassiveContainer" type="HBoxContainer" parent="HUDLayer/HUD"]
+layout_mode = 1
+anchors_preset = 0
+offset_left = 8.0
+offset_top = 56.0
+offset_right = 208.0
+offset_bottom = 88.0
+
+[node name="OverlayLayer" type="CanvasLayer" parent="."]
+layer = 2
+
+[node name="LevelUpScreen" type="Control" parent="OverlayLayer"]
+process_mode = 3
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("7_levelup")
+
+[node name="Dim" type="ColorRect" parent="OverlayLayer/LevelUpScreen"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.6)
+
+[node name="Panel" type="Panel" parent="OverlayLayer/LevelUpScreen"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -280.0
+offset_top = -240.0
+offset_right = 280.0
+offset_bottom = 240.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TitleLabel" type="Label" parent="OverlayLayer/LevelUpScreen/Panel"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 12.0
+offset_bottom = 48.0
+grow_horizontal = 2
+text = "LEVEL UP!"
+horizontal_alignment = 1
+
+[node name="OptionsContainer" type="VBoxContainer" parent="OverlayLayer/LevelUpScreen/Panel"]
+layout_mode = 1
+anchor_right = 0.62
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = 56.0
+offset_right = -8.0
+offset_bottom = -56.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="StatRail" type="VBoxContainer" parent="OverlayLayer/LevelUpScreen/Panel"]
+layout_mode = 1
+anchor_left = 0.62
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = 56.0
+offset_right = -16.0
+offset_bottom = -56.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="RerollButton" type="Button" parent="OverlayLayer/LevelUpScreen/Panel"]
+layout_mode = 1
+anchor_top = 1.0
+anchor_right = 0.33
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = -48.0
+offset_right = -4.0
+offset_bottom = -12.0
+grow_horizontal = 2
+grow_vertical = 0
+text = "Reroll (0)"
+
+[node name="SkipButton" type="Button" parent="OverlayLayer/LevelUpScreen/Panel"]
+layout_mode = 1
+anchor_left = 0.33
+anchor_top = 1.0
+anchor_right = 0.66
+anchor_bottom = 1.0
+offset_left = 4.0
+offset_top = -48.0
+offset_right = -4.0
+offset_bottom = -12.0
+grow_horizontal = 2
+grow_vertical = 0
+disabled = true
+text = "Skip (0)"
+
+[node name="BanishButton" type="Button" parent="OverlayLayer/LevelUpScreen/Panel"]
+layout_mode = 1
+anchor_left = 0.66
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 4.0
+offset_top = -48.0
+offset_right = -16.0
+offset_bottom = -12.0
+grow_horizontal = 2
+grow_vertical = 0
+disabled = true
+text = "Banish (0)"
+
+[node name="PauseScreen" type="Control" parent="OverlayLayer"]
+process_mode = 3
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("5_pause")
+
+[node name="Dim" type="ColorRect" parent="OverlayLayer/PauseScreen"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.6)
+
+[node name="Panel" type="Panel" parent="OverlayLayer/PauseScreen"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -160.0
+offset_top = -210.0
+offset_right = 160.0
+offset_bottom = 210.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TitleLabel" type="Label" parent="OverlayLayer/PauseScreen/Panel"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 12.0
+offset_bottom = 48.0
+grow_horizontal = 2
+text = "PAUSED"
+horizontal_alignment = 1
+
+[node name="BuildContainer" type="VBoxContainer" parent="OverlayLayer/PauseScreen/Panel"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 16.0
+offset_top = 56.0
+offset_right = -16.0
+offset_bottom = 300.0
+grow_horizontal = 2
+
+[node name="ResumeButton" type="Button" parent="OverlayLayer/PauseScreen/Panel"]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = -96.0
+offset_right = -16.0
+offset_bottom = -56.0
+grow_horizontal = 2
+grow_vertical = 0
+text = "Resume"
+
+[node name="QuitButton" type="Button" parent="OverlayLayer/PauseScreen/Panel"]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = -48.0
+offset_right = -16.0
+offset_bottom = -8.0
+grow_horizontal = 2
+grow_vertical = 0
+text = "Quit to Menu"
+
+[node name="ResultScreen" type="Control" parent="OverlayLayer"]
+process_mode = 3
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("6_result")
+
+[node name="Dim" type="ColorRect" parent="OverlayLayer/ResultScreen"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.7)
+
+[node name="Panel" type="Panel" parent="OverlayLayer/ResultScreen"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -160.0
+offset_top = -180.0
+offset_right = 160.0
+offset_bottom = 180.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TitleLabel" type="Label" parent="OverlayLayer/ResultScreen/Panel"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 12.0
+offset_bottom = 48.0
+grow_horizontal = 2
+text = "GAME OVER"
+horizontal_alignment = 1
+
+[node name="TimeLabel" type="Label" parent="OverlayLayer/ResultScreen/Panel"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 24.0
+offset_top = 72.0
+offset_right = -24.0
+offset_bottom = 100.0
+grow_horizontal = 2
+text = "Time: 00:00"
+
+[node name="LevelLabel" type="Label" parent="OverlayLayer/ResultScreen/Panel"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 24.0
+offset_top = 104.0
+offset_right = -24.0
+offset_bottom = 132.0
+grow_horizontal = 2
+text = "Level: 1"
+
+[node name="KillsLabel" type="Label" parent="OverlayLayer/ResultScreen/Panel"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 24.0
+offset_top = 136.0
+offset_right = -24.0
+offset_bottom = 164.0
+grow_horizontal = 2
+text = "Kills: 0"
+
+[node name="GoldLabel" type="Label" parent="OverlayLayer/ResultScreen/Panel"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 24.0
+offset_top = 168.0
+offset_right = -24.0
+offset_bottom = 196.0
+grow_horizontal = 2
+text = "Gold: 0"
+
+[node name="RestartButton" type="Button" parent="OverlayLayer/ResultScreen/Panel"]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = -96.0
+offset_right = -16.0
+offset_bottom = -56.0
+grow_horizontal = 2
+grow_vertical = 0
+text = "Restart"
+
+[node name="MenuButton" type="Button" parent="OverlayLayer/ResultScreen/Panel"]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = -48.0
+offset_right = -16.0
+offset_bottom = -8.0
+grow_horizontal = 2
+grow_vertical = 0
+text = "Quit to Menu"

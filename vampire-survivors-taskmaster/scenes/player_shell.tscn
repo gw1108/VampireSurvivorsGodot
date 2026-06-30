@@ -1,34 +1,14 @@
-[gd_scene load_steps=4 format=3 uid="uid://b1ps2playershell0"]
+[gd_scene load_steps=3 format=3 uid="uid://b1ps2playershell0"]
 
 [ext_resource type="Script" uid="uid://dh20w0onadwfh" path="res://nodes/player_shell.gd" id="1_ps"]
-
-[sub_resource type="PlaceholderTexture2D" id="ph_1"]
-size = Vector2(16, 16)
-
-[sub_resource type="SpriteFrames" id="frames_1"]
-animations = [{
-"frames": [{
-"duration": 1.0,
-"texture": SubResource("ph_1")
-}],
-"loop": true,
-"name": &"idle",
-"speed": 5.0
-}, {
-"frames": [{
-"duration": 1.0,
-"texture": SubResource("ph_1")
-}],
-"loop": true,
-"name": &"walk",
-"speed": 5.0
-}]
+[ext_resource type="SpriteFrames" uid="uid://cantonioframes1" path="res://assets/sprites/antonio.tres" id="2_frames"]
 
 [node name="PlayerShell" type="Node2D"]
 script = ExtResource("1_ps")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
-sprite_frames = SubResource("frames_1")
+scale = Vector2(0.03, 0.03)
+sprite_frames = ExtResource("2_frames")
 animation = &"idle"
 autoplay = "idle"
 
