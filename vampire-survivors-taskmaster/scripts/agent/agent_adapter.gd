@@ -8,6 +8,11 @@ extends Node
 
 @onready var game: VSRun = get_parent()
 
+# The four movement actions the harness can tap. Their taps are converted into a held
+# press (see _hold_move) so the player actually travels during the unfrozen step.
+const MOVE_ACTIONS := ["move_up", "move_down", "move_left", "move_right"]
+var _held_move := ""   # the single movement direction currently held for the agent ("" = none)
+
 func _ready() -> void:
 	AgentBridge.register_provider(_provide)
 	AgentBridge.register_command_handler(_on_command)
@@ -19,7 +24,7 @@ func _provide() -> Dictionary:
 	if p and is_instance_valid(p):
 		player_dict = {
 			"pos": [p.position.x, p.position.y],
-			"velocity": [0.0, 0.0],
+			"velocity": [p.velocity.x, p.velocity.y],
 			"health": p.health,
 			"max_health": p.max_health,
 			"alive": p.alive,
@@ -49,6 +54,8 @@ func _provide() -> Dictionary:
 func _actions(phase: String) -> Array:
 	if phase == "game_over":
 		return ["ui_accept"]
+	if phase == "level_up":
+		return ["choose_1", "choose_2", "choose_3"]
 	return ["move_up", "move_down", "move_left", "move_right"]
 
 func _entities() -> Array:
@@ -61,10 +68,50 @@ func _entities() -> Array:
 		out.append({"id": str(g.get_instance_id()), "type": "xp", "pos": [g.position.x, g.position.y], "state": "idle"})
 	return out
 
-# Only commands NOT handled by the bridge (press/release/tap/set_time_scale/ack/restart).
+# Commands NOT consumed by the bridge itself (set_time_scale/ack/restart) land here.
+# Registering this handler suppresses the bridge's default input synthesis, so we
+# synthesize press/release/tap ourselves — that's how the harness moves the player and
+# picks a level-up upgrade (choose_1/2/3). The harness only ever sends taps, so movement
+# taps are converted to a held direction (_hold_move); discrete choices stay real taps.
 func _on_command(cmd: Dictionary) -> void:
 	match str(cmd.get("type", "")):
 		"set_seed":
 			game.reseed(int(cmd.get("value", 0)))
+		"press":
+			_send_action(str(cmd.get("action", "")), true)
+		"release":
+			_send_action(str(cmd.get("action", "")), false)
+		"tap":
+			var a := str(cmd.get("action", ""))
+			if a in MOVE_ACTIONS:
+				_hold_move(a)   # movement: hold the direction so the step actually travels
+			else:
+				_send_action(a, true)   # discrete choice (choose_1/2/3, ui_accept): a real tap
+				_send_action(a, false)
 		_:
 			pass
+
+# The harness freezes the game, taps ONE action, then unfreezes for a step. A movement
+# tap (press+release in the same frozen frame) nets ~0 displacement: the player polls
+# Input.get_vector and the action is already released before any time passes, so the
+# agent could never actually move. Instead we HOLD the tapped direction — releasing any
+# prior one — so get_vector reports it for the whole unfrozen step and the player travels.
+# Only one direction is held at a time: pressing an opposite without releasing the current
+# one would cancel out inside get_vector. The next movement tap replaces it; a noop step
+# leaves it held (continuous VS-style movement), which the persona steers by changing dir.
+func _hold_move(action: String) -> void:
+	if action == _held_move:
+		return
+	if _held_move != "":
+		_send_action(_held_move, false)
+	_held_move = action
+	_send_action(action, true)
+
+func _send_action(action: String, pressed: bool) -> void:
+	if action == "" or not InputMap.has_action(action):
+		return
+	var ev := InputEventAction.new()
+	ev.action = action
+	ev.pressed = pressed
+	ev.strength = 1.0 if pressed else 0.0
+	Input.parse_input_event(ev)
