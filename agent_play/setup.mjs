@@ -4,7 +4,7 @@
 //   1. npm install (toolkit deps)            5. install the /godot_agent_play skill
 //   2. playwright install chromium           6. merge the playwright MCP server into .mcp.json
 //   3. detect / configure the Godot project  7. wire the AgentBridge into the game (copy + autoload)
-//   4. ensure ANTHROPIC_API_KEY in .env       8. report the one step left to a human/agent (the adapter)
+//   4. gitignore .env, then ensure the key   8. report the one step left to a human/agent (the adapter)
 //
 // Idempotent: re-running skips anything already done. Safe: edits are additive and guarded.
 //
@@ -14,7 +14,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import readline from 'node:readline';
-import { spawn } from 'node:child_process';
+import { spawn, execFileSync } from 'node:child_process';
 import { ROOT, HERE, isGodotProject, detectGodotProjects, resolveProjectDir } from './project.mjs';
 
 const results = [];
@@ -102,9 +102,65 @@ async function resolveProject(args) {
   }
 }
 
-// ---- 4. ANTHROPIC_API_KEY in .env ------------------------------------------
+// ---- 4. .env safety + ANTHROPIC_API_KEY ------------------------------------
+
+// Ensure the repo-root .gitignore keeps .env out of version control. This runs
+// BEFORE any key is written, so a freshly-installed repo can never commit the
+// secret. Idempotent + additive: only appends a block if .env isn't ignored yet.
+function ensureGitignore() {
+  const giPath = path.join(ROOT, '.gitignore');
+  const text = fs.existsSync(giPath) ? fs.readFileSync(giPath, 'utf8') : '';
+  const ignoresEnv = text.split(/\r?\n/).some((l) => {
+    const t = l.trim();
+    return t === '.env' || t === '/.env' || t === '.env*' || t === '.env.*';
+  });
+  if (ignoresEnv) { ok('.env already gitignored'); return; }
+  const block =
+    '\n# Secrets / local environment — never commit API keys (added by agent_play setup)\n' +
+    '.env\n.env.*\n!.env.example\n';
+  fs.writeFileSync(giPath, (text && !text.endsWith('\n') ? text + '\n' : text) + block);
+  ok(`.env added to .gitignore (the key never lands in a commit)`);
+}
+
+// Write a committable, secret-free .env.example the docs point at, if absent.
+function ensureEnvExample() {
+  const exPath = path.join(ROOT, '.env.example');
+  if (fs.existsSync(exPath)) { skip('.env.example already present'); return; }
+  fs.writeFileSync(
+    exPath,
+    '# agent_play — copy this file to `.env` and fill in your key.\n' +
+      '# `.env` is gitignored; NEVER commit a real key, and never put one in this example.\n' +
+      'ANTHROPIC_API_KEY=\n' +
+      '\n# Optional overrides (uncomment as needed):\n' +
+      '# AGENT_MODEL=claude-opus-4-8\n' +
+      '# GODOT=godot\n' +
+      '# AGENT_GODOT_PROJECT=\n' +
+      '# AGENT_PORT=8099\n'
+  );
+  ok('wrote .env.example (committable template, no secret)');
+}
+
+// gitignore can't save an ALREADY-tracked .env — warn loudly so the human knows
+// they have a leaked key to rotate + purge, not just a file to ignore going forward.
+function warnIfEnvTracked() {
+  try {
+    execFileSync('git', ['ls-files', '--error-unmatch', '.env'], { cwd: ROOT, stdio: 'ignore' });
+  } catch {
+    return; // not tracked (or not a git repo) — the good path
+  }
+  warn(
+    '.env is ALREADY TRACKED by git — gitignore alone will NOT remove it. Run ' +
+      '`git rm --cached .env`, ROTATE the leaked key, and purge it from history ' +
+      '(e.g. `git filter-repo --path .env --invert-paths`) before pushing.'
+  );
+}
 
 async function ensureApiKey(args) {
+  // Lock the secret out of git BEFORE writing any key into .env.
+  ensureGitignore();
+  ensureEnvExample();
+  warnIfEnvTracked();
+
   const envPath = path.join(ROOT, '.env');
   let text = fs.existsSync(envPath) ? fs.readFileSync(envPath, 'utf8') : '';
   const hasKey = /^\s*ANTHROPIC_API_KEY\s*=\s*\S+/m.test(text) || !!process.env.ANTHROPIC_API_KEY;
@@ -240,7 +296,7 @@ async function main() {
   step('3. Resolve the Godot project');
   const gameDir = await resolveProject(args);
 
-  step('4. API key');
+  step('4. .env safety + API key');
   await ensureApiKey(args);
 
   step('5. Install the /godot_agent_play skill');

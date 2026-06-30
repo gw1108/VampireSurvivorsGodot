@@ -46,8 +46,8 @@ For most setups, run the installer first — it does everything mechanical and i
 node agent_play/setup.mjs        # add --project <dir> if the repo has several Godot projects
 ```
 
-It runs `npm install`, downloads Chromium, detects (or lets you pick) the Godot project, ensures
-`ANTHROPIC_API_KEY` in `.env` (prompts if interactive; or pass `--api-key`), installs this skill
+It runs `npm install`, downloads Chromium, detects (or lets you pick) the Godot project, gitignores
+`.env` and ensures `ANTHROPIC_API_KEY` in it (prompts if interactive; or pass `--api-key`), installs this skill
 into `.claude/commands/`, adds the Playwright MCP server to `.mcp.json`, and wires the `AgentBridge`
 autoload + bridge script into the game. The **one** thing it can't do is write the game-specific
 adapter (Step 1.3–1.5 below) — it prints exactly what's left. After the installer + adapter, jump to
@@ -106,7 +106,7 @@ cd agent_play
 npm install
 npx playwright install chromium
 ```
-Ensure `ANTHROPIC_API_KEY` is in the repo-root `.env` (see `.env.example`).
+Ensure `ANTHROPIC_API_KEY` is in the repo-root `.env` (copy `.env.example`). `.env` is gitignored — never commit it.
 
 ### 4a. Run a personality autonomously (unattended)
 
