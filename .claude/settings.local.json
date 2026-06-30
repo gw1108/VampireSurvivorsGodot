@@ -24,5 +24,8 @@
   },
   "enabledPlugins": {
     "taskmaster@taskmaster": true
-  }
+  },
+  "enabledMcpjsonServers": [
+    "playwright"
+  ]
 }
