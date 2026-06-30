@@ -97,6 +97,22 @@ function Test-Prereqs {
   [pscustomobject]@{ Key = $hasKey; Templates = $hasTpl; Preset = $hasPreset; TplDir = $tplShown }
 }
 
+# Export the Web build ourselves (NOT via the harness). Godot 4.6 headless --export-release segfaults
+# on SHUTDOWN on Windows AFTER writing a valid build, so the harness's own export (which aborts on a
+# non-zero exit) can't be trusted. We judge success by the ARTIFACTS, then run the harness --no-export.
+function Export-WebBuild {
+  $proj   = Join-Path $root 'vampire-survivors-taskmaster'
+  $outDir = Join-Path $proj 'build\web'
+  $out    = Join-Path $outDir 'index.html'
+  New-Item -ItemType Directory -Force -Path $outDir | Out-Null
+  Write-Note "exporting Web build -> $out"
+  $log = & godot --headless --path $proj --export-release 'Web' $out 2>&1
+  $ok = (Test-Path $out) -and (Test-Path (Join-Path $outDir 'index.wasm')) -and (Test-Path (Join-Path $outDir 'index.pck'))
+  if ($ok) { Write-Note 'export OK (artifacts present; ignoring any shutdown crash).' 'Green' }
+  else { Write-Note 'export produced no usable build — check the Web preset / templates:' 'Red'; $log | Select-Object -Last 15 | Out-Host }
+  return $ok
+}
+
 function Invoke-Play {
   param([object]$pre)
   if ($SkipPlay) { Write-Note 'SkipPlay set — scoring from the latest existing run.' 'Yellow'; return }
@@ -109,15 +125,14 @@ function Invoke-Play {
     $blockers | ForEach-Object { Write-Host "    - $_" -ForegroundColor Yellow }
     return
   }
-  $first = $true
+  if (-not (Export-WebBuild)) { Write-Note 'No usable build — scoring from the latest existing run instead.' 'Yellow'; return }
   foreach ($p in $Personalities) {
-    $a = @('agent_play/harness.mjs', '--personality', $p, '--steps', "$Steps")
-    if (-not $first) { $a += '--no-export' }       # export once, reuse the build for later personalities
+    # Build already exported above; every personality reuses it via --no-export.
+    $a = @('agent_play/harness.mjs', '--personality', $p, '--steps', "$Steps", '--no-export')
     Write-Note "play: node $($a -join ' ')"
     Push-Location $root
     try { & node @a } catch { Write-Note "harness failed for '$p': $($_.Exception.Message)" 'Yellow' }
     finally { Pop-Location }
-    $first = $false
   }
 }
 

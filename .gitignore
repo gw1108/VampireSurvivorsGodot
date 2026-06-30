@@ -56,6 +56,9 @@ ExportedObj/
 # Python bytecode cache files (auto-generated when Python imports a module; not source)
 *.pyc
 
+# agent_play playtest run artifacts (screenshots / session traces, regenerated each run)
+agent_play/runs/
+
 # Secrets / local environment — never commit API keys
 .env
 .env.*
