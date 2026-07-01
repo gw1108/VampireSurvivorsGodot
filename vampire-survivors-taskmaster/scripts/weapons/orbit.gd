@@ -1,7 +1,7 @@
 class_name VSOrbit
 extends Node2D
-## "Blades" — N blades that spin around the player and cut any enemy they sweep past.
-## A melee orbit (think Vampire Survivors' King Bible): no aim, no chase — it punishes
+## "King Bible" — N holy tomes that spin around the player and cut any enemy they sweep past.
+## A melee orbit (Vampire Survivors' King Bible): no aim, no chase — it punishes
 ## whatever wanders into the spinning ring. Picked and levelled through the level-up
 ## screen (see VSRun.UPGRADES / apply_upgrade("orbit")): first pick spawns one blade,
 ## repeats add a blade (up to MAX_BLADES) and deepen the cut, for a real power spike.
@@ -83,17 +83,38 @@ func _tick() -> void:
 func _draw() -> void:
 	if level <= 0:
 		return
-	# Faint ring marking the blades' path, then a steely blade glint at each blade.
-	draw_arc(Vector2.ZERO, orbit_radius, 0.0, TAU, 48, Color(0.75, 0.85, 1.0, 0.12), 1.0)
+	# Faint gold ring marking the tomes' path, then a small spinning holy book at each point.
+	draw_arc(Vector2.ZERO, orbit_radius, 0.0, TAU, 48, Color(0.95, 0.85, 0.50, 0.12), 1.0)
 	var bright := 0.6 + _pulse * 0.4
 	for i in count:
 		var a := _angle + float(i) * TAU / float(count)
 		var lp := Vector2.from_angle(a) * orbit_radius
-		var fwd := Vector2.from_angle(a + PI * 0.5)   # travel direction (tangent to the ring)
-		var side := fwd.orthogonal()
-		# A pointed steel blade leaning into its travel, with a bright core glint.
-		var poly := PackedVector2Array([
-			lp + fwd * 11.0, lp + side * 4.0, lp - fwd * 11.0, lp - side * 4.0,
-		])
-		draw_colored_polygon(poly, Color(0.82, 0.88, 1.0, 0.85))
-		draw_circle(lp, 3.0, Color(1.0, 1.0, 1.0, bright))
+		# The book's local basis spins with the ring so each tome tumbles as it flies.
+		var along := Vector2.from_angle(a + PI * 0.5)   # spine axis, tangent to travel
+		var flat := along.orthogonal()                  # across the cover (radial)
+		_draw_tome(lp, along, flat, bright)
+
+func _draw_tome(lp: Vector2, along: Vector2, flat: Vector2, bright: float) -> void:
+	# A small closed holy book: cream cover, dark spine on one long edge, bright page fore-edge on the
+	# other, and a gold cross on the face — brightened on a connecting tick so the cut still reads.
+	const HL := 9.0    # half-length (down the spine)
+	const HW := 6.5    # half-width (across the closed cover)
+	var cover := Color(0.90, 0.86, 0.72).lerp(Color(1.0, 1.0, 1.0), _pulse * 0.5)
+	draw_colored_polygon(PackedVector2Array([
+		lp + along * HL + flat * HW, lp + along * HL - flat * HW,
+		lp - along * HL - flat * HW, lp - along * HL + flat * HW,
+	]), cover)
+	# Dark leather spine band on the -flat edge.
+	draw_colored_polygon(PackedVector2Array([
+		lp + along * HL - flat * HW, lp + along * HL - flat * (HW - 2.0),
+		lp - along * HL - flat * (HW - 2.0), lp - along * HL - flat * HW,
+	]), Color(0.42, 0.24, 0.14, 0.95))
+	# Bright page fore-edge on the +flat edge.
+	draw_colored_polygon(PackedVector2Array([
+		lp + along * (HL - 1.0) + flat * HW, lp + along * (HL - 1.0) + flat * (HW - 2.0),
+		lp - along * (HL - 1.0) + flat * (HW - 2.0), lp - along * (HL - 1.0) + flat * HW,
+	]), Color(1.0, 0.98, 0.90, 0.95))
+	# Gold cross on the cover face.
+	var gold := Color(0.85, 0.70, 0.28, bright)
+	draw_line(lp - along * (HL * 0.55), lp + along * (HL * 0.5), gold, 1.5)
+	draw_line(lp + along * (HL * 0.1) - flat * (HW * 0.45), lp + along * (HL * 0.1) + flat * (HW * 0.45), gold, 1.5)

@@ -52,8 +52,8 @@ func _provide() -> Dictionary:
 	}
 
 func _actions(phase: String) -> Array:
-	if phase == "game_over":
-		return ["ui_accept"]
+	if phase == "game_over" or phase == "victory":
+		return ["ui_accept"]   # both terminal phases: Enter restarts the run
 	if phase == "level_up":
 		return ["choose_1", "choose_2", "choose_3"]
 	return ["move_up", "move_down", "move_left", "move_right"]

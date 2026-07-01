@@ -7,6 +7,23 @@ extends CanvasLayer
 
 signal chosen(key: String)
 
+## Per-upgrade icons (item art from SourceArt) shown to the LEFT of each choice so the
+## pick reads at a glance, not just from text. Keyed by the same upgrade key as VSRun.UPGRADES;
+## sources are square (64 or 256 px) so a 32px cap downscales by an integer ratio — crisp under
+## the project's NEAREST filter (see VISUAL_RULES.md).
+const ICONS := {
+	"damage": preload("res://art/icons/damage.png"),
+	"firerate": preload("res://art/icons/firerate.png"),
+	"speed": preload("res://art/icons/speed.png"),
+	"projectile": preload("res://art/icons/projectile.png"),
+	"garlic": preload("res://art/icons/garlic.png"),
+	"orbit": preload("res://art/icons/orbit.png"),
+	"wand": preload("res://art/icons/wand.png"),
+	"regen": preload("res://art/icons/regen.png"),
+	"armor": preload("res://art/icons/armor.png"),
+}
+const ICON_MAX := 32   # cap icon width (px); 64->32 and 256->32 are integer downscales (crisp on NEAREST)
+
 var _options: Array = []   ## Array of {key, title, desc} dicts (set before add_child).
 var _owned: Dictionary = {}   ## upgrade key -> times already chosen (drives the Lv/NEW tag).
 var _done := false
@@ -49,6 +66,14 @@ func _ready() -> void:
 		btn.text = "[%d]  %s (%s) — %s" % [i + 1, str(opt.get("title", "")), tag, str(opt.get("desc", ""))]
 		btn.custom_minimum_size = Vector2(380, 46)
 		btn.add_theme_font_size_override("font_size", 16)
+		# Weapon/passive icon to the LEFT of the label. icon_max_width caps it (preserving aspect),
+		# left alignment pins it to the button's leading edge, h_separation gaps it from the text.
+		var icon: Texture2D = ICONS.get(key, null)
+		if icon != null:
+			btn.icon = icon
+			btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
+			btn.add_theme_constant_override("icon_max_width", ICON_MAX)
+			btn.add_theme_constant_override("h_separation", 10)
 		btn.pressed.connect(func() -> void: _choose(key))
 		box.add_child(btn)
 		if i == 0:

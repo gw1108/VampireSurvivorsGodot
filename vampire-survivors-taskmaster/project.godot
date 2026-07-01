@@ -23,8 +23,8 @@ Sfx="*res://scripts/audio/sfx.gd"
 
 [display]
 
-window/size/viewport_width=800
-window/size/viewport_height=640
+window/size/viewport_width=1445
+window/size/viewport_height=920
 window/stretch/mode="canvas_items"
 
 [editor_plugins]

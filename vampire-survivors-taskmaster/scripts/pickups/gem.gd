@@ -5,14 +5,20 @@ extends Node2D
 
 const RADIUS := 6.0
 const PICKUP := 24.0
-const MAGNET := 95.0
-const MAGNET_SPEED := 240.0
+const MAGNET := 140.0          # range at which a gem starts homing toward the player (a touch wider than the player sprite's reach so your wake gets swept up)
+# Distance-ramped homing: slow at the edge of MAGNET range, accelerating to a "vacuum" snap right
+# before pickup. MAGNET_SPEED_MAX is kept comfortably above the player's top speed (base 210, and
+# higher with Swift) so a gem behind a fleeing/kiting player still catches up — a flat 240 px/s
+# barely beat the 210 base and LOST to a Swift-stacked player, stranding XP and starving level-ups.
+const MAGNET_SPEED_MIN := 230.0
+const MAGNET_SPEED_MAX := 560.0
 const SPRITE := preload("res://art/gem_xp.png")
 const SPRITE_RICH := preload("res://art/gem_xp_red.png")   # high-value drop (e.g. a brute): reads RED so soaking a tank pays off
 const SPARK_DUR := 0.18   # brief sparkle the gem plays on pickup before freeing
 
 var run: VSRun
 var xp_value := 1         # XP granted on pickup; >1 draws the richer red gem (set by the spawner via the enemy)
+var vacuum := false       # level-up sweep: when set, this gem homes to the player regardless of distance
 var _collected := false
 var _spark_t := 0.0
 
@@ -35,8 +41,19 @@ func _process(delta: float) -> void:
 	var pl := run.player
 	var to := pl.position - position
 	var d := to.length()
-	if d < MAGNET and d > 0.5:
-		position += to / d * MAGNET_SPEED * delta
+	if vacuum and d > 0.5:
+		# Level-up sweep: this gem was flagged (in VSRun._show_level_up) to rush the player
+		# regardless of distance, so the whole field of XP vacuums in at the snap speed as the
+		# world unfreezes — the iconic VS level-up rush. MAGNET_SPEED_MAX stays above any player
+		# speed, so even far-flung gems catch up and none are left orphaned.
+		position += to / d * MAGNET_SPEED_MAX * delta
+	elif d < MAGNET and d > 0.5:
+		# Speed ramps up as the gem nears the player (0 at the edge -> 1 at pickup), so the pull
+		# starts gentle and snaps in like a vacuum — and the peak stays above any player speed, so
+		# fleeing the death-pile never strands the gem.
+		var t := 1.0 - clampf(d / MAGNET, 0.0, 1.0)
+		var sp := lerpf(MAGNET_SPEED_MIN, MAGNET_SPEED_MAX, t)
+		position += to / d * sp * delta
 	if d < PICKUP + VSPlayer.RADIUS:
 		run.collect_xp(xp_value)
 		AgentBridge.emit_event("pickup", {"type": "xp", "value": xp_value})

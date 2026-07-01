@@ -3,6 +3,690 @@
 Each Ralph/Workshop pass appends `[x] <title> — <what landed>` here. Union-merged across lanes
 (see `.gitattributes`) so parallel appends concatenate instead of conflicting.
 
+[x] Recycle far-off enemies so kiting never empties the field — the player (157.5) outruns every
+    enemy kind (bat 46.5 / ghost 84 / brute 31.5), yet enemies only ever left the "enemies" group on
+    death, so a kiter left a permanent trail of stragglers that never catch up. Once MAX_ENEMIES=90
+    fills with those off-screen bodies, _spawn_one() early-returns and NO new enemies spawn around the
+    player — the field ahead empties as you move, and the cap is wasted on irrelevant far-away enemies.
+    enemy.gd only: added const DESPAWN_DIST=1200 and, in _process right after the already-computed
+    player distance d, a cull — `if d > DESPAWN_DIST and not is_reaper: remove_from_group("enemies");
+    queue_free(); return` — a silent recycle (no gem, no kill, no despawn event) that frees the cap so
+    the spawner keeps refilling the SPAWN_RING (520) around the moving player. 1200px is well beyond the
+    ~950px visible corner (viewport 1445x920 @ zoom 0.9) so nothing on-screen ever pops out; spawn
+    distance is <=520 so a fresh enemy is never culled on spawn; the reaper is explicitly excluded so
+    the finale boss always reaches the duel; _dying enemies already return earlier so corpses aren't
+    culled. queue_free defers to end-of-frame but remove_from_group is immediate, so other nodes
+    iterating the group this frame already skip the recycling body. One file; no scene/art/API changes;
+    a different KIND (gameplay/performance) from the recent art/UI/wording passes. Gate PASS exit 0
+    (import registered VSEnemy with no parse errors — validating the new const + cull — + both smoke
+    tests incl. run-scene boot which spawns enemies and runs their _process through the new cull path;
+    the ~6s smoke never pushes an enemy 1200px out so no early free). Eyeball (feel the gate can't
+    judge): kite in one direction for a while — instead of the field going empty behind you, distant
+    stragglers vanish and fresh enemies keep pouring in from the ring ahead. Tune DESPAWN_DIST by feel.
+
+[x] Reword the victory banner to reflect slaying the Reaper — winning is now killing the summoned
+    Reaper, but the victory banner still read "YOU SURVIVED!", so the climax didn't name the deed.
+    hud.gd only: changed the victory headline from "YOU SURVIVED!" to "YOU SLEW DEATH!" in both
+    `_ready()` (the headline-only initial text) and `refresh()` (the victory-phase banner compose),
+    matching the boss banner's "SLAY DEATH" wording; kept the run-recap line and "Press Enter to play
+    again" beneath it untouched, and updated the two matching comments. One file; no scene/API/art
+    changes; a small end-of-run UI-wording increment. Gate PASS exit 0 (import parsed VSHud with no
+    errors + both smoke tests incl. run-scene boot which builds the HUD and calls refresh()). Eyeball:
+    slay the Reaper — the banner now reads "YOU SLEW DEATH!" above the "Survived M:SS   Kills N   Lv N" recap.
+
+[x] Show a run recap (time/kills/level) on the death & victory banners — the end-of-run banners were
+    static text ("YOU DIED" / "YOU SURVIVED!"), so a finished run showed no summary of what it achieved —
+    a bare, unsatisfying close for a slice whose GOAL is "polished, genuinely fun." hud.gd only: added
+    `_recap(run)` — returns "Survived M:SS    Kills N    Lv N" with spacing/wording matching the top
+    `_stat` readout so it reads as the same run's final tally — and `_format_time(secs)` (seconds → M:SS,
+    e.g. 154.0 → "2:34"). `refresh()` now composes the recap into the banner text when each banner's phase
+    is active: `"YOU DIED\n\n<recap>\n\nPress Enter to retry"` for game_over and
+    `"YOU SURVIVED!\n\n<recap>\n\nPress Enter to play again"` for victory. The `_ready()` initial text is
+    now headline-only (a comment notes refresh() rewrites it once visible); the banners already
+    center-anchor with grow-both so the extra lines stay centred at any resolution. Composed only while the
+    banner is up (a static screen until Enter reloads), so the per-frame string build is negligible and
+    matches the existing per-frame `_stat.text` set. One file; no scene/API/art changes; a different KIND
+    (end-of-run UI/closure) from the recent hitbox/icon/orbit/balance passes. Gate PASS exit 0 (import
+    parsed VSHud with the new `_recap`/`_format_time` helpers + the refresh() change, no errors, + both
+    smoke tests incl. run-scene boot which builds the HUD and calls refresh() per frame). Eyeball (the ~6s
+    gate never reaches a run end): die, or slay the Reaper — the banner now shows a "Survived 2:34   Kills
+    187   Lv 12" summary between the headline and the retry prompt; tune wording/spacing by eye.
+
+[x] Unify the player hitbox that collides with enemies with player getting hurt — the player had TWO
+    separate circular colliders: SOLID_RADIUS=9 (blocked enemy movement) and RADIUS=14 (the contact-damage
+    hurt box), each checked separately in enemy.gd, so "how close before I get hurt" and "how close before
+    an enemy is stopped" were two different circles. Unified them into ONE rectangle roughly the player's
+    visual footprint. player.gd: removed SOLID_RADIUS; added `const HITBOX_HALF := Vector2(16.0, 21.0)`
+    (half-extents ≈ the visible body, ~32×42 vs the 49×52 sprite); kept RADIUS=14 but it now serves ONLY
+    gem-pickup assist (gem.gd), not enemy contact — doc comment updated to say so. enemy.gd `_process`:
+    replaced the radial solid-block push (`VSPlayer.SOLID_RADIUS + radius` along the player→enemy line) AND
+    the separate circular contact check (`d < radius + VSPlayer.RADIUS`) with a single Minkowski test — the
+    player rect inflated by this enemy's own `radius`. If the enemy centre is inside that inflated rect it is
+    BOTH ejected along the axis of least penetration (so the round body sits flush against the flat player
+    edge; +x fallback if dead-centre) AND, on the 0.5s contact cooldown, deals contact damage. So "pressed
+    against the player" and "hurting the player" are now literally the same boundary — the unification the
+    task asked for. Two files (player.gd, enemy.gd); no scene/art/API changes; gem pickup (still reads
+    VSPlayer.RADIUS) and enemy knockback (uses the enemy's own RADIUS) are untouched. Gate PASS exit 0
+    (import registered VSPlayer+VSEnemy with no parse errors — validating HITBOX_HALF and the new rect math —
+    plus both smoke tests incl. run-scene boot, which spawns enemies that chase/contact the player through
+    the unified collider headless). Eyeball (feel the gate can't judge): let a swarm press on you — enemies
+    stop flush against a body-shaped rectangle and the damage edge matches exactly where they're blocked; the
+    taller box means top/bottom contact reads a touch further out than the old r=14 circle. Tune HITBOX_HALF
+    by feel.
+
+[x] Redraw the Empty Tome (firerate) icon as a book — the firerate upgrade was renamed Empty Tome
+    (cooldown) but its icon at art/icons/firerate.png was still a flaming stopwatch, mismatching the name
+    while every other upgrade icon already depicts its faithful VS item. Replaced firerate.png with a
+    hand-drawn pixel-art closed TOME. Authored at 32x32 native pixel-art resolution then scaled x8 to
+    256x256 with NEAREST (honors VISUAL_RULES: no filtering/mipmaps, integer scale) — kept the SAME
+    256x256 dimensions as the old file so the documented integer-downscale invariant still holds (256->32
+    via /8 for the level-up picker's ICON_MAX 32, 256->16 via /16 for the HUD loadout's LOADOUT_ICON_PX
+    16; both NEAREST downscales were rendered and verified to still read as a book). Made it a TEAL magic
+    tome — teal cover, gold ornate inset frame, cyan center gem, cream page edges peeking on the
+    right+bottom, dark spine on the left — with a 1px black silhouette outline, deliberately distinct from
+    the brown KJV bible orbit icon so the two book items never read the same. ONLY art/icons/firerate.png
+    changed; the .import is untouched (same 256x256 RGBA PNG — the gate's headless import reimported it) and
+    no script/scene/key changes were needed since levelup_screen.gd (ICONS) and hud.gd (ICONS) already
+    preload res://art/icons/firerate.png by the 'firerate' key, so the new art shows with zero code change.
+    Gate PASS exit 0 (godot --import reimported firerate.png with no errors + both smoke tests incl.
+    run-scene boot). Eyeball (art the gate can't judge): open a level-up — the Empty Tome choice now shows
+    a teal book instead of a flaming clock, and the bottom-left HUD loadout shows the same book at 16px;
+    tune the palette/frame by eye.
+
+[x] Reskin the King Bible orbit visual from blades to tomes — the orbit weapon was renamed King Bible
+    (matching its bible icon + the GDD) but orbit.gd still drew steel blade polygons, a mismatch left over
+    from the old "Blades" upgrade. orbit.gd (VSOrbit._draw) only: replaced the pointed blade-polygon +
+    core glint at each orbit point with a small spinning holy book, drawn from primitives like the rest of
+    the juice. New _draw_tome(lp, along, flat, bright) draws a closed book — a cream cover quad (Color
+    0.90,0.86,0.72, lerped toward white by _pulse on a connecting tick), a dark-leather spine band on the
+    -flat long edge (0.42,0.24,0.14), a bright page fore-edge on the +flat long edge (1.0,0.98,0.90), and a
+    gold cross on the face (two draw_line bars, alpha 0.6 + _pulse*0.4). The book's local basis (along =
+    tangent to travel, flat = radial) comes from the ring angle so each tome tumbles as it flies. Recolored
+    the faint orbit path ring from steely blue to gold (0.95,0.85,0.50,0.12), and updated the class doc
+    header (Blades → King Bible / N holy tomes). run.gd: King Bible picker desc changed from "Orbiting
+    attack that strikes nearby foes" to "Spinning holy tomes that strike nearby foes". Two files (orbit.gd +
+    run.gd); no scene/art/API changes; damage/count/spin/orbit_radius/level_up + the _tick hit logic are
+    untouched so the weapon behaves identically. Gate PASS exit 0 (import registered VSOrbit+VSRun with no
+    parse errors — validating _draw_tome + the recolored ring — + both smoke tests incl. run-scene boot; the
+    ~6s smoke test never reaches a level-up so King Bible isn't picked and _draw_tome is parse-validated, not
+    run at runtime). Eyeball (visual the gate can't judge): pick King Bible at a level-up — small cream books
+    with a gold cross spin around Antonio instead of steel blades; tune HL/HW (book size) and the
+    cover/spine/page colors by eye.
+
+[x] Fix passive item movespeed (Wings +12%) — the Wings (speed) passive applied
+    `player.speed *= 1.12`, so the "+12% move speed" label was inaccurate under stacking:
+    multiplicative compounding (1.12^n) made each successive pick worth >12% of base and could
+    balloon a stacked player past the gem magnet's edge speed (gem.gd MAGNET_SPEED_MIN 230),
+    stranding XP behind a fleeing kiter (a documented concern). Fixed to a clean additive
+    +12%-of-base per pick: player.gd now defines `const BASE_SPEED := 157.5` with
+    `var speed := BASE_SPEED`, and run.gd apply_upgrade("speed") does
+    `player.speed += VSPlayer.BASE_SPEED * 0.12`. Pick 1 is unchanged (157.5 → 176.4, same as
+    *1.12); after that speed grows linearly at +18.9 px/s/pick, so the label is literally true at
+    every stack and late picks no longer runaway. Two files (player.gd, run.gd); no scene/art/API
+    changes. Gate PASS exit 0 (import registered VSPlayer+VSRun with no parse errors — validating
+    the new const + the VSPlayer.BASE_SPEED reference in run.gd — + both smoke tests incl. run-scene
+    boot which runs apply_upgrade headless). Eyeball: stack Wings a few times and feel the movement
+    speed rise in even, predictable steps.
+
+[x] Whip rework again — reworked the Multishot whip layout. A single whip now cracks FLAT toward the
+    player's facing (box centre HSEP to the facing side, NO vertical offset) instead of a diagonal NE/NW
+    corner. Multishot adds cracks alternating BACKWARD then FORWARD, each stacking one VSEP row UP on its
+    own side: forward indices (even i) climb rows 0,1,2…; backward indices (odd i) climb rows 1,2,3… — so
+    a 4-stack reads forward@row0 / NW@row1 / forward@row1 / NW@row2 (a forward column + a backward column
+    climbing off the player, matching the task's WWW/WWW…[player]WWW sketch). whip.gd only: removed the
+    old _alt up/down toggle and _swing_dirs(); new _swing_strikes(n) returns (hsign,row) packed in a
+    Vector2 in Multishot order; _strike(hsign,row) centres the AABB pierce box at global_position +
+    (HSEP*hsign, -VSEP*row); _spawn_slash(centre,hsign) mirrors the slash VFX purely by world horizontal
+    sign (hsign<0 → -SLASH_ROT + scale.x flip). MAX_DIRS stays 4 (also the Duplicator cap in run.gd);
+    fire_count/fire_interval/damage/projectile_count untouched so the smoke test + upgrades are
+    unaffected. Gate PASS exit 0 (import + both smoke tests). Eyeball: facing right, a single whip cracks
+    straight east at body height; Duplicator adds NW, then forward stacked above, then backward stacked
+    above — two columns climbing off Antonio. Tune VSEP row spacing by eye.
+
+[x] Pipeestrello variants — every bat shared one sprite, so a dense pack read as identical clones. We
+    have no per-variant bat art, so per the task we vary the existing sprite's SIZE. spawner.gd
+    _apply_kind only: added an explicit `else` bat branch (the bat was previously the implicit fallback
+    that just kept the VSEnemy defaults) that picks one of three size variants — small/normal/large via
+    `vscale := 0.9 + float(randi() % 3) * 0.1` (0.9 / 1.0 / 1.1) — and sets `e.base_scale = vscale` plus
+    `e.radius = VSEnemy.RADIUS * vscale` so the swarm reads as a crowd of differently-sized creatures
+    instead of one stamped texture. Radius tracks the scale so what-you-see is still what-you-hit;
+    HP/damage/speed stay at the bat baseline (this is visual variety, not a new toughness tier), and
+    _apply_difficulty's `*=` base_scale/radius tier growth still stacks on top so a hardened bat keeps its
+    variant size. ghost/brute/reaper untouched. One file; no scene/art/API changes. Gate PASS exit 0
+    (import registered VSSpawner with no parse errors — validating the new else branch + the
+    `VSEnemy.RADIUS` reference — + both smoke tests incl. run-scene boot which spawns bats and runs their
+    _draw through base_scale). Eyeball (feel the gate can't judge): play a wave — the bats should now be a
+    mix of slightly smaller and larger bodies rather than identical clones; tune the ±10% spread by feel.
+
+[x] Remove items/passives that should not exist — the level-up pool used INVENTED names that aren't
+    in the GDD slice roster (thoughts/shared/game-design), out of sync with the already-faithful icon
+    art. Renamed run.gd UPGRADES titles/descs to the canonical Vampire Survivors items (keys + both
+    ICONS dicts + hud _title_for unchanged, so apply_upgrade still keys off them): Power→Spinach (leaf
+    icon), Haste→Empty Tome (cooldown), Swift→Wings (winged-boots icon), Multishot→Duplicator (gold-ring
+    icon), Blades→King Bible (the orbit icon was already a KJV bible). The made-up "Vitality"/regen is
+    Pummarola/HP-recovery, which the GDD explicitly marks *not in slice* — reworked it into Hollow Heart
+    (+20% max HP per pick, healing by the gain), a REAL slice passive the heart-"+1" icon already
+    depicts: apply_upgrade("regen") now raises player.max_health/health instead of regen, and the
+    now-dead `var regen` + its _process recovery loop were removed from player.gd (the stale Vitality
+    reference in take_damage's Armor comment trimmed too). Also corrected run.gd's _roll_upgrades comment
+    (Multishot→Duplicator). The agent adapter already reports health/max_health, so Hollow Heart shows to
+    the harness with no adapter change. Two files (run.gd + player.gd); no scene/art/key/icon changes —
+    every pool item now maps to a GDD weapon (Garlic, King Bible, Magic Wand) or passive (Spinach, Empty
+    Tome, Wings, Duplicator, Hollow Heart, Armor), with Whip as the starter. Gate PASS exit 0 (import
+    registered VSPlayer+VSRun with no parse errors — validating the reworked match arm and the field
+    removal — + both smoke tests incl. run-scene boot which drives apply_upgrade). Eyeball (feel the gate
+    can't judge): level up and confirm the picker reads the faithful names, and Hollow Heart widens the
+    health bar (more max HP) rather than trickling HP back. Follow-ups queued: reskin the King Bible
+    orbit visual (still steel blades) to tomes, and redraw the Empty Tome icon (still a flaming clock).
+
+[x] Subtle small black outline by default — bodies blended into the busy ground (GOAL readability /
+    FEEL-REVIEW "flat presentation"). Added a subtle thin black rim around the player and every enemy
+    kind WITHOUT a shader/material/scene/art: the sprite silhouette drawn tinted SOLID black
+    (OUTLINE_COLOR Color(0,0,0,0.7)) at 8 small offsets (OUTLINE_PX 1.5, diagonals normalized to unit
+    length so the rim is even) BEHIND the real sprite — modulate keeps transparent pixels clear, so only
+    the silhouette darkens (no box). player.gd: new _draw_outline(rect) reuses the same flipped facing
+    rect, drawn between the ground shadow and the sprite (always, incl. the greyed death sprite).
+    enemy.gd: the offset copies draw inside the existing draw_set_transform(scale), so the rim scales with
+    the sprite (a brute/reaper gets a proportionally thicker rim), and are skipped while _dying so the
+    bright fading death pop stays clean. New OUTLINE_COLOR/OUTLINE_PX/OUTLINE_OFFSETS consts (typed const
+    Array[Vector2], matching whip.gd's DIRS) in both files. Two files (player.gd + enemy.gd); no
+    scene/art/API changes. Gate PASS exit 0 (import registered VSPlayer+VSEnemy with no parse errors —
+    validating the typed const array + the new outline draws — + both smoke tests incl. run-scene boot
+    which spawns the player/enemies and runs their _draw through the outline path). Eyeball (feel the gate
+    can't judge): the player and every enemy kind now carry a thin black rim that pops them off the
+    background; tune OUTLINE_PX / the 0.7 alpha by feel.
+
+[x] Simple blob shadow for player + enemies — the presentation read flat/floaty (FEEL-REVIEW
+    flagged it), so bodies didn't sit on the ground. Added a soft, flattened dark-ellipse ground
+    shadow under the feet, drawn FIRST in each entity's _draw() (above the z=-100 ground, beneath
+    its own sprite) via a non-uniform draw_set_transform that squashes a draw_circle into a ground
+    ellipse, then resets the transform. player.gd: new SHADOW_COLOR/SHADOW_W_FRAC/SHADOW_FLATTEN/
+    SHADOW_LIFT consts + _draw_shadow() called at the top of _draw() (also shows on death). enemy.gd:
+    _draw_shadow(alpha_mul) sized to the RESTING footprint (× base_scale, so a brute/reaper casts a
+    bigger shadow than a bat) and faded out with the death pop's p; called before the existing
+    sprite-scale transform. Two files (player.gd + enemy.gd); no scene/art/API changes. Gate PASS
+    exit 0 (import registered VSPlayer+VSEnemy with no parse errors + both smoke tests incl. the
+    run-scene boot, which spawns the player/enemies and runs their _draw). Eyeball (feel the gate
+    can't judge): a soft oval shadow hugs the feet of the player and every enemy kind, growing for
+    the brute/reaper; tune the alpha/flatten by feel.
+
+[x] Show upgrade icons in the HUD loadout readout too — the bottom-left owned-build readout
+    (hud.gd refresh_loadout) was text-only ("Power Lv2") while the level-up picker already shows item
+    icons, so the owned build and the picker read inconsistently. hud.gd ONLY: added an ICONS preload
+    set (the same res://art/icons/<key>.png art VSLevelUpScreen.ICONS uses, keyed by the VSRun.UPGRADES
+    key) + const LOADOUT_ICON_PX 16 (64->16 ×4 and 256->16 ×16 are integer downscales — crisp on
+    NEAREST). Changed _loadout from a Label to a VBoxContainer (still bottom-left, grows up, separation
+    2, MOUSE_FILTER_IGNORE) built in _ready. refresh_loadout now queue_frees the previous rows and
+    rebuilds one HBoxContainer per owned upgrade (acquisition order preserved by the Dictionary): a 16px
+    TextureRect icon (EXPAND_IGNORE_SIZE + STRETCH_KEEP_ASPECT_CENTERED; NO per-node texture_filter
+    override, so it keeps the project NEAREST default per VISUAL_RULES) + an outlined "LvN" Label;
+    falls back to "<title>  LvN" text when an upgrade has no icon (keeps _title_for). No scene/art/API
+    changes — one file. Gate PASS exit 0 (import registered VSHud with no parse errors + both smoke
+    tests incl. run-scene boot, which builds the HUD via _ready; the ~6s smoke test doesn't reach a
+    level-up so refresh_loadout itself is parse-validated). Eyeball (feel the gate can't judge): pick a
+    couple of upgrades and confirm the bottom-left readout shows crisp 16px item icons with "LvN"
+    beside them, rows growing upward, matching the picker.
+
+[x] Pre-spawn 'DEATH APPROACHES' warning before the Reaper — the finale telegraphed only at the
+    instant the Reaper spawned (the 14-magnitude summon quake + the "THE REAPER COMES" banner), so it
+    sprang with no foreshadowing. Added a build-up in the last few seconds before SURVIVE_SECONDS.
+    run.gd: new consts REAPER_WARN_SECONDS 4.0 / REAPER_WARN_SHAKE_MIN 1.5 / REAPER_WARN_SHAKE_MAX 6.0
+    (kept under the 14 summon quake) + a _reaper_warned once-guard. _process's summon check is now
+    `if not _reaper_summoned: if elapsed >= SURVIVE_SECONDS: _summon_reaper() elif elapsed >=
+    SURVIVE_SECONDS - REAPER_WARN_SECONDS: _warn_reaper()`. _warn_reaper() fires a one-time AgentBridge
+    "reaper_warning" {time} event (so the headless FEEL reviewer, which can't see shake, observes the
+    build-up) and each frame calls add_shake(lerpf(MIN,MAX,p), 0.25) with p = window progress 0->1 —
+    add_shake takes the strongest pending kick, so a per-frame rising magnitude over a sustained 0.25s
+    window yields a growing tremor that then hands off to the bigger 14 summon quake. hud.gd: new
+    _warning Label "DEATH APPROACHES" (blood-red 0.95,0.10,0.12, font_size 30, outline 6, CENTER_TOP
+    offset_top 44 — the same top slot the boss banner takes over) + const WARN_FLASH_HZ 3.0; refresh()
+    shows it only while phase=="playing" and not reaper_alive and SURVIVE_SECONDS-REAPER_WARN_SECONDS <=
+    elapsed < SURVIVE_SECONDS (so it hands off cleanly to "THE REAPER COMES" at the summon, never both at
+    once) and pulses modulate.a via 0.25 + 0.75*(0.5 + 0.5*sin(t * WARN_FLASH_HZ * TAU)) so it flashes
+    urgently. Two files (run.gd + hud.gd); no scene/art/API changes; the ~6s smoke test never reaches the
+    296-300s window so reaper==null and the warning never shows — no regression. Gate PASS exit 0 (import
+    registered VSRun+VSHud with no parse errors — validating the new consts, _warn_reaper, and the warning
+    label/flash — + both smoke tests incl. run-scene boot which builds the HUD and runs the controller
+    through _process/refresh each frame). Eyeball (feel the gate can't judge): lower SURVIVE_SECONDS to
+    test quickly — in the last ~4s before Death descends a flashing red "DEATH APPROACHES" banner appears
+    over a rising rumble, then it cuts to "THE REAPER COMES" + the big summon quake as the Reaper drops in.
+    Tune REAPER_WARN_SECONDS / shake min-max / WARN_FLASH_HZ by feel.
+
+[x] Boss HP bar for the Reaper finale — the Reaper (REAPER_HP 400) had only the banner, no health
+    readout, so the duel gave no sense of progress. hud.gd (VSHud) only: a wide blood-red boss HP bar
+    under the "THE REAPER COMES" banner. New consts BOSS_BAR_TOP 82 / BOSS_BAR_H 16 / BOSS_BAR_LEFT 0.2
+    / BOSS_BAR_RIGHT 0.8 (anchors -> centre 60% of the viewport, centred at any width) / BOSS_BAR_TRACK
+    (dark = drained) / BOSS_BAR_FILL (blood-red = Death's life). _ready builds two anchored ColorRects
+    under the banner — a track + a fill on top, both MOUSE_FILTER_IGNORE, hidden until the Reaper is up.
+    refresh() hoists the banner's "reaper_alive" test (phase=="playing" and run.reaper valid) to a local,
+    reuses it for _boss.visible + both rects' visibility, and when alive drives the fill's right edge:
+    anchor_right = BOSS_BAR_LEFT + (BOSS_BAR_RIGHT-BOSS_BAR_LEFT) * clampf(run.reaper.health /
+    VSSpawner.REAPER_HP, 0, 1) — red drains right-to-left as Death is chipped, the dark track showing as
+    lost HP. health is read only inside the reaper_alive guard, and _on_reaper_killed nulls reaper before
+    phase flips to victory, so the bar hides cleanly on the kill (no null deref / zero-width flash). One
+    file; no scene/art/API changes; the ~6s smoke test never hits 300s so reaper==null and the bar stays
+    hidden — no regression. Gate PASS exit 0 (import parsed VSHud — validating the ColorRects, the
+    VSSpawner.REAPER_HP reference, and the clampf ratio — + both smoke tests incl. run-scene boot which
+    builds the HUD and calls refresh() per frame). Eyeball: lower SURVIVE_SECONDS to test quickly — when
+    Death descends a wide blood-red bar appears under the banner and drains as you plink the Reaper down,
+    then vanishes on the kill.
+
+[x] Stop offering Multishot once the whip is maxed (no dead-choice trap) — the whip caps at
+    VSWhip.MAX_DIRS=4 corners (n := clampi(projectile_count, 1, MAX_DIRS) in _fire), so a 4th+
+    Multishot pick cost a level-up choice for ZERO effect. run.gd only: _roll_upgrades() now filters
+    UPGRADES through a new _is_maxed(key) before shuffle()/slice(0,3); _is_maxed drops 'projectile'
+    once weapon.projectile_count >= VSWhip.MAX_DIRS (the only capped upgrade today, else false), so a
+    fully-stacked whip never offers the dead pick. 8 upgrades remain so slice(0,3) still yields 3.
+    Gate PASS exit 0 (import parsed VSRun + both smoke tests incl. run-scene boot). Eyeball: cap
+    Multishot at 4 corners, keep leveling — it no longer appears among the 3 offered choices.
+
+[x] Flashing-colors XP bar during the level-up picker — during level_up the leftover xp had
+    already been subtracted (VSRun._check_level_up's `xp -= need`), so the top-of-screen XP bar sat
+    near-empty during the big moment. hud.gd (VSHud) only: refresh() now branches on run.phase — when
+    phase=="level_up" it forces _xp_fill.anchor_right = 1.0 (bar shows FULL) and flashes the color by
+    cycling the hue via Color.from_hsv(fmod(Time.get_ticks_msec()/1000.0 * XP_FLASH_HZ, 1.0), 0.8, 1.0,
+    0.95) (new const XP_FLASH_HZ=1.5 full-rainbow cycles/sec); the normal branch restores the steady
+    cyan-blue XP_FILL_COLOR (0.40,0.78,1.0,0.95 — extracted to a const, reused in _ready) and the
+    xp/(level*5) fill ratio, so the bar snaps back to normal once the picker closes. refresh() is called
+    every frame from run._process regardless of phase, so the flash animates while the world is frozen.
+    One file; no scene/API changes. Gate PASS exit 0 (import parsed VSHud with no parse errors —
+    validating Color.from_hsv / Time.get_ticks_msec — + both smoke tests incl. run-scene boot which
+    builds the HUD and calls refresh() per frame). Eyeball: play to a level-up — the top XP bar appears
+    full and rapidly cycles through colors while the picker is open, then returns to the blue progress
+    fill when you pick.
+
+[x] Level-up picker shows weapon/passive icons — the choice buttons were text-only; now each shows
+    its item icon to the LEFT of the label. Imported 9 matching icons from SourceArt/extracted_clean
+    into res://art/icons/ named by upgrade key (spinach->damage, fire_clock->firerate,
+    winged_boots->speed, duplicator_ring_blue->projectile, garlic, bible->orbit, magic_wand->wand,
+    plus_heart->regen, armor). levelup_screen.gd: new const ICONS (key->preloaded Texture2D) +
+    ICON_MAX 32; each Button gets icon=ICONS[key], alignment=LEFT, icon_max_width=32 theme const,
+    h_separation=10. Square 64/256px sources cap to 32 by an integer ratio (÷2, ÷8) so they stay crisp
+    on the project's NEAREST filter (VISUAL_RULES; no per-node filter override). One script edit + 9
+    PNGs(+9 .import). Gate PASS exit 0 (import reimported all 9 icons + both smoke tests incl. run-scene
+    boot which loads VSLevelUpScreen so the preload dict resolves). Eyeball: at a level-up each of the 3
+    choices shows its item icon on the left.
+
+[x] Replace the instant survival-victory with a Reaper boss finale — faithful to VS, reaching
+    SURVIVE_SECONDS no longer instantly wins; it summons Death, and the run is WON by slaying it.
+    run.gd: _process now calls _summon_reaper() (was _on_victory()) at the time limit, once-guarded
+    by `_reaper_summoned`; new fields `spawner: VSSpawner` (the _build_world local is now a field),
+    `reaper: VSEnemy`, `_reaper_summoned`. _summon_reaper() asks the spawner to build the boss, stores
+    run.reaper, kicks add_shake(14,0.6) and emits AgentBridge "reaper_summoned" {time} (no audio —
+    GOAL minimizes sfx; the shake + giant sprite + banner carry the telegraph). Victory now fires only
+    from _on_reaper_killed() — phase=="playing"-guarded so a same-frame player death can't be
+    overwritten and a double lethal hit can't double-fire — which nulls reaper then calls _on_victory()
+    (its guard tightened to `if phase != "playing": return`). The world stays "playing" during the duel
+    so the player fights Death; on the kill phase flips to "victory" and freezes everything (incl. the
+    boss mid-death-pop). spawner.gd: new summon_reaper() builds ONE VSEnemy on the SPAWN_RING with
+    is_reaper=true, the ghost sprite tinted dark wraith-purple (0.55,0.42,0.72), base_scale 2.6,
+    radius 40, speed 38 (kitable — player 157.5), health REAPER_HP 400, contact 30, xp 50; and _process
+    early-returns while run.reaper is alive so the regular waves halt for a focused duel. enemy.gd: new
+    `is_reaper` flag; hit()'s lethal branch calls run._on_reaper_killed() when set. hud.gd: new _boss
+    Label ("THE REAPER COMES — SLAY DEATH") pinned top-center, shown while phase=="playing" and
+    run.reaper is alive. Four files (run/spawner/enemy/hud); no scene/art/API changes; the ~6s smoke
+    test never reaches 300s so reaper==null and the spawner runs normally — no regression. Gate PASS
+    exit 0 (import registered VSEnemy/VSSpawner/VSRun/VSHud with no parse errors + both smoke tests incl.
+    run-scene boot which builds the world with the new spawner field and runs the controller through
+    _process). Eyeball (feel/balance the gate can't judge): lower SURVIVE_SECONDS to test quickly — at
+    the time limit the ground quakes, a giant dark wraith descends from the edge, regular spawns stop,
+    and "THE REAPER COMES" shows; kite + plink it down to win (gold "YOU SURVIVED!"), or it corners and
+    kills you (game over). Tune REAPER_HP (400) / contact 30 / speed 38 / scale by feel.
+
+[x] Whip strikes the way the player faces — whip.gd now reads the player's facing (its parent's
+    `_facing` via get_parent()) instead of blind-cycling NE->SE->SW->NW. A single whip cracks the
+    facing-side corner (right -> NE, left -> NW) and alternates up/down each swing (`_alt` toggle,
+    replacing the old `_dir` index). Multishot grows the swing facing-first: 2nd strike mirrors to the
+    OPPOSITE side at the same vertical, 3rd/4th add the other vertical of each side — so a stacked whip
+    sweeps the top pair then the bottom pair, capped at MAX_DIRS=4 (every corner), per "max 4
+    directional". New `_facing_sign()` (falls back to +1/right if not parented to a VSPlayer) and
+    `_swing_dirs()` build the ordered corner sign-vectors; `_strike()` now takes the sign vector
+    directly (was a DIRS index). The per-corner slash VFX mirroring (`_spawn_slash`) is unchanged — it
+    keys off the same sign vector. One file (whip.gd); the smoke test reads `fire_count` which is
+    untouched. Gate PASS exit 0 (import + both smoke tests incl. run-scene boot which swings the whip).
+    Eyeball: walk right -> slash cracks upper-right; walk left -> flips upper-left; Multishot mirrors
+    to the opposite flank and tops out covering all four corners.
+
+[x] Reduce base speed of everybody 25% + 50% more starting/spawning monsters — a slower, denser
+    slice. Cut every moving-character base speed 25% (relative speeds preserved, so kiting is
+    unchanged and the player still outruns all kinds): player.gd 210 -> 157.5; enemy.gd bat 62 ->
+    46.5; spawner.gd brute 42 -> 31.5, ghost 112 -> 84.0. Spawn rate +50% in ONE expression —
+    spawner.gd `var rate := (1.0 + run.elapsed / 20.0) * 1.5`: the *1.5 lifts BOTH the starting count
+    (the 1.0 base, now 1.5 enemies/sec at t=0 — the "starting monsters") AND the time-ramp ("rate of
+    monsters spawning") 50%, so the field is denser from the opening and ramps harder; MAX_ENEMIES 90
+    still caps the on-screen count so performance stays bounded. Updated the inline comments that
+    quoted the old numbers (the ghost/brute speed comments + the _apply_kind doc's "player at 210") to
+    the new values so they stay honest. The gem magnet's MAGNET_SPEED_MAX 560 stays comfortably above
+    the new 157.5 top speed, so no XP is stranded; the smoke test's run.weapon.fire_count>0 progress
+    signal is weapon-only, so it's unaffected. Three files (player.gd, enemy.gd, spawner.gd); no
+    scene/art/API changes. Gate PASS exit 0 (import registered VSPlayer/VSEnemy/VSSpawner with no parse
+    errors + both smoke tests incl. run-scene boot which spawns enemies and runs the controller through
+    the new speed/spawn path). Eyeball (feel/balance the gate can't judge): play — everyone moves
+    noticeably slower and more enemies pour in from the start; tune the 0.75 speed / 1.5 spawn factors
+    by feel.
+
+[x] Whip VFX rotation should be horizontal — the whip slashes read as steep up-right/down-left
+    diagonals (the user reported "NE vertically"); the base SLASH_ROT 0.6 only nudged the already-
+    diagonal warrior-VFX sprite. whip.gd only. Bumped SLASH_ROT 0.6 -> 1.0 — the rotation that lays
+    the diagonal slash MOSTLY HORIZONTAL with a slight outward tilt — and rewrote _spawn_slash's
+    per-corner transform. The four corners fall on two diagonals: the "/" corners NE & SW
+    (s.x*s.y < 0) use +SLASH_ROT with no flip (outer end tilts UP at NE / DOWN at SW); the "\" corners
+    SE & NW (s.x*s.y > 0) are the horizontal-axis mirror, realised as -SLASH_ROT AND a HORIZONTAL flip
+    (scale.x = -SLASH_SCALE) — so the SE crack comes out flipped horizontally and tilts DOWN (the
+    mirror of NE), NW its left-side twin. This replaces the old rot / -rot / PI-rot point-reflection
+    that kept every swing diagonal. The engine rotation sign was pinned from the user's ground truth
+    (the current +0.6 reads vertical => engine(g) == PIL.rotate(-deg g)) and the exact 4-corner layout
+    was validated by rendering the real whip_slash.png frames at engine transforms before editing.
+    Position logic (DIRS / HSEP / VSEP) and the stat fields (damage/fire_interval/projectile_count/
+    fire_count) are untouched, so Power/Haste/Multishot and the run-scene smoke test work unchanged.
+    One file; no scene/art/API changes. Gate PASS exit 0 (import registered VSWhip with no parse errors
+    + both smoke tests incl. run-scene boot which swings the whip through _fire -> _strike ->
+    _spawn_slash headless). Eyeball (VFX, the gate can't judge orientation): play — the whip should
+    crack as four mostly-horizontal slashes around Antonio (NE/NW tilting up-and-out, SE/SW down-and-
+    out) with SE visibly flipped horizontally; tune SLASH_ROT (1.0) if the tilt is too much/little.
+
+[x] Add a survival-time victory state (win condition) — the run could only be LOST (game_over), never
+    WON, so the build-up toward the mid-run power spike had nothing to survive TO. Added the counterpart
+    to game_over. run.gd: const SURVIVE_SECONDS := 300.0 (tunable 5:00 slice goal); _process checks
+    `if elapsed >= SURVIVE_SECONDS: _on_victory()` inside the existing `phase == "playing"` block (elapsed
+    only ticks while playing, so it fires once); _on_victory() sets phase="victory" (re-entry guarded),
+    which freezes the whole world EXACTLY like game_over since every entity gates on phase=="playing"
+    (player/enemy/spawner/weapon/gem/projectile/aura/orbit), emits AgentBridge "victory" {time,kills,level},
+    and reuses the rising C-E-G-C level-up fanfare as a triumphant win sting (the descending "gameover"
+    stinger's opposite — no new asset); _unhandled_input restarts on Enter for victory too (was game_over
+    only). hud.gd: new gold _win banner ("YOU SURVIVED!\nPress Enter to play again") mirroring the death
+    banner, shown when phase=="victory"; the Time readout now shows the goal ("Time Xs / 300s") so the run
+    has a legible destination. agent_adapter.gd: _actions() returns ["ui_accept"] for victory too so the
+    harness can restart. Three files; no scene/art/API changes; a different KIND (run-lifecycle/win
+    condition) from the recent juice/passive/pickup passes. Smoke test runs only ~6s so it never trips the
+    300s goal — no regression. Gate PASS exit 0 (import registered VSRun+VSHud, both smoke tests incl.
+    run-scene boot which drives _process through the victory check). Eyeball: survive to 5:00 (or lower
+    SURVIVE_SECONDS to test) — the field freezes and a gold "YOU SURVIVED!" banner shows; Enter restarts.
+
+[x] Level-up burst VFX on the player when the run resumes — punctuated the power spike with a golden
+    bloom on the player, alongside the gem vacuum-sweep. The level-up moment had the gems streak in but
+    no flourish on the hero himself. run.gd: new self-freeing inner Node2D `LevelUpBurst` (DUR 0.5s,
+    z_index 120) modeled on projectile.gd's `ImpactSpark` — a soft warm-gold central flash (brightest at
+    the instant of choice, gone by mid-life), an expanding golden halo ring (r 8→66, fading), a tighter
+    trailing core ring for depth, and an 8-ray sunburst — all drawn with primitives like the rest of the
+    juice and phase-gated on `run.phase` so it holds with a frozen world (a chained picker) and frees
+    itself. `_spawn_levelup_burst()` lazily parents one on the player (centered, null-guarded), called
+    from `_on_upgrade_chosen` right after phase returns to "playing" — so the bloom plays exactly as the
+    world unfreezes. Gate PASS exit 0 (import registered VSRun + both smoke tests incl. run-scene boot).
+    Eyeball: pick an upgrade — a golden ring + sunburst blooms off Antonio as the run resumes.
+
+[x] Vacuum all on-screen XP gems to the player on level-up — leveling up now triggers the iconic VS
+    sweep: every gem on the field streaks into the player. The gem magnet only homed within MAGNET 140px
+    and froze entirely during the level-up picker, so far-flung gems from a kited death-pile could sit
+    orphaned while the run resumed. gem.gd: new public `vacuum` flag; _process gains a branch ABOVE the
+    normal ramped magnet — `if vacuum and d > 0.5: position += to/d * MAGNET_SPEED_MAX * delta` — homing
+    the gem to the player regardless of distance at the 560 px/s snap speed (already kept above any player
+    speed, so even distant gems catch up and none are stranded); the existing `if run.phase != "playing":
+    return` keeps it frozen until the world unfreezes. run.gd _show_level_up(): right after phase =
+    "level_up", loops `get_tree().get_nodes_in_group("gems")` setting `g.vacuum = true` — so the flag is
+    raised while the picker freezes the world, and the rush actually PLAYS as _on_upgrade_chosen returns
+    phase to "playing" and the world unfreezes (gated on the existing phase resume, exactly as specced).
+    Idempotent across a chained multi-level XP burst (the chained _show_level_up just re-flags). Two files
+    (gem.gd + run.gd); no scene/art/API changes; the normal magnet feel is untouched when vacuum is false
+    (no regression), and a different KIND (core-loop level-up feel) from the recent magnet/passive passes.
+    Gate PASS exit 0 (import registered VSGem+VSRun with no parse errors — validating the new vacuum branch
+    and the group loop — + both smoke tests incl. run-scene boot which spawns, kills, and collects gems and
+    runs the controller through the level-up path headless). Eyeball: play to a level-up — when you pick an
+    upgrade and the world unfreezes, every on-screen gem streaks into you in a satisfying burst, leaving no
+    orphaned XP behind. Tune MAGNET_SPEED_MAX if the rush feels too fast/slow.
+
+[x] Stronger XP-gem magnet so kiting never strands XP — the gem magnet (MAGNET_SPEED 240 px/s)
+    barely beat the player's 210 base speed and LOST to a Swift-stacked player (210*1.12^2 ~= 263),
+    so a kiter fleeing the death-pile left gems chasing at only ~30 px/s net — and once Swift stacked
+    they could never catch up, stranding XP and starving the level-up loop the GOAL centers on. The
+    pull was also flat/sluggish with no satisfying vacuum snap. gem.gd only: MAGNET range 95->140 (a
+    touch wider so your wake gets swept up) and the flat MAGNET_SPEED replaced by a distance-ramped
+    pull — t = 1 - clampf(d/MAGNET,0,1) (0 at the edge, 1 at pickup), sp = lerpf(MAGNET_SPEED_MIN 230,
+    MAGNET_SPEED_MAX 560, t) — so a gem starts homing gently at the edge and accelerates into a
+    vacuum-snap right before pickup, with the peak (560) kept comfortably above any player speed
+    (base 210, Swift-stacked higher) so a fleeing player's gems always catch up. Pickup geometry
+    (d < PICKUP+RADIUS) and the post-pickup sparkle are untouched; one constant pair + ~4 lines in
+    _process; no scene/art/API changes; a different KIND (core-loop pickup feel) from the recent
+    survivability/physics/passive passes. Gate PASS exit 0 (import registered VSGem with no parse
+    errors — validating the lerpf/clampf ramp — + both smoke tests incl. run-scene boot which spawns,
+    kills, and collects gems through the new magnet path headless). Eyeball: kite a swarm and run past
+    the gems your kills drop — they should now snap up into you with a satisfying vacuum even while
+    you're moving away, and stacking Swift no longer leaves a trail of uncollected XP behind you. Tune
+    MAGNET / MAGNET_SPEED_MIN / MAGNET_SPEED_MAX by feel.
+
+[x] Armor passive (flat contact-damage reduction) — the only defensive option was Vitality's HP
+    regen (recovery); there was no mitigation, the other half of VS defensive flavor (Pummarola vs
+    armor). Added Armor as the mitigation counterpart. player.gd: new `var armor := 0.0` beside
+    `regen`; take_damage now reduces the incoming hit at the TOP via `if armor > 0.0: amount =
+    maxf(1.0, amount - armor)` — floored at 1 so stacking can never make you invulnerable and a touch
+    always still stings, and placed before `health -= amount` / the "damage" event / the hurt flash so
+    all three read the actual mitigated damage. take_damage is only ever called from enemy contact
+    (enemy.gd:75), so this is exactly "flat contact-damage reduction." run.gd: added
+    {key:armor,title:Armor,desc:"Take less contact damage"} to UPGRADES (pool now offers 3 of 9) + an
+    apply_upgrade("armor") case stacking player.armor += 1.0 per pick. The picker UI (reads the rolled
+    UPGRADES) and the HUD loadout (_title_for iterates UPGRADES) pick it up automatically — no UI
+    changes; a survivability KIND that completes the recovery-vs-mitigation defensive choice. Two files
+    (player.gd + run.gd); no scene/art/API changes. Gate PASS exit 0 (import registered VSPlayer+VSRun
+    with no parse errors — validating the new field, the "armor" match arm, and the 9th UPGRADES entry
+    — + both smoke tests incl. run-scene boot which builds the world and runs the controller through
+    apply_upgrade). Eyeball: take Armor at a level-up, then let a bat chip you — each contact hit lands
+    for noticeably less; stack it and the swarm becomes a survivable trickle, but a hit never drops
+    below 1 damage. Tune the +1.0 step by feel.
+
+[x] Vitality (HP-regen) survivability passive — the level-up pool was pure-offense (Power/Haste/
+    Swift/Multishot/Garlic/Blades/Magic Wand) with zero sustain, so a long run was pure attrition and a
+    player could die before the GOAL's "satisfying mid-run power spike." Added the first DEFENSIVE option,
+    mirroring VS's Pummarola, so the central offense-vs-defense level-up tension finally exists. player.gd:
+    new `var regen := 0.0` (HP/sec) + a per-frame heal in _process on the PLAYING path only (after the
+    alive + run.phase=="playing" guards, so it never ticks while dead or frozen) and only when regen>0 and
+    health<max_health: health = minf(max_health, health + regen*delta); the existing end-of-_process
+    queue_redraw repaints the diegetic health bar so the refill reads. run.gd: added
+    {"key":"regen","title":"Vitality","desc":"Recover health over time"} to UPGRADES (pool now offers 3 of
+    8) + an apply_upgrade("regen") case that stacks player.regen += 0.6 HP/s per pick. The picker UI
+    (levelup_screen reads the rolled UPGRADES) and the HUD loadout (_title_for iterates UPGRADES) pick it up
+    automatically — no UI changes. Two files (player.gd + run.gd); no scene/art/API changes; a different
+    KIND (survivability) from the recent weapon/physics/render passes. Gate PASS exit 0 (import registered
+    VSPlayer+VSRun with no parse errors — validating the new field, the "regen" match arm, and the 8th
+    UPGRADES entry — + both smoke tests incl. run-scene boot which builds the world and runs the controller
+    through apply_upgrade). Eyeball: play to a level-up, pick Vitality — Antonio's red health bar slowly
+    refills between hits; pick it again and it sustains harder, so investing in defense becomes a real
+    choice against the escalating waves. Tune the 0.6 HP/s step by feel.
+
+[x] Player collider — enemies pathed to the player's center and buried inside the 49x52 sprite. Added a
+    small inner SOLID collider enemies can't pass through. player.gd: const SOLID_RADIUS := 9.0 (< hurt
+    RADIUS 14, so contact damage still triggers). enemy.gd _process: after chase + separation + knockback
+    (resolved last so it wins), if the enemy is within min_d = SOLID_RADIUS + radius it's pushed back out
+    to that touching distance along the player->enemy line — a contacting enemy presses against the body
+    instead of overlapping the sprite. Per-enemy radius holds a brute further out than a bat; knockback
+    still flings enemies (block only engages when too close). Gate PASS exit 0. Eyeball: a swarm should
+    ring up against Antonio and stop at his body edge, still chipping contact damage at that distance.
+
+[x] Adjust resolution and zoom out 10% — bigger default window + a 10% camera zoom-out. project.godot:
+    base viewport 800x640 -> 1445x920 (with canvas_items stretch this sets BOTH the base render res and
+    the initial window size; kept 1:1 so pixels stay crisp and the apparent sprite size is unchanged —
+    the larger window just reveals more field). run.gd: the player Camera2D now sets zoom=Vector2(0.9,0.9)
+    — zoom<1 widens the view, so sprites read ~10% smaller than before (the literal "zoom out 10%").
+    hud.gd: re-anchored the game-over banner from a hardcoded position (300,280) to PRESET_CENTER +
+    GROW_DIRECTION_BOTH so it stays centred at the wider viewport (the fixed pos would drift left). Three
+    files; no scene/art/API changes; the XP-bar/stat/loadout HUD anchors are already responsive. Gate
+    PASS exit 0 (import registered VSRun+VSHud, no parse errors, + both smoke tests incl. run-scene boot
+    which builds the world with the new camera zoom and recentred HUD). Eyeball: launch the build — window
+    opens ~1445x920, field reads a touch wider / sprites ~10% smaller; at the extreme arena corner a ~3px
+    sliver of clear-colour may peek past the ground MARGIN (negligible).
+
+[x] Change whip hurt boxes — pushed the whip's strike box a bit further from Antonio AND gave it four
+    diagonal corners (was two). whip.gd only. Horizontal/vertical reach: OVERLAP 18->10 so HSEP =
+    STRIKE_W*0.5-OVERLAP (~64px, the box-centre's horizontal distance from the player), plus a new
+    VSEP=30 vertical offset replacing VERT=14 — each swing now sits a touch further out horizontally
+    AND vertically. Replaced the 2-way boolean _flip (up-right / down-left) with a `_dir` index that
+    cycles a new `const DIRS: Array[Vector2]` of the four diagonal sign-vectors
+    [NE(1,-1), SE(1,1), SW(-1,1), NW(-1,-1)] applied to (HSEP,VSEP); _fire advances _dir each swing
+    so a Multishot-stacked whip fans across all four corners in turn. _strike takes the dir index,
+    _spawn_slash takes the sign vector and tilts the slash into its corner: base SLASH_ROT reads as
+    the NE crack, -rot mirrors it across the horizontal axis for a downward (s.y>0) swing, PI-rot
+    mirrors it across the vertical axis for a leftward (s.x<0) swing — both flips compose to rot+PI,
+    exactly the old up-right->down-left point-reflection, so NE/SW are unchanged and SE/NW are the new
+    mirrored cracks. The hurt boxes stay axis-aligned wide-short rects with the same AABB pierce test,
+    just at the 4 diagonal positions. One file; no scene/art/API changes; fire_count/fire_interval/
+    damage/projectile_count untouched so the run-scene smoke test and the Power/Haste/Multishot upgrade
+    pool work unchanged. Gate PASS exit 0 (import registered VSWhip with the typed const array + 4-way
+    logic, no parse errors, + both smoke tests incl. run-scene boot which swings the whip through
+    _fire->_strike->_spawn_slash). Eyeball: play — the whip cracks at NE/SE/SW/NW around Antonio, each
+    a touch further out; tune HSEP/VSEP (offsets) and SLASH_ROT mirroring (slash orientation) by eye.
+
+[x] Fix flip_h when moving left — the player sprite jumped a full body-width to the right whenever it
+    faced left. player.gd _draw() built the flip as Rect2(-w*0.5*_facing, -h*0.5, w*_facing, h): BOTH
+    the origin.x AND the width were scaled by _facing. But draw_texture_rect normalizes a negative-width
+    rect (RendererCanvasCull::canvas_item_add_texture_rect) by negating the size and setting
+    CANVAS_RECT_FLIP_H *without moving the position* — so facing-left left the origin pinned at +w*0.5
+    while the (now-positive, mirrored) sprite drew from +w*0.5 to +1.5w, i.e. a full width to the RIGHT
+    of the node origin and off the hurt collider — exactly the reported "flipped along the right vertical
+    axis." Fix: pin origin.x to the LEFT edge -w*0.5 in BOTH headings and let only the width carry
+    _facing's sign — Rect2(-size.x*0.5, -size.y*0.5, size.x*_facing, size.y). _facing 1 is unchanged
+    (positive width, centered -0.5w..+0.5w); _facing -1 normalizes to the same centered rect with FLIP_H,
+    so the mirror now pivots on the sprite center, staying over the body and health bar. One-line change +
+    comment, player.gd only; no API/scene/art changes; the health bar (drawn after, symmetric) is
+    untouched. Gate PASS exit 0 (import registered VSPlayer with no parse errors + both smoke tests incl.
+    run-scene boot which draws the player). Eyeball: walk left then right — Antonio mirrors in place over
+    his hurt collider / health bar instead of sliding a body-width sideways on the flip.
+
+[x] Floating damage numbers on hit — hits flashed and recoiled but the amount wasn't quantified, so
+    weapon power didn't read as a number. enemy.gd only: added a self-freeing `DamageNumber` inner
+    Node2D (drawn primitively in _draw() via draw_string + draw_string_outline, no scene file) modeled
+    on projectile.gd's ImpactSpark. It floats up RISE 24px and fades over DUR 0.55s (alpha holds, then
+    fades near the end), centered over the head via font.get_string_size, with a dark outline (size 4)
+    so it stays legible over the busy field. `_spawn_damage_number(amount, killed)` mounts it on `run`
+    (a sibling, so it outlives the enemy's death pop) at position + (0, -radius - 6) — just above the
+    head, and naturally higher over a big brute. It's called from BOTH branches of hit(): the non-lethal
+    chip reads small warm-white (HIT_SIZE 14, Color 1,0.96,0.78), the killing blow reads bigger gold
+    (KILL_SIZE 20, Color 1,0.80,0.25) so both the hit and the kill read as a quantity, not just a flash.
+    z_index 110 (above the impact spark's 100) and phase-gated on run.phase so it holds with the frozen
+    world (level-up picker / game over). One file; no scene/API/art changes — every weapon routes
+    through hit(), so the whip / wand bolt / garlic tick / orbit blade all get numbers for free. Gate
+    PASS exit 0 (import registered VSEnemy with no parse errors — validating the inner-class +
+    draw_string/draw_string_outline signatures — + both smoke tests incl. run-scene boot which spawns
+    and kills enemies through the hit() -> DamageNumber path headless). Eyeball: shoot/whip a bat — a
+    small white number floats up from each chip hit and a bigger gold number pops on the kill; tune
+    DUR / RISE / sizes / colors by eye.
+
+[x] Player sprite faces movement direction (flip_h) — player.gd _draw always faced the sprite's
+    default (right) heading, so Antonio looked identical walking left or right and direction didn't
+    read. player.gd only: added a `_facing` var (1 = right = the Antonio art's default orientation,
+    -1 = left), updated each _process from the last non-zero ACTUAL velocity.x via signf(velocity.x)
+    — so it holds the prior heading on a wall-clamp (velocity.x == 0), while frozen (level-up picker /
+    game over), and during purely-vertical motion. _draw now mirrors the sprite with one
+    negative-width draw_texture_rect: Rect2(-size.x*0.5*_facing, -size.y*0.5, size.x*_facing, size.y)
+    — Godot flips a texture when the rect width is negative, and scaling both the x-origin and the
+    width by _facing keeps the flip centered on the node origin, so _facing 1 draws unflipped and
+    _facing -1 mirrors horizontally. The health bar and the hurt/death tints are untouched (the bar is
+    drawn separately and symmetric; tints are just the modulate). Reuses the existing per-frame
+    queue_redraw in _process; no scene/API/art changes. Gate PASS exit 0 (import registered VSPlayer
+    with no parse errors + both smoke tests incl. run-scene boot which draws the player). Eyeball:
+    walk left then right — Antonio and his whip flip to face the way he last moved and hold that
+    heading when standing still or moving purely vertically.
+
+[x] Enemy knockback on hit — weapons hit like the enemy was a ghost: a white flash, but the enemy
+    kept boring in at the same pace with no physical reaction. enemy.gd only: landed hits now fling
+    the body back a touch before the chase reels it in, so every weapon reads as connecting. hit()
+    already received the strike source but ignored it (_from); renamed to `from` and added
+    _apply_knockback(from), called on the non-lethal branch — it sets a decaying _knockback velocity =
+    dir.normalized() * KNOCKBACK (150 px/s) * (RADIUS/radius) where dir = position - from. The whip's
+    AABB passes the enemy's OWN position (degenerate zero dir), so _apply_knockback falls back to
+    (position - target.position) — push straight away from the player — guaranteeing the starter weapon
+    flinches too. Heavier/bigger kinds flinch less via the RADIUS/radius mass factor (bat/ghost 1.0;
+    brute radius 22 -> ~0.55x; hardened enemies whose radius scaled up resist more). _process applies it
+    after chase+separation (position += _knockback*delta) and bleeds it off via move_toward(ZERO,
+    KNOCKBACK_DECEL 950 * delta) -> a ~0.16s, ~12px recoil. Composes with chase+separation (brief recoil
+    then chase resumes); rapid garlic/whip ticks refresh it into a gentle soft-pushback (a nice emergent
+    VS feel). Lethal hits go _dying and the death-pop branch returns early, so corpses aren't knocked.
+    One file; no call-site/scene/art changes (all 4 weapon call sites already pass a source positionally).
+    Gate PASS exit 0 (import registered VSEnemy with no parse errors + both smoke tests incl. run-scene
+    boot which spawns and kills enemies through the hit() -> knockback path headless). Eyeball: play —
+    bats/ghosts visibly recoil from each whip slash / wand bolt / garlic tick / blade sweep while brutes
+    barely budge; tune KNOCKBACK / KNOCKBACK_DECEL and the RADIUS/radius mass curve by feel.
+
+[x] Give the Magic Wand bolt a distinct magic look — VSProjectile (the Magic Wand's bolt) drew a
+    flat yellow circle (Color 1.0,0.95,0.4) with no trail, so it read like a generic bullet rather
+    than "magic" and didn't separate from the Whip's slash. projectile.gd only: recolored the bolt to
+    a violet body (CORE_COLOR 0.62,0.48,1.0) over a hot near-white core (INNER_COLOR 0.86,0.83,1.0,
+    drawn at RADIUS*0.5), and added a short fading wake — _process appends the bolt's world position
+    each frame into a PackedVector2Array `_trail` capped at TRAIL_LEN 8 (remove_at(0) when over), and
+    _draw renders each stored point relative to the current position (point - position, so the wake
+    trails opposite to travel) as a violet circle (TRAIL_COLOR 0.45,0.35,0.95) whose alpha (f*0.5) and
+    radius (RADIUS*(0.35+f*0.55)) taper toward the tail. Also recolored the inner ImpactSpark from
+    warm yellow to a matching violet burst (ring 0.70,0.55,1.0 / spokes 0.86,0.83,1.0) so the hit reads
+    as magic too. One file; no scene/API changes. Gate PASS exit 0 (import registered VSProjectile with
+    no parse errors + both smoke tests incl. run-scene boot which fires the wand and draws/trails
+    projectiles headless). Eyeball: pick the Magic Wand and watch a bolt — it flies as a glowing violet
+    comet with a short fading wake, clearly distinct from the Whip's horizontal slash; tune
+    CORE/INNER/TRAIL colors and TRAIL_LEN by eye.
+
+[x] Add Magic Wand as a level-up weapon — the projectile weapon (VSWeapon/VSProjectile), Antonio's
+    old starter, was orphaned after the Whip replaced it: still in the codebase but never spawned. Wired
+    it back in as the GDD's Magic Wand — a pickable level-up weapon that auto-fires a bolt at the nearest
+    enemy (the core "you move, the weapon fights" loop), so weapon variety returns and the projectile code
+    is in the game again. weapon.gd: gave VSWeapon a `level` var + level_up() mirroring VSAura/VSOrbit —
+    first pick sets the base (fire_interval 0.6, damage 4, 1 bolt), repeats deepen it (fire_interval *=
+    0.85 floored at 0.25, damage +2, and projectile_count +1 every other level via `if level % 2 == 1` so
+    Lv3/Lv5/… add a bolt, fanned by the existing SPREAD); class doc updated from "starter" to "pickable
+    level-up weapon." run.gd: added {"key":"wand","title":"Magic Wand","desc":"Bolt fired at the nearest
+    enemy"} to UPGRADES (pool now offers 3 of 7), a `var wand: VSWeapon` field, and an apply_upgrade("wand")
+    case that lazily mounts a VSWeapon on the player on first pick (so it auto-fires) and level_up()s it on
+    every pick — matching the garlic/orbit lazy-spawn pattern. The picker UI and HUD loadout pick it up
+    automatically (both read VSRun.UPGRADES). Power/Haste/Multishot still buff only the Whip (the starter
+    weapon field), so the Magic Wand scales via its own re-picks, consistent with garlic/orbit. Two files
+    (weapon.gd, run.gd); no scene/art changes. Gate PASS exit 0 (import registered VSRun+VSWeapon with no
+    parse errors — confirming the new match arm is valid — + both smoke tests incl. run-scene boot which
+    builds the world and runs the run controller through apply_upgrade). Eyeball: play to a level-up, pick
+    Magic Wand — a yellow bolt auto-fires at the nearest enemy; pick it again and it fires faster/harder and
+    eventually fans extra bolts. Tune base/scaling by feel.
+
+[x] Health Bar — HP was only legible in the HUD corner; per the GOAL's clear-feedback/readability
+    aim, moved it onto the character. player.gd: new _draw_health_bar() (called from _draw only while
+    alive) draws a small diegetic bar hugging the bottom of the Antonio sprite — a 1px black outline
+    (track.grow(1)) + a dark-red empty track (0.20,0.04,0.04,0.85) + a bright-red fill (0.86,0.18,0.18)
+    whose width is HP_BAR_W(44) * clampf(health/max_health,0,1), at HP_BAR_GAP(5)px below the sprite,
+    HP_BAR_H(5)px tall. Drawn with primitives like the rest of the juice (aura/spark/gem), no per-node
+    texture_filter so VISUAL_RULES stays intact; redraws via the existing _process queue_redraw + on
+    take_damage; hidden on death (the sprite already greys out). hud.gd: dropped the "HP %d" number from
+    the corner stat line (now "Time/Kills/Lv (xp)") and removed the now-unused hp computation; doc line
+    updated. Diegetic, so the player's gaze stays on the action instead of darting to a corner. Two files
+    (player.gd, hud.gd); no scene/API changes. Gate PASS exit 0 (import registered VSPlayer/VSHud with no
+    parse errors + both smoke tests incl. run-scene boot which builds the world and draws the player).
+    Eyeball: take hits — a red bar under Antonio shrinks left-to-right as HP drains; tune
+    HP_BAR_W/H/GAP and the colors by eye.
+
+[x] Starting weapon, Whip — Antonio started with the Magic Wand projectile; per the GDD his
+    starter is the Whip. New scripts/weapons/whip.gd (VSWhip extends Node2D): a horizontal-slash
+    melee weapon that on its cooldown (fire_interval 1.1s, damage 5) PIERCES every enemy inside a
+    wide, short box and ALTERNATES between an up-and-right swing and a down-and-left swing (it swings
+    on cooldown whether or not anything is in reach, like VS). Box sized off the player sprite:
+    STRIKE_W = 49*3 = ~147px (3 player widths) wide, STRIKE_H = 52*1.2 = ~62px (1.2 player heights)
+    tall, offset OVERLAP 18 behind / VERT 14 up|down per the struck side; damage is an AABB test
+    (|dx|<=hw+e.radius && |dy|<=hh+e.radius) over a get_nodes_in_group("enemies") snapshot so it cuts
+    the whole flank at once with no double-hit. Keeps the same mutable stat fields the upgrade pool
+    drives (damage/fire_interval/projectile_count), so apply_upgrade(Power/Haste/Multishot) works
+    unchanged — Multishot adds an extra simultaneous swing on the opposite flank. VFX: new
+    art/whip_slash.png (950x98, a 10-frame 95x98 horizontal strip built offline with PIL from
+    SourceArt/pixel_art-animations-warrior/VFX 3/Frames, uniform-cropped to the union content bbox
+    (7,27,102,125); lossless, mipmaps off, NEAREST, fix_alpha_border via headless --import, matching
+    the other sprites). An inner WhipSlash Node2D one-shot plays the strip once via
+    draw_texture_rect_region, rotated by SLASH_ROT (0.6 rad, +PI for the down-left swing) so the
+    diagonal warrior slash reads horizontal, scaled SLASH_SCALE 1.5 toward the box, fading its tail,
+    then frees itself (z 50, gated on run.phase — matches the impact-spark juice pattern). run.gd:
+    `weapon` typed VSWhip and _build_world now spawns VSWhip instead of VSWeapon; lightly corrected
+    the picker descs ("+1 weapon damage" / "+1 extra strike") now that the starter isn't a projectile.
+    The projectile weapon (VSWeapon/VSProjectile) stays in the codebase as the GDD's Magic Wand (a
+    future level-up weapon), just no longer the starter. Ported run_smoke_test.gd's progress signal
+    from "projectiles in flight" (the whip has none, and enemies spawn ~520px out vs the whip's ~130px
+    reach so kills aren't guaranteed in the 6s window) to run.weapon.fire_count > 0 — the weapon-
+    agnostic "auto-weapon is alive" signal. Files: +whip.gd, +whip_slash.png(+.import), run.gd,
+    run_smoke_test.gd. Gate PASS exit 0 (import registered VSWhip + reimported whip_slash.png with no
+    parse errors + both smoke tests incl. run-scene boot which builds the world with the whip and
+    swings it). Eyeball: play — the whip cracks a horizontal slash beside Antonio, alternating
+    up-right / down-left, clearing the flank as the swarm closes; tune SLASH_ROT/SLASH_SCALE
+    (orientation/size of the slash sprite) and damage/fire_interval (feel) by eye.
+
 [x] Add a top-of-screen XP progress bar to the HUD — level-up progress was only legible as the
     "(N xp)" number, so the central VS pacing meter (how close am I to the next choice?) didn't read at
     a glance — a clear-feedback/readability gap the GOAL calls out. hud.gd (VSHud) only: added the iconic
