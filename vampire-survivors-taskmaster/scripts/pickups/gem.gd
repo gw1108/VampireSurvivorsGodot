@@ -39,5 +39,10 @@ func _process(delta: float) -> void:
 	if d < PICKUP + VSPlayer.RADIUS:
 		run.collect_xp(value)
 		AgentBridge.emit_event("pickup", {"type": "xp"})
+		# Cosmetic pickup pop: a ring bloom at the gem, parented to the world so it
+		# outlives this gem. Tinted by value so richer gems flash brighter reward.
+		var parent := get_parent()
+		if parent != null:
+			VSPickupFlash.spawn(parent, position, VALUE_COLORS.get(value, VALUE_COLORS[3]))
 		queue_free()
 		return
