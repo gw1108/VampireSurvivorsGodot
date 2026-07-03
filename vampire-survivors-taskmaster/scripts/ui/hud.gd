@@ -11,6 +11,10 @@ var _reaper: Label
 var _slain: Label
 var _chest: Label
 var _over: Label
+# Pause overlay: a full-screen dim + a centered "PAUSED" banner shown while run.phase == "paused"
+# (ESC toggles it). Purely a readability layer — the freeze itself is the phase, driven in run.gd.
+var _pause_dim: ColorRect
+var _pause_label: Label
 
 # Treasure-chest reveal banner: a transient centered gold banner naming the items + gold a chest
 # just granted, so a multi-item jackpot reads as one build spike rather than a scatter of floating
@@ -279,6 +283,26 @@ func _ready() -> void:
 	_over.visible = false
 	add_child(_over)
 
+	# Pause overlay — a dim wash over the whole viewport with a centered "PAUSED / Press ESC to
+	# resume" banner. Anchored full-rect so it stays correct at any resolution; hidden until the
+	# run enters the "paused" phase (see refresh()). Mouse-ignored so it never eats clicks.
+	_pause_dim = ColorRect.new()
+	_pause_dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_pause_dim.color = Color(0.0, 0.0, 0.0, 0.55)
+	_pause_dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_pause_dim.visible = false
+	add_child(_pause_dim)
+
+	_pause_label = Label.new()
+	_pause_label.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_pause_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_pause_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_pause_label.text = "PAUSED\n\nPress ESC to resume"
+	_pause_label.add_theme_font_size_override("font_size", 40)
+	_pause_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_pause_label.visible = false
+	add_child(_pause_label)
+
 ## Flash the swarm-surge telegraph toward `dir` — the flank the wall is marching in from
 ## (dir points from the player out to the wall's spawn point). Places the arrow near the
 ## screen edge in that direction and rotates it to point outward at the threat, then _process
@@ -378,6 +402,11 @@ func refresh(run: VSRun) -> void:
 	# The extra kill-win banner rides above the summary only when the Reaper was actually slain.
 	if _slain:
 		_slain.visible = won and run.reaper_slain
+	var is_paused := run.phase == "paused"
+	if _pause_dim:
+		_pause_dim.visible = is_paused
+	if _pause_label:
+		_pause_label.visible = is_paused
 	_over.visible = run.phase == "game_over" or won
 	if _over.visible:
 		# Run summary: give the run's end some closure by showing what it achieved. The gold

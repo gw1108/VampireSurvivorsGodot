@@ -24,7 +24,7 @@ var _shake_trauma := 0.0
 const SHAKE_DECAY := 5.0          # trauma/sec — full trauma dissipates in ~0.2s
 const SHAKE_MAX_OFFSET := 14.0    # px of offset at trauma 1.0
 
-var phase := "playing"          # playing | level_up | game_over | victory  (AgentState lifecycle)
+var phase := "playing"          # playing | level_up | paused | game_over | victory  (AgentState lifecycle)
 var kills := 0
 var elapsed := 0.0
 
@@ -179,6 +179,7 @@ func _ensure_input() -> void:
 		"upgrade_reroll": [KEY_R],
 		"upgrade_skip": [KEY_F],
 		"open_shop": [KEY_B],
+		"pause": [KEY_ESCAPE],
 	}
 	for action in defaults.keys():
 		if not InputMap.has_action(action):
@@ -865,7 +866,23 @@ func on_reaper_slain() -> void:
 	add_camera_shake(1.0)   # the heaviest jolt in the run — the finale falls
 	_on_victory()
 
+## Toggle the paused breather. Reuses the very freeze the level-up screen relies on: every
+## entity halts on phase != "playing", so flipping to "paused" stops the player, the horde,
+## every weapon, the spawner, and the elapsed/reaper clocks in one move, and "playing" resumes
+## them exactly where they stood. Only meaningful from active play (guarded by the caller).
+func _set_paused(on: bool) -> void:
+	phase = "paused" if on else "playing"
+	AgentBridge.emit_event("pause", {"paused": on})
+	if hud:
+		hud.refresh(self)
+
 func _unhandled_input(event: InputEvent) -> void:
+	# ESC pause/resume, but only over active play — never over the level-up picker, the shop,
+	# or the end screen (each owns its own flow), so a stray ESC can't strand the run.
+	if event.is_action_pressed("pause") and (phase == "playing" or phase == "paused"):
+		get_viewport().set_input_as_handled()
+		_set_paused(phase == "playing")
+		return
 	if phase != "game_over" and phase != "victory":
 		return
 	# The shop swallows its own input while open; retry only fires from the bare
