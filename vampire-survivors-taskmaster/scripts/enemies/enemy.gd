@@ -5,6 +5,13 @@ extends Node2D
 
 const RADIUS := 12.0
 const FLASH_DURATION := 0.1
+## Boid separation: enemies repel from neighbours within this radius so the horde
+## spreads into a mass that SURROUNDS the player instead of every unit collapsing
+## onto the exact player position into one overlapping column. STRENGTH weights the
+## push against the toward-player drive; at equilibrium they pack ~SEPARATION_RADIUS
+## apart, forming the VS-style pincer wall.
+const SEPARATION_RADIUS := 26.0
+const SEPARATION_STRENGTH := 0.65
 ## Enemies at or above this max health (mini-bosses like ELITE) get a health bar
 ## once damaged, so their long HP pool reads as visible progress.
 const HEALTH_BAR_MIN_MAX_HEALTH := 40.0
@@ -83,12 +90,33 @@ func _process(delta: float) -> void:
 		return
 	var to := target.position - position
 	var d := to.length()
-	if d > 0.5:
-		position += to / d * speed * delta
+	var desired := to / d if d > 0.5 else Vector2.ZERO
+	# Blend the toward-player drive with a repulsion from crowded neighbours so the
+	# swarm spreads around the player rather than stacking on one point. In dense
+	# packs the push counters the inward drive, settling enemies into a surrounding
+	# ring while they still press contact range; when spread out the push fades.
+	var move := desired + _separation() * SEPARATION_STRENGTH
+	if move.length() > 0.001:
+		position += move.normalized() * speed * delta
 	_contact_cd -= delta
 	if d < radius + VSPlayer.RADIUS and _contact_cd <= 0.0 and target.alive:
 		target.take_damage(contact_damage)
 		_contact_cd = 0.5
+
+## Sum of unit repulsions from every enemy inside SEPARATION_RADIUS, each weighted
+## by how close it is (nearer neighbours push harder). Returned un-normalized so the
+## push grows with crowding; the caller normalizes the blended move. O(n) per enemy
+## (O(n²) per frame) which is fine within the spawner's MAX_ENEMIES cap.
+func _separation() -> Vector2:
+	var push := Vector2.ZERO
+	for other in get_tree().get_nodes_in_group("enemies"):
+		if other == self:
+			continue
+		var away: Vector2 = position - other.position
+		var dist := away.length()
+		if dist > 0.001 and dist < SEPARATION_RADIUS:
+			push += away / dist * (1.0 - dist / SEPARATION_RADIUS)
+	return push
 
 func hit(amount: float, _from: Vector2) -> void:
 	if _dying:

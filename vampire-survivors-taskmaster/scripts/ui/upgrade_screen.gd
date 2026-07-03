@@ -22,6 +22,7 @@ const ICONS := {
 	"multishot": "res://art/up_multishot.png",
 	"garlic": "res://art/up_garlic.png",
 	"whip": "res://art/up_whip.png",
+	"bible": "res://art/up_bible.png",
 }
 const PANEL_TEX := "res://art/ui_panel.png"       # Kenney RPG panel (brown)
 const PANEL_TEX_SEL := "res://art/ui_panel_sel.png"  # highlighted (blue) for hover/focus

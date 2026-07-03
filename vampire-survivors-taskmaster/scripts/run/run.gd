@@ -40,6 +40,7 @@ var weapon_fire_interval := 0.6
 var weapon_count := 1
 var garlic_level := 0            # 0 = Garlic aura not yet chosen; each pick grows it
 var whip_level := 0              # 0 = Whip melee arc not yet chosen; each pick grows it
+var bible_level := 0             # 0 = King Bible orbit not yet chosen; each pick grows it
 
 var _pending_levels := 0        # level-ups queued but not yet chosen (XP can span several)
 
@@ -61,6 +62,7 @@ const UPGRADE_POOL := [
 	{"id": "multishot", "title": "Multishot", "desc": "+1 projectile", "max": 4},
 	{"id": "garlic", "title": "Garlic", "desc": "Damaging aura around you (grows each pick)", "max": 8},
 	{"id": "whip", "title": "Whip", "desc": "Melee arc lashing your facing side; both sides at Lv 2+", "max": 8},
+	{"id": "bible", "title": "King Bible", "desc": "Holy books orbit you, striking enemies they pass through", "max": 8},
 ]
 
 ## Permanent, between-run PowerUps bought in the shop with banked meta-coins. Each level
@@ -138,6 +140,13 @@ func _build_world() -> void:
 	whip.run = self
 	whip.z_index = 1
 	player.add_child(whip)
+
+	# Fourth weapon: the King Bible orbit. Inert until bible_level > 0 (a level-up pick).
+	# z_index above the player so the books read on top of the enemies they sweep.
+	var bible := VSKingBible.new()
+	bible.run = self
+	bible.z_index = 1
+	player.add_child(bible)
 
 	var spawner := VSSpawner.new()
 	spawner.run = self
@@ -389,6 +398,8 @@ func _apply_upgrade(id: String) -> void:
 			garlic_level += 1
 		"whip":
 			whip_level += 1
+		"bible":
+			bible_level += 1
 	AgentBridge.emit_event("upgrade_chosen", {"id": id, "level": level})
 
 func _on_player_died() -> void:
