@@ -5,7 +5,12 @@ extends CanvasLayer
 
 var _stat: Label
 var _build: Label
+var _meta: Label
 var _over: Label
+
+# Active permanent PowerUps are fixed for the whole run (applied once at start), so we read
+# MetaSave + build the line a single time and cache that it's been done.
+var _meta_built := false
 
 # Top-right "build" panel: one row per owned upgrade (icon + "Lv N/max"), like VS's
 # weapon/accessory rows. Rebuilt only when the level signature changes so it costs
@@ -26,6 +31,15 @@ func _ready() -> void:
 	_build.add_theme_font_size_override("font_size", 14)
 	_build.modulate = Color(0.8, 0.9, 1.0)
 	add_child(_build)
+
+	# Third line: permanent PowerUps bought between runs, so the player can see their
+	# meta-investment paying off this run. Amber to read as distinct from the run stats.
+	_meta = Label.new()
+	_meta.position = Vector2(12, 48)
+	_meta.add_theme_font_size_override("font_size", 14)
+	_meta.modulate = Color(1.0, 0.82, 0.35)
+	_meta.visible = false
+	add_child(_meta)
 
 	# Build panel, anchored to the top-right corner and growing downward.
 	_loadout = VBoxContainer.new()
@@ -61,6 +75,7 @@ func refresh(run: VSRun) -> void:
 		_build.text += "    Garlic Lv %d" % run.garlic_level
 	if run.whip_level > 0:
 		_build.text += "    Whip Lv %d" % run.whip_level
+	_refresh_meta()
 	_refresh_loadout(run)
 	_over.visible = run.phase == "game_over"
 	if _over.visible:
@@ -71,6 +86,25 @@ func refresh(run: VSRun) -> void:
 		var mmss := "%d:%02d" % [secs / 60, secs % 60]
 		var banked := MetaSave.load_coins()
 		_over.text = "YOU DIED\n\nTime Survived  %s\nKills  %d\nLevel Reached  %d\nGold This Run  %d\nCoins Banked  %d\n\nPress B for the PowerUp shop\nPress Enter to retry" % [mmss, run.kills, run.level, run.gold, banked]
+
+## Build the active-PowerUp line once (they're fixed for the run). Reads persisted levels
+## from MetaSave and names them via the VSRun.POWERUPS catalog, in catalog order, e.g.
+## "PowerUps:  Might Lv 2   Armor Lv 1". Stays hidden if no PowerUps are owned.
+func _refresh_meta() -> void:
+	if _meta == null or _meta_built:
+		return
+	_meta_built = true
+	var levels := MetaSave.load_powerups()
+	var parts := PackedStringArray()
+	for opt in VSRun.POWERUPS:
+		var lvl := int(levels.get(opt["id"], 0))
+		if lvl > 0:
+			parts.append("%s Lv %d" % [str(opt["title"]), lvl])
+	if parts.is_empty():
+		_meta.visible = false
+		return
+	_meta.text = "PowerUps:  " + "   ".join(parts)
+	_meta.visible = true
 
 ## Show each owned upgrade as an icon + "Lv N/max" row, ordered by VSRun.UPGRADE_POOL so
 ## the layout is stable as picks come in. Rebuilds only when the levels change (cheap
