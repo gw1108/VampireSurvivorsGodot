@@ -23,9 +23,15 @@ var _shake_trauma := 0.0
 const SHAKE_DECAY := 5.0          # trauma/sec — full trauma dissipates in ~0.2s
 const SHAKE_MAX_OFFSET := 14.0    # px of offset at trauma 1.0
 
-var phase := "playing"          # playing | level_up | game_over  (AgentState lifecycle)
+var phase := "playing"          # playing | level_up | game_over | victory  (AgentState lifecycle)
 var kills := 0
 var elapsed := 0.0
+
+## Survival goal for the slice: outlast the escalating waves to this many seconds and the
+## run is WON (VS's core loop is survive-to-the-clock, not endless). 5:00 sits just past the
+## enemy HP/damage ramp cap (~6 min) so the late run is at its most dangerous right as the
+## timer runs out. Named so it's the single knob to tune the run length.
+const RUN_DURATION := 300.0
 var xp := 0
 var level := 1
 var gold := 0                   # run coins banked from coin pickups; seed of the VS meta-currency
@@ -253,6 +259,8 @@ func _process(delta: float) -> void:
 	frame_tick += 1
 	if phase == "playing":
 		elapsed += delta
+		if elapsed >= RUN_DURATION:
+			_on_victory()
 	_update_shake(delta)
 	if hud:
 		hud.refresh(self)
@@ -493,7 +501,7 @@ func _apply_upgrade(id: String) -> void:
 	AgentBridge.emit_event("upgrade_chosen", {"id": id, "level": level})
 
 func _on_player_died() -> void:
-	if phase == "game_over":
+	if phase == "game_over" or phase == "victory":
 		return
 	phase = "game_over"
 	# Bank this run's coins into the persisted meta purse so the VS "coins" economy
@@ -502,8 +510,19 @@ func _on_player_died() -> void:
 	var meta_coins := MetaSave.add_coins(gold)
 	AgentBridge.emit_event("death", {"type": "player", "run_gold": gold, "meta_coins": meta_coins})
 
+## Player outlasted RUN_DURATION — the run is WON. Freezes the world (every entity halts on
+## phase != "playing") and banks this run's coins into the meta purse exactly like death, so a
+## survived run still pays into the between-run economy. Guarded so it fires once even if the
+## victory and a death signal race on the same frame (whichever set a terminal phase first wins).
+func _on_victory() -> void:
+	if phase == "game_over" or phase == "victory":
+		return
+	phase = "victory"
+	var meta_coins := MetaSave.add_coins(gold)
+	AgentBridge.emit_event("victory", {"type": "player", "run_gold": gold, "meta_coins": meta_coins})
+
 func _unhandled_input(event: InputEvent) -> void:
-	if phase != "game_over":
+	if phase != "game_over" and phase != "victory":
 		return
 	# The shop swallows its own input while open; retry only fires from the bare
 	# game-over screen so Enter doesn't yank the player out mid-purchase.

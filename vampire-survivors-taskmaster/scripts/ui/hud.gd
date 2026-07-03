@@ -67,7 +67,9 @@ func refresh(run: VSRun) -> void:
 	if run.player:
 		hp = int(ceil(run.player.health))
 		max_hp = int(round(run.player.max_health))
-	_stat.text = "HP %d/%d    Time %ds    Kills %d    Lv %d (%d xp)    Gold %d" % [hp, max_hp, int(run.elapsed), run.kills, run.level, run.xp, run.gold]
+	# Survival clock counts UP toward the run's goal (VS-style), so the player can read how
+	# close they are to outlasting the waves and winning.
+	_stat.text = "HP %d/%d    Time %s / %s    Kills %d    Lv %d (%d xp)    Gold %d" % [hp, max_hp, _mmss(run.elapsed), _mmss(VSRun.RUN_DURATION), run.kills, run.level, run.xp, run.gold]
 	var fire_rate := 1.0 / run.weapon_fire_interval if run.weapon_fire_interval > 0.0 else 0.0
 	var move_speed := int(round(VSPlayer.SPEED * run.player_speed_mult))
 	_build.text = "DMG %.0f    Rate %.2f/s    Speed %d    Shots %d" % [run.weapon_damage, fire_rate, move_speed, run.weapon_count]
@@ -77,15 +79,22 @@ func refresh(run: VSRun) -> void:
 		_build.text += "    Whip Lv %d" % run.whip_level
 	_refresh_meta()
 	_refresh_loadout(run)
-	_over.visible = run.phase == "game_over"
+	var won := run.phase == "victory"
+	_over.visible = run.phase == "game_over" or won
 	if _over.visible:
-		# Run summary: give the death some closure by showing what the run achieved.
-		# The run's gold was banked into the persisted purse in VSRun._on_player_died
-		# before this refresh, so MetaSave.load_coins() reflects the post-deposit total.
-		var secs := int(run.elapsed)
-		var mmss := "%d:%02d" % [secs / 60, secs % 60]
+		# Run summary: give the run's end some closure by showing what it achieved. The gold
+		# was banked into the persisted purse (VSRun._on_player_died / _on_victory) before this
+		# refresh, so MetaSave.load_coins() reflects the post-deposit total. A survived run leads
+		# with a golden "YOU SURVIVED!"; a death leads with the crimson "YOU DIED".
 		var banked := MetaSave.load_coins()
-		_over.text = "YOU DIED\n\nTime Survived  %s\nKills  %d\nLevel Reached  %d\nGold This Run  %d\nCoins Banked  %d\n\nPress B for the PowerUp shop\nPress Enter to retry" % [mmss, run.kills, run.level, run.gold, banked]
+		var heading := "YOU SURVIVED!" if won else "YOU DIED"
+		_over.modulate = Color(1.0, 0.9, 0.4) if won else Color(1, 1, 1)
+		_over.text = "%s\n\nTime Survived  %s\nKills  %d\nLevel Reached  %d\nGold This Run  %d\nCoins Banked  %d\n\nPress B for the PowerUp shop\nPress Enter to retry" % [heading, _mmss(run.elapsed), run.kills, run.level, run.gold, banked]
+
+## Format a seconds count as m:ss for the survival clock and run summaries.
+func _mmss(seconds: float) -> String:
+	var s := int(seconds)
+	return "%d:%02d" % [s / 60, s % 60]
 
 ## Build the active-PowerUp line once (they're fixed for the run). Reads persisted levels
 ## from MetaSave and names them via the VSRun.POWERUPS catalog, in catalog order, e.g.
