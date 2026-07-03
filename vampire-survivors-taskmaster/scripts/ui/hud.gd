@@ -1,6 +1,7 @@
 class_name VSHud
 extends CanvasLayer
-## Minimal heads-up display: HP / time / kills / level, plus a game-over banner.
+## Minimal heads-up display: time / kills / level, plus a game-over banner. HP is drawn as a
+## bar under the player avatar (VSPlayer._draw_health_bar), not as corner text here.
 ## Built in code; replace with the Kenney UI pack art as the UI lane matures.
 
 var _stat: Label
@@ -421,14 +422,10 @@ func _process_chest_reveal(delta: float) -> void:
 func refresh(run: VSRun) -> void:
 	if _stat == null:
 		return
-	var hp := 0
-	var max_hp := 0
-	if run.player:
-		hp = int(ceil(run.player.health))
-		max_hp = int(round(run.player.max_health))
 	# Survival clock counts UP toward the run's goal (VS-style), so the player can read how
-	# close they are to outlasting the waves and winning.
-	_stat.text = "HP %d/%d    Time %s / %s    Kills %d    Lv %d (%d xp)    Gold %d" % [hp, max_hp, _mmss(run.elapsed), _mmss(VSRun.RUN_DURATION), run.kills, run.level, run.xp, run.gold]
+	# close they are to outlasting the waves and winning. HP now lives as a bar under the
+	# player avatar (see VSPlayer._draw_health_bar) rather than as corner text.
+	_stat.text = "Time %s / %s    Kills %d    Lv %d (%d xp)    Gold %d" % [_mmss(run.elapsed), _mmss(VSRun.RUN_DURATION), run.kills, run.level, run.xp, run.gold]
 	var fire_rate := 1.0 / run.weapon_fire_interval if run.weapon_fire_interval > 0.0 else 0.0
 	var move_speed := int(round(VSPlayer.SPEED * run.player_speed_mult))
 	_build.text = "DMG %.0f    Rate %.2f/s    Speed %d    Shots %d" % [run.weapon_damage, fire_rate, move_speed, run.weapon_count]

@@ -33,6 +33,14 @@ const NDUJA_DAMAGE := 9.0
 const NDUJA_TICK := 0.2
 const NDUJA_TINT := Color(1.6, 0.6, 0.25)   # hot orange the sprite pulses toward while ablaze
 
+## Health bar drawn right under the sprite, replacing the old HUD corner "HP N/N" text so the
+## player's vitals read at a glance on the avatar itself. Mirrors VSEnemy's mini-boss bar look
+## (dark track + red fill) but stays visible at every health level, not just once damaged.
+const HEALTH_BAR_HEIGHT := 3.0
+const HEALTH_BAR_OFFSET_Y := 28.0   # clears the sprite's visible feet (art is 44px tall)
+const HEALTH_BAR_BG_COLOR := Color(0, 0, 0, 0.7)
+const HEALTH_BAR_FILL_COLOR := Color(0.85, 0.15, 0.15)
+
 ## Living-avatar motion: a brisk two-step bounce while walking and a slow breathe when standing.
 ## Both are a couple of pixels of vertical offset on the sprite alone (position untouched), driven
 ## off the run's own `elapsed` clock so they pause cleanly with the game during level-up.
@@ -69,6 +77,10 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	if not alive:
 		return
+	# Health can change from several places (contact damage, food pickups, chicken heals,
+	# Vitality upgrades), so just redraw the bar every live frame rather than threading a
+	# queue_redraw() call through each of them.
+	queue_redraw()
 	_update_hit_flash(delta)
 	var run := get_parent() as VSRun
 	if run and run.phase != "playing":
@@ -121,12 +133,25 @@ func _burn_nearby() -> void:
 			if position.distance_to(e.position) <= NDUJA_RADIUS + e.radius:
 				e.hit(NDUJA_DAMAGE, position)
 
-## Draw the translucent flame ring while the Nduja aura is up so its burn radius reads at a glance.
+## Draw the health bar (always) and the translucent flame ring while the Nduja aura is up.
 func _draw() -> void:
+	_draw_health_bar()
 	if not _nduja_glow:
 		return
 	draw_circle(Vector2.ZERO, NDUJA_RADIUS, Color(1.0, 0.45, 0.12, 0.16))
 	draw_arc(Vector2.ZERO, NDUJA_RADIUS, 0.0, TAU, 48, Color(1.0, 0.62, 0.2, 0.55), 2.0)
+
+## Draw the player's HP as a small red bar right under the sprite. Local-space draw, so it
+## rides along with the avatar automatically; unlike VSEnemy's version this one never hides,
+## since it's now the player's only HP readout (the HUD corner text used to own that job).
+func _draw_health_bar() -> void:
+	if not alive or max_health <= 0.0:
+		return
+	var frac := clampf(health / max_health, 0.0, 1.0)
+	var w := RADIUS * 2.0
+	var bg := Rect2(-w * 0.5, HEALTH_BAR_OFFSET_Y, w, HEALTH_BAR_HEIGHT)
+	draw_rect(bg, HEALTH_BAR_BG_COLOR)
+	draw_rect(Rect2(bg.position, Vector2(w * frac, HEALTH_BAR_HEIGHT)), HEALTH_BAR_FILL_COLOR)
 
 ## Nudge the sprite up and down to sell life: a footfall bounce when a move key is held, a slow
 ## breathe when idle. `-absf(sin)` keeps the walk cycle lifting off the ground (up is -y) rather
