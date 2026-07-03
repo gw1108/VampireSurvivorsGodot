@@ -348,7 +348,11 @@ func _on_player_died() -> void:
 	if phase == "game_over":
 		return
 	phase = "game_over"
-	AgentBridge.emit_event("death", {"type": "player"})
+	# Bank this run's coins into the persisted meta purse so the VS "coins" economy
+	# carries between runs (seed of a future PowerUp shop). Guarded above so a run
+	# can only deposit once, never double-banking on repeated death signals.
+	var meta_coins := MetaSave.add_coins(gold)
+	AgentBridge.emit_event("death", {"type": "player", "run_gold": gold, "meta_coins": meta_coins})
 
 func _unhandled_input(event: InputEvent) -> void:
 	if phase == "game_over" and event.is_action_pressed("ui_accept"):
