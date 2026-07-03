@@ -22,6 +22,15 @@ const HIT_FLASH_COLOR := Color(1.7, 0.35, 0.35)
 ## deleting the player unfairly the moment the horde closes in. Ticks only while playing.
 const IFRAME_DURATION := 0.24
 
+## Nduja Fritta Tanta berserk: while VSRun.is_nduja_active() the avatar takes no contact damage
+## and a burning aura sears every enemy within NDUJA_RADIUS, dealing NDUJA_DAMAGE on each
+## NDUJA_TICK so charging through the horde melts it. The buff itself lives on the run clock
+## (VSNduja pickup sets run.nduja_until); the player just reads it each frame.
+const NDUJA_RADIUS := 78.0
+const NDUJA_DAMAGE := 9.0
+const NDUJA_TICK := 0.2
+const NDUJA_TINT := Color(1.6, 0.6, 0.25)   # hot orange the sprite pulses toward while ablaze
+
 ## Living-avatar motion: a brisk two-step bounce while walking and a slow breathe when standing.
 ## Both are a couple of pixels of vertical offset on the sprite alone (position untouched), driven
 ## off the run's own `elapsed` clock so they pause cleanly with the game during level-up.
@@ -44,6 +53,10 @@ var _flash_time := 0.0
 ## Remaining invulnerability time (s), armed by a landed hit and counted down each playing
 ## frame; while > 0 take_damage is a no-op so overlapping enemies can't stack simultaneous hits.
 var _iframe_time := 0.0
+## True while a Nduja buff is wreathing the avatar in flame, so the fiery tint + aura ring can be
+## cleared exactly once when it lapses. Paired with _nduja_tick_accum, the burn-cadence timer.
+var _nduja_glow := false
+var _nduja_tick_accum := 0.0
 
 func _ready() -> void:
 	add_to_group("player")
@@ -75,6 +88,43 @@ func _process(delta: float) -> void:
 	if run:
 		position.x = clampf(position.x, -run.arena_half.x, run.arena_half.x)
 		position.y = clampf(position.y, -run.arena_half.y, run.arena_half.y)
+	_update_nduja(run, delta)
+
+## Nduja Fritta Tanta: while the berserk buff is live, burn every enemy in NDUJA_RADIUS on a tick
+## and pulse the sprite toward a hot orange (the invincibility itself is enforced in take_damage).
+## When the window lapses, clear the tint + aura ring once so the avatar returns to normal.
+func _update_nduja(run: VSRun, delta: float) -> void:
+	if run and run.is_nduja_active():
+		_nduja_glow = true
+		_nduja_tick_accum += delta
+		while _nduja_tick_accum >= NDUJA_TICK:
+			_nduja_tick_accum -= NDUJA_TICK
+			_burn_nearby()
+		if _sprite:
+			var pulse := 0.5 + 0.5 * sin(run.elapsed * 12.0)
+			_sprite.modulate = Color(1, 1, 1).lerp(NDUJA_TINT, 0.5 + 0.5 * pulse)
+		queue_redraw()
+	elif _nduja_glow:
+		_nduja_glow = false
+		_nduja_tick_accum = 0.0
+		if _sprite and _flash_time <= 0.0:
+			_sprite.modulate = Color(1, 1, 1)
+		queue_redraw()
+
+## Sear every enemy overlapping the fiery aura this tick. Routes through VSEnemy.hit so burned
+## enemies flash, take knockback, and die/pay out exactly like any weapon kill.
+func _burn_nearby() -> void:
+	for e in get_tree().get_nodes_in_group("enemies"):
+		if is_instance_valid(e) and e is VSEnemy:
+			if position.distance_to(e.position) <= NDUJA_RADIUS + e.radius:
+				e.hit(NDUJA_DAMAGE, position)
+
+## Draw the translucent flame ring while the Nduja aura is up so its burn radius reads at a glance.
+func _draw() -> void:
+	if not _nduja_glow:
+		return
+	draw_circle(Vector2.ZERO, NDUJA_RADIUS, Color(1.0, 0.45, 0.12, 0.16))
+	draw_arc(Vector2.ZERO, NDUJA_RADIUS, 0.0, TAU, 48, Color(1.0, 0.62, 0.2, 0.55), 2.0)
 
 ## Nudge the sprite up and down to sell life: a footfall bounce when a move key is held, a slow
 ## breathe when idle. `-absf(sin)` keeps the walk cycle lifting off the ground (up is -y) rather
@@ -103,9 +153,13 @@ func take_damage(amount: float) -> void:
 	# per body — the per-enemy contact cooldowns alone can't provide it.
 	if _iframe_time > 0.0:
 		return
+	var run := get_parent() as VSRun
+	# Nduja Fritta Tanta: while the fiery berserk buff burns, the player is untouchable — charge
+	# straight through the horde taking no contact damage while the aura sears it (see _update_nduja).
+	if run and run.is_nduja_active():
+		return
 	# Armor passive subtracts flat damage, but at least 1 always gets through so armor can
 	# never make the player invulnerable (faithful to VS: chip damage still lands).
-	var run := get_parent() as VSRun
 	if run and run.armor > 0:
 		amount = maxf(1.0, amount - float(run.armor))
 	health -= amount

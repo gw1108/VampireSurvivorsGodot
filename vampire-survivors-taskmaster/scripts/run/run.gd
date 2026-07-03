@@ -47,6 +47,11 @@ var reaper_enemy: VSEnemy         # the summoned Reaper node, so the HUD can sho
 ## VSEnemy._process). Set by the Freeze Clock pickup (VSFrozenClock); measured in the run's
 ## own `elapsed` clock so it pauses cleanly with the game during level-up.
 var freeze_until := 0.0
+
+## Nduja Fritta Tanta berserk window: while `elapsed < nduja_until` the player takes no contact
+## damage and burns nearby enemies with a fiery aura (see VSPlayer._process). Set by the Nduja
+## pickup (VSNduja); measured in the run's own `elapsed` clock so it pauses cleanly during level-up.
+var nduja_until := 0.0
 var xp := 0
 var level := 1
 var gold := 0                   # run coins banked from coin pickups; seed of the VS meta-currency
@@ -408,6 +413,12 @@ func add_kill(at: Vector2, xp_value: int = 1, gem_count: int = 1, is_elite: bool
 func is_frozen() -> bool:
 	return elapsed < freeze_until
 
+## True while a Nduja Fritta Tanta buff is active — the player reads this each frame to ignore
+## contact damage and sear nearby enemies (see VSPlayer._process). Compared against the run's own
+## `elapsed` clock so the berserk window pauses with the game rather than bleeding real seconds.
+func is_nduja_active() -> bool:
+	return elapsed < nduja_until
+
 ## Bank gold from a collected coin. Kept as a method so pickups and any future
 ## meta-progression hooks share one entry point onto the run's currency.
 func add_gold(amount: int) -> void:
@@ -583,7 +594,16 @@ func _spawn_candelabra() -> void:
 func drop_candelabra_bonus(at: Vector2) -> void:
 	var roll := randf()
 	if roll < 0.04:
-		# Rarest light: a bonus reroll granted directly to the run budget. No pickup node —
+		# Rarest treat: Nduja Fritta Tanta — a few seconds of fiery invincibility that also burns
+		# the horde you charge through (see VSPlayer / VSNduja). The standout power fantasy of the
+		# light drops, so it's as scarce as the bonus reroll.
+		var n := VSNduja.new()
+		n.position = at
+		n.run = self
+		add_child(n)
+		AgentBridge.emit_event("spawn", {"type": "nduja", "pos": [at.x, at.y]})
+	elif roll < 0.08:
+		# Rare light: a bonus reroll granted directly to the run budget. No pickup node —
 		# the HUD reroll readout refreshes every frame, so the +1 shows immediately. Pop a
 		# floating "+1 Reroll" at the shatter so the silent grant reads as a reward, tinted
 		# the same violet as the HUD reroll token.
