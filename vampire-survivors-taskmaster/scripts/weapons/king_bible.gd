@@ -7,12 +7,17 @@ extends Node2D
 ## through the orbit. Mounted on the player, enabled/scaled by run.bible_level
 ## (0 = not yet picked: no books, inert). The slice's fourth, mechanically-distinct weapon.
 
-const BASE_ORBIT_RADIUS := 96.0
-const RADIUS_PER_LEVEL := 8.0
-const ANGULAR_SPEED := 3.2          # rad/s the books orbit the player
-const BOOK_HIT_RADIUS := 22.0       # how close a book must pass to strike an enemy
+# Tuned by eye against the horde (see _debug_bible_shot playtest): the ring is kept
+# tight enough to hug the player so enemies must cross the books to reach them (a wide
+# ring let fast enemies camp inside, untouched), each book sweeps a wide band so few
+# enemies slip through the gaps, and the orbit spins briskly so it reads as active area
+# denial. Damage tracks the wiki (base ~10 scaled, ~30 at max level).
+const BASE_ORBIT_RADIUS := 88.0
+const RADIUS_PER_LEVEL := 6.0
+const ANGULAR_SPEED := 3.6          # rad/s the books orbit the player (~0.57 rev/s)
+const BOOK_HIT_RADIUS := 27.0       # how close a book must pass to strike an enemy
 const TICK_INTERVAL := 0.35         # min seconds between a book's hits (avoids per-frame drain)
-const BASE_DAMAGE := 4.0
+const BASE_DAMAGE := 6.0
 const DAMAGE_PER_LEVEL := 3.0
 const MAX_BOOKS := 5
 const BOOK_SCALE := 0.5             # 64px source -> ~32px book, legible beside enemies
