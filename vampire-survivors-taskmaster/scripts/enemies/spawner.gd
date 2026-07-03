@@ -5,9 +5,12 @@ extends Node2D
 
 const MAX_ENEMIES := 90
 const SPAWN_RING := 520.0
+const ELITE_INTERVAL := 35.0   # seconds between mini-boss spawns
+const ELITE_FIRST := 35.0      # delay before the first elite appears
 
 var run: VSRun
 var _accum := 0.0
+var _next_elite := ELITE_FIRST
 
 func _process(delta: float) -> void:
 	if run == null or run.phase != "playing" or run.player == null:
@@ -17,6 +20,9 @@ func _process(delta: float) -> void:
 	while _accum >= 1.0:
 		_accum -= 1.0
 		_spawn_one()
+	if run.elapsed >= _next_elite:
+		_next_elite += ELITE_INTERVAL
+		_spawn_elite()
 
 func _spawn_one() -> void:
 	if get_tree().get_nodes_in_group("enemies").size() >= MAX_ENEMIES:
@@ -32,6 +38,21 @@ func _spawn_one() -> void:
 	e.target = run.player
 	run.add_child(e)
 	AgentBridge.emit_event("spawn", {"type": "enemy", "pos": [pos.x, pos.y]})
+
+## Spawn a single elite/mini-boss on the ring. Bypasses the enemy cap so the
+## boss always shows up, and tags its event so tooling can tell it apart.
+func _spawn_elite() -> void:
+	var ang := randf() * TAU
+	var pos := run.player.position + Vector2(cos(ang), sin(ang)) * SPAWN_RING
+	pos.x = clampf(pos.x, -run.arena_half.x, run.arena_half.x)
+	pos.y = clampf(pos.y, -run.arena_half.y, run.arena_half.y)
+	var e := VSEnemy.new()
+	e.type = VSEnemy.Type.ELITE
+	e.position = pos
+	e.run = run
+	e.target = run.player
+	run.add_child(e)
+	AgentBridge.emit_event("spawn", {"type": "elite", "pos": [pos.x, pos.y]})
 
 ## Weighted enemy-type roll that introduces tougher archetypes as the run ramps.
 func _pick_type() -> int:
