@@ -41,6 +41,11 @@ const REAPER_DURATION := 15.0
 var reaper_active := false        # true once the Reaper has been summoned at the time limit
 var reaper_deadline := 0.0        # elapsed time at which surviving the Reaper wins the run
 var reaper_slain := false         # true if the player KILLED the Reaper (a kill-win) rather than outlasting it
+
+## Orologion time-stop: while `elapsed < freeze_until` every enemy halts in place (see
+## VSEnemy._process). Set by the Freeze Clock pickup (VSFrozenClock); measured in the run's
+## own `elapsed` clock so it pauses cleanly with the game during level-up.
+var freeze_until := 0.0
 var xp := 0
 var level := 1
 var gold := 0                   # run coins banked from coin pickups; seed of the VS meta-currency
@@ -308,8 +313,15 @@ func add_kill(at: Vector2, xp_value: int = 1, gem_count: int = 1, is_elite: bool
 	_maybe_drop_food(at)
 	_maybe_drop_coin(at, is_elite)
 	_maybe_drop_rosary(at, is_elite)
+	_maybe_drop_freeze_clock(at, is_elite)
 	if is_elite:
 		_maybe_drop_magnet(at)
+
+## True while an Orologion freeze is active — enemies read this each frame and halt (see
+## VSEnemy._process). Compared against the run's own `elapsed` clock so the freeze window
+## pauses with the game rather than bleeding real seconds during a level-up.
+func is_frozen() -> bool:
+	return elapsed < freeze_until
 
 ## Bank gold from a collected coin. Kept as a method so pickups and any future
 ## meta-progression hooks share one entry point onto the run's currency.
@@ -356,6 +368,20 @@ func _maybe_drop_rosary(at: Vector2, is_elite: bool) -> void:
 	r.run = self
 	add_child(r)
 	AgentBridge.emit_event("spawn", {"type": "rosary", "pos": [at.x, at.y]})
+
+## Rarely drop a Freeze Clock — the VS Orologion time-stop treat that halts every enemy on
+## pickup (see VSFrozenClock). Same rarity tuning as the Rosary (~0.3% from ordinary kills,
+## ~10% from an elite): a run-swinging breather that feels like a lucky break, not a staple.
+## The Rosary's complement — a pause to reposition rather than a mass clear.
+func _maybe_drop_freeze_clock(at: Vector2, is_elite: bool) -> void:
+	var chance := 0.10 if is_elite else 0.003
+	if randf() >= chance:
+		return
+	var c := VSFrozenClock.new()
+	c.position = at
+	c.run = self
+	add_child(c)
+	AgentBridge.emit_event("spawn", {"type": "frozen_clock", "pos": [at.x, at.y]})
 
 ## Occasionally drop a gold coin on a kill so the run banks a little meta-currency. Ordinary
 ## kills pay out rarely (~2%) and a single coin; elites are a jackpot — a guaranteed coin
@@ -409,6 +435,12 @@ func drop_candelabra_bonus(at: Vector2) -> void:
 		r.run = self
 		add_child(r)
 		AgentBridge.emit_event("spawn", {"type": "rosary", "pos": [at.x, at.y]})
+	elif roll < 0.16:
+		var fc := VSFrozenClock.new()
+		fc.position = at
+		fc.run = self
+		add_child(fc)
+		AgentBridge.emit_event("spawn", {"type": "frozen_clock", "pos": [at.x, at.y]})
 	elif roll < 0.33:
 		var m := VSMagnet.new()
 		m.position = at

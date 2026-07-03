@@ -92,6 +92,15 @@ func _process(delta: float) -> void:
 		return
 	if target == null or not is_instance_valid(target):
 		return
+	# Orologion time-stop: while a Freeze Clock is active every enemy halts in place and deals
+	# no contact damage — a breather for the player to reposition (weapons still hit them). An
+	# icy tint (when not mid hit-flash) makes the frozen state read at a glance.
+	if run and run.is_frozen():
+		if _flash_time <= 0.0 and _sprite:
+			_sprite.modulate = Color(0.55, 0.8, 1.3)
+		return
+	elif _flash_time <= 0.0 and _sprite and _sprite.modulate != Color(1, 1, 1):
+		_sprite.modulate = Color(1, 1, 1)   # clear any lingering freeze tint once thawed
 	var to := target.position - position
 	var d := to.length()
 	var desired := to / d if d > 0.5 else Vector2.ZERO
