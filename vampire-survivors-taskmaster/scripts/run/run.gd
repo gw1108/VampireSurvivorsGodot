@@ -448,8 +448,11 @@ func drop_candelabra_bonus(at: Vector2) -> void:
 	var roll := randf()
 	if roll < 0.04:
 		# Rarest light: a bonus reroll granted directly to the run budget. No pickup node —
-		# the HUD reroll readout refreshes every frame, so the +1 shows immediately.
+		# the HUD reroll readout refreshes every frame, so the +1 shows immediately. Pop a
+		# floating "+1 Reroll" at the shatter so the silent grant reads as a reward, tinted
+		# the same violet as the HUD reroll token.
 		rerolls_left += 1
+		VSFloatText.spawn(self, at, "+1 Reroll", Color(0.72, 0.6, 1.0))
 		AgentBridge.emit_event("reroll_bonus", {"rerolls_left": rerolls_left})
 	elif roll < 0.12:
 		var r := VSRosary.new()
