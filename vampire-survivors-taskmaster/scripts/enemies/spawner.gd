@@ -24,6 +24,13 @@ const SURGE_GROWTH := 0.06     # extra line-members per second survived
 const SURGE_MAX := 16          # cap the line length so a wall never becomes a full encirclement
 const SURGE_SPACING := 46.0    # px between adjacent enemies along the wall
 
+# Pincer variant: rarely, and only later in the run, a surge arrives as TWO mirrored walls
+# marching in from opposite flanks (dir and -dir) at once, so the player must thread the gap
+# between them along the shared perpendicular axis instead of simply fleeing one wall. Reuses
+# the single-wall math for each side and shares MAX_ENEMIES, so it stays bounded.
+const PINCER_FIRST := 150.0    # seconds survived before a surge may become a pincer
+const PINCER_CHANCE := 0.25    # chance an eligible (late-run) surge doubles into a pincer
+
 var run: VSRun
 var _accum := 0.0
 var _next_elite := ELITE_FIRST
@@ -117,8 +124,26 @@ func _spawn_surge() -> void:
 	if get_tree().get_nodes_in_group("enemies").size() >= MAX_ENEMIES:
 		return
 	var count := clampi(SURGE_BASE + int(run.elapsed * SURGE_GROWTH), SURGE_BASE, SURGE_MAX)
-	# The flank the wall comes from, and the perpendicular axis it spreads along.
+	# The flank the wall comes from; its perpendicular spread axis is derived per wall.
 	var dir := Vector2.from_angle(randf() * TAU)
+	# Later in the run a surge occasionally doubles into a PINCER: a second mirrored wall
+	# marches in from the opposite flank (-dir) at the same time, forcing the player to thread
+	# the gap between them rather than just fleeing one wall.
+	var pincer := run.elapsed >= PINCER_FIRST and randf() < PINCER_CHANCE
+	_spawn_wall(dir, count)
+	if pincer:
+		_spawn_wall(-dir, count)
+	AgentBridge.emit_event("surge", {"count": count, "dir": [dir.x, dir.y], "pincer": pincer})
+	# Telegraph the incoming wall on the HUD: flash an edge arrow pointing at the flank it
+	# marches in from, so the player gets a beat to juke before it closes. The HUD holds a single
+	# arrow, so a pincer telegraphs only the primary flank — its mirror stays a late-run surprise.
+	if run.hud:
+		run.hud.telegraph_surge(dir)
+
+## Spawn one marching wall of `count` enemies off the `dir` flank, spaced evenly along the
+## axis perpendicular to their approach and centered on the flank point. Honors MAX_ENEMIES on
+## every enemy so a single wall — or a pincer's second wall — never blows the performance budget.
+func _spawn_wall(dir: Vector2, count: int) -> void:
 	var perp := dir.orthogonal()
 	var center := run.player.position + dir * SPAWN_RING
 	for i in count:
@@ -135,11 +160,6 @@ func _spawn_surge() -> void:
 		e.run = run
 		e.target = run.player
 		run.add_child(e)
-	AgentBridge.emit_event("surge", {"count": count, "dir": [dir.x, dir.y]})
-	# Telegraph the incoming wall on the HUD: flash an edge arrow pointing at the flank it
-	# marches in from, so the player gets a beat to juke perpendicular before it closes.
-	if run.hud:
-		run.hud.telegraph_surge(dir)
 
 ## Summon the finale Reaper on the spawn ring. Modeled on _spawn_elite (bypasses the
 ## enemy cap, tags its event) but injects the single, near-unkillable REAPER that VSRun
