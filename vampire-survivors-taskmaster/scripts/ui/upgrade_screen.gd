@@ -189,6 +189,13 @@ func _refresh_stat_rail(run: VSRun, preview_id := "") -> void:
 				_add_rail_header("ITEMS")
 			owned += 1
 			_add_rail_line(str(opt["title"]), "Lv %d" % lvl, pv.get(str(opt["title"]), ""))
+	# A brand-new weapon/passive pick owns no line above, so synthesize one ("Whip  + NEW",
+	# "Lv 0 → 1", green) — every card should give the rail some feedback, not read as "no impact".
+	var new_item := str(pv.get("__new_item__", ""))
+	if new_item != "":
+		if owned == 0:
+			_add_rail_header("ITEMS")
+		_add_rail_line("%s  + NEW" % new_item, "Lv 0", "Lv 1")
 
 ## Map an upgrade option id to the rail line(s) it would change, keyed by the exact label the
 ## rail renders, valued with the "after" string in that line's own format. Mirrors _apply_upgrade
@@ -224,10 +231,16 @@ func _compute_preview(run: VSRun, id: String) -> Dictionary:
 		"armor":
 			out["Armor"] = "%d" % (run.armor + 1)
 	# Owned weapons/passives also advance their ITEMS "Lv N" line (only rendered when owned).
+	# A not-yet-owned pick (lvl == 0) with no dedicated stat row above (i.e. a weapon/passive, not a
+	# stat boost like Power/Haste) has nothing on the rail to change, so flag it under __new_item__ so
+	# the rail can synthesize a "+ NEW" row — otherwise a brand-new weapon/passive reads as no impact.
+	var has_stat_preview := not out.is_empty()
 	for opt in VSRun.UPGRADE_POOL:
 		if str(opt["id"]) == id:
 			var lvl: int = run.upgrade_levels.get(id, 0)
 			out[str(opt["title"])] = "Lv %d" % (lvl + 1)
+			if lvl == 0 and not has_stat_preview:
+				out["__new_item__"] = str(opt["title"])
 	return out
 
 ## A dim section header row for the build rail (e.g. "YOUR BUILD", "ITEMS"), with a little

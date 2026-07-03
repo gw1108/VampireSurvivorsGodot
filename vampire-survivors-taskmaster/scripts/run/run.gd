@@ -14,6 +14,7 @@ var hud: VSHud
 var adapter: Node
 var upgrade_screen: VSUpgradeScreen
 var shop_screen: VSShopScreen
+var title_screen: VSTitleScreen
 var _spawner: VSSpawner
 var _cam: Camera2D
 
@@ -24,7 +25,7 @@ var _shake_trauma := 0.0
 const SHAKE_DECAY := 5.0          # trauma/sec — full trauma dissipates in ~0.2s
 const SHAKE_MAX_OFFSET := 14.0    # px of offset at trauma 1.0
 
-var phase := "playing"          # playing | level_up | paused | game_over | victory  (AgentState lifecycle)
+var phase := "title"            # title | playing | level_up | paused | game_over | victory  (AgentState lifecycle)
 var kills := 0
 var elapsed := 0.0
 
@@ -292,6 +293,7 @@ func _build_world() -> void:
 	# Between-run PowerUp shop, opened from the game-over screen (key B). Spends banked
 	# meta-coins on permanent boosts; hidden until the run ends.
 	shop_screen = VSShopScreen.new()
+	shop_screen.closed.connect(_on_shop_closed)
 	add_child(shop_screen)
 
 	# Establish the character (Antonio Belpaese) — his starting weapon (Whip) and initial
@@ -304,6 +306,19 @@ func _build_world() -> void:
 
 	adapter = preload("res://scripts/agent/agent_adapter.gd").new()
 	add_child(adapter)
+
+	# Title / main menu (GDD: "Main menu -> Start -> straight into Mad Forest"). The run boots
+	# frozen in the "title" phase — nothing keys off "title", only "playing" — and enters play on
+	# Start. HARNESS-SAFE: when the AgentBridge is live we auto-start before the first frame, so an
+	# autonomous playtest never stalls on a menu it has no button for (the harness only sees "playing").
+	title_screen = VSTitleScreen.new()
+	title_screen.start_requested.connect(start_run)
+	title_screen.shop_requested.connect(_open_shop_from_title)
+	add_child(title_screen)
+	if AgentBridge.is_active():
+		start_run()
+	else:
+		title_screen.open()
 
 ## Antonio Belpaese — the default (and currently only) playable character. Faithful to the
 ## GDD/offline wiki: he begins wielding the Whip (his starting weapon), with +20 Max Health
@@ -949,7 +964,44 @@ func _set_paused(on: bool) -> void:
 	if hud:
 		hud.refresh(self)
 
+## Leave the title screen and begin the run. Idempotent (guards on the title phase) so a double
+## Start press — or a race between the Start button, the keyboard, and the harness auto-start —
+## can only ever kick the run off once.
+func start_run() -> void:
+	if phase != "title":
+		return
+	phase = "playing"
+	if title_screen:
+		title_screen.close()
+	AgentBridge.emit_event("start", {})
+
+## Open the between-run PowerUp shop from the title (so meta-coins can be spent before the first
+## dive). Hides the title while the shop is up; _on_shop_closed brings the menu back on dismiss.
+func _open_shop_from_title() -> void:
+	if title_screen:
+		title_screen.close()
+	if shop_screen:
+		shop_screen.open()
+
+## The PowerUp shop was dismissed. From the title we restore the menu (buy PowerUps, then Start);
+## from the game-over screen the shop simply hides back to the run summary, so guard on the phase.
+func _on_shop_closed() -> void:
+	if phase == "title" and title_screen:
+		title_screen.open()
+
 func _unhandled_input(event: InputEvent) -> void:
+	# Title / main menu: Enter (or the focused Start button) begins the run; B drops into the
+	# PowerUp shop. The world stays frozen in the "title" phase until Start fires.
+	if phase == "title":
+		if shop_screen and shop_screen.visible:
+			return   # the shop owns its own input while it's open
+		if event.is_action_pressed("ui_accept"):
+			get_viewport().set_input_as_handled()
+			start_run()
+		elif event.is_action_pressed("open_shop"):
+			get_viewport().set_input_as_handled()
+			_open_shop_from_title()
+		return
 	# ESC pause/resume, but only over active play — never over the level-up picker, the shop,
 	# or the end screen (each owns its own flow), so a stray ESC can't strand the run.
 	if event.is_action_pressed("pause") and (phase == "playing" or phase == "paused"):
