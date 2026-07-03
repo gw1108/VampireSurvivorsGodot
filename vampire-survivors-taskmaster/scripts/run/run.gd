@@ -63,6 +63,7 @@ var garlic_level := 0            # 0 = Garlic aura not yet chosen; each pick gro
 var whip_level := 0              # 0 = Whip melee arc not yet chosen; each pick grows it
 var bible_level := 0             # 0 = King Bible orbit not yet chosen; each pick grows it
 var lightning_level := 0         # 0 = Lightning Ring not yet chosen; each pick grows it
+var knife_level := 0             # 0 = Knife directional throw not yet chosen; each pick grows it
 var bible_evolved := false       # true once King Bible -> Unholy Vespers (the weapon reads this)
 var whip_evolved := false        # true once Whip -> Bloody Tear (whip.gd reads this)
 var garlic_evolved := false      # true once Garlic -> Soul Eater (garlic.gd reads this)
@@ -100,6 +101,7 @@ const UPGRADE_POOL := [
 	{"id": "whip", "title": "Whip", "desc": "Melee arc lashing your facing side; both sides at Lv 2+", "max": 8},
 	{"id": "bible", "title": "King Bible", "desc": "Holy books orbit you, striking enemies they pass through", "max": 8},
 	{"id": "lightning", "title": "Lightning Ring", "desc": "Bolts smite random enemies across the field, splashing on impact", "max": 8},
+	{"id": "knife", "title": "Knife", "desc": "Fast blades hurled where you're facing; more per throw as it grows", "max": 8},
 ]
 
 ## The signature VS mechanic: a weapon maxed to its UPGRADE_POOL `max` PLUS its paired
@@ -209,6 +211,13 @@ func _build_world() -> void:
 	lightning.run = self
 	lightning.z_index = 1
 	player.add_child(lightning)
+
+	# Sixth weapon: the Knife — fast directional throws in the player's facing. Inert until
+	# knife_level > 0 (a level-up pick). z_index above the player so its blades read on top.
+	var knife := VSKnife.new()
+	knife.run = self
+	knife.z_index = 1
+	player.add_child(knife)
 
 	_spawner = VSSpawner.new()
 	_spawner.run = self
@@ -656,6 +665,8 @@ func _apply_upgrade(id: String) -> void:
 			bible_level += 1
 		"lightning":
 			lightning_level += 1
+		"knife":
+			knife_level += 1
 		"unholy_vespers":
 			# King Bible -> Unholy Vespers: flag the evolution so VSKingBible swaps to its
 			# boosted profile, and remember it so the card stops re-rolling.

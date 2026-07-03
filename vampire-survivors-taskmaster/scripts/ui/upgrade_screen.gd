@@ -26,6 +26,7 @@ const ICONS := {
 	"whip": "res://art/up_whip.png",
 	"bible": "res://art/up_bible.png",
 	"lightning": "res://art/up_lightning.png",
+	"knife": "res://art/projectile_dagger.png",   # reuse the in-world dagger bolt as the Knife icon
 	"unholy_vespers": "res://art/up_bible.png",   # King Bible evolution reuses the tome icon
 }
 const PANEL_TEX := "res://art/ui_panel.png"       # Kenney RPG panel (brown)
