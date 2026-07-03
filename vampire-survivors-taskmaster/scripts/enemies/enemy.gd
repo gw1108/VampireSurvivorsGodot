@@ -12,6 +12,14 @@ const FLASH_DURATION := 0.1
 ## apart, forming the VS-style pincer wall.
 const SEPARATION_RADIUS := 26.0
 const SEPARATION_STRENGTH := 0.65
+## Per-archetype movement flavour, so the horde doesn't read as one uniform blob:
+## - GHOST ignores separation entirely, drifting straight through the pack and even
+##   overlapping other units (faithful to VS's phasing ghosts).
+## - BAT threads a small perpendicular sine weave over its homing drive, giving the
+##   swarm a fluttering, erratic look. WEAVE_AMP is relative to the unit toward-drive
+##   (kept well under 1.0 so bats still close in); a per-enemy phase de-syncs the flock.
+const BAT_WEAVE_AMP := 0.42
+const BAT_WEAVE_FREQ := 6.5
 ## Enemies at or above this max health (mini-bosses like ELITE) get a health bar
 ## once damaged, so their long HP pool reads as visible progress.
 const HEALTH_BAR_MIN_MAX_HEALTH := 40.0
@@ -67,6 +75,9 @@ var knock_resist := 1.0
 var _knockback := Vector2.ZERO
 ## Remaining hit-stop freeze time (s), counting down in _process; set by hit().
 var _hitstop := 0.0
+## Random phase offset (radians) for BAT's perpendicular weave, so bats flutter
+## out of sync rather than snaking in a single wave. Set once in _ready.
+var _weave_phase := 0.0
 var run: VSRun
 var target: VSPlayer
 var _contact_cd := 0.0
@@ -97,6 +108,7 @@ func _ready() -> void:
 	gem_drops = cfg.get("gems", 1)
 	knock_resist = cfg.get("knock", 1.0)
 	scale = Vector2(base_scale, base_scale)
+	_weave_phase = randf() * TAU
 	_sprite = Sprite2D.new()
 	_sprite.texture = load(cfg["tex"])
 	add_child(_sprite)
@@ -138,7 +150,17 @@ func _process(delta: float) -> void:
 	# swarm spreads around the player rather than stacking on one point. In dense
 	# packs the push counters the inward drive, settling enemies into a surrounding
 	# ring while they still press contact range; when spread out the push fades.
-	var move := desired + _separation() * SEPARATION_STRENGTH
+	# GHOST opts out — it phases straight through the pack, faithful to VS's ghosts.
+	var move := desired
+	if type != Type.GHOST:
+		move += _separation() * SEPARATION_STRENGTH
+	# BAT flutters: add a small oscillating shove perpendicular to its homing drive
+	# so bats weave in and out rather than beelining, and the per-enemy phase keeps
+	# the flock from snaking as one. No perpendicular exists when desired is zero.
+	if type == Type.BAT and desired != Vector2.ZERO:
+		var t2: float = run.elapsed if run else 0.0
+		var perp := Vector2(-desired.y, desired.x)
+		move += perp * (sin(t2 * BAT_WEAVE_FREQ + _weave_phase) * BAT_WEAVE_AMP)
 	var step := Vector2.ZERO
 	if move.length() > 0.001:
 		step = move.normalized() * speed * delta
