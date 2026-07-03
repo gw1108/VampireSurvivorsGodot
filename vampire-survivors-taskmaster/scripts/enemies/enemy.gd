@@ -58,7 +58,7 @@ const TYPES := {
 	Type.GHOST:    {"tex": "res://art/enemy_ghost.png",    "speed": 78.0, "health": 2.0,   "damage": 7.0,  "xp": 1},
 	Type.MUMMY:    {"tex": "res://art/enemy_mummy.png",    "speed": 34.0, "health": 10.0,  "damage": 12.0, "xp": 3},
 	Type.MANTIS:   {"tex": "res://art/enemy_mantis.png",   "speed": 96.0, "health": 5.0,   "damage": 11.0, "xp": 3},
-	Type.MANTIS_WARRIOR: {"tex": "res://art/enemy_mantis_warrior.png", "speed": 84.0, "health": 45.0, "damage": 16.0, "xp": 10, "scale": 1.4, "radius": 16.0, "gems": 2, "knock": 0.4},
+	Type.MANTIS_WARRIOR: {"tex": "res://art/enemy_mantis_warrior.png", "speed": 84.0, "health": 45.0, "damage": 16.0, "xp": 10, "scale": 1.4, "radius": 16.0, "gems": 2, "knock": 0.4, "tint": Color(0.68, 0.74, 0.82)},
 	Type.ELITE:    {"tex": "res://art/enemy_elite.png",    "speed": 40.0, "health": 140.0, "damage": 20.0, "xp": 25, "scale": 2.0, "radius": 22.0, "gems": 5, "knock": 0.25},
 	Type.REAPER:   {"tex": "res://art/enemy_reaper.png",   "speed": 130.0, "health": 600.0, "damage": 34.0, "xp": 60, "scale": 2.6, "radius": 30.0, "gems": 10, "knock": 0.06},
 }
@@ -89,6 +89,11 @@ var base_scale := 1.0
 var gem_drops := 1
 ## Per-type knockback resistance (1.0 = full shove, 0 = immovable); read from TYPES.
 var knock_resist := 1.0
+## Resting sprite tint (default white = untinted). MANTIS_WARRIOR wears a cool
+## gunmetal cast so the armored mini-elite reads at a glance — distinct from the
+## green base Mantis and the ELITE. All modulate logic (freeze-clear, hit-flash)
+## returns the sprite to this colour rather than a hardcoded white.
+var _base_tint := Color(1, 1, 1)
 ## Current knockback velocity (px/s), decaying to zero in _process; set by hit().
 var _knockback := Vector2.ZERO
 ## Remaining hit-stop freeze time (s), counting down in _process; set by hit().
@@ -125,11 +130,18 @@ func _ready() -> void:
 	base_scale = cfg.get("scale", 1.0)
 	gem_drops = cfg.get("gems", 1)
 	knock_resist = cfg.get("knock", 1.0)
+	_base_tint = cfg.get("tint", Color(1, 1, 1))
 	scale = Vector2(base_scale, base_scale)
 	_weave_phase = randf() * TAU
 	_sprite = Sprite2D.new()
 	_sprite.texture = load(cfg["tex"])
+	_sprite.modulate = _base_tint
 	add_child(_sprite)
+	# Tinted mini-elites (MANTIS_WARRIOR) flare with a brief bright spawn glint —
+	# reusing the hit-flash channel — so their arrival pops before settling to the
+	# resting armour tint, clocking the elite instantly if they spawn on-screen.
+	if _base_tint != Color(1, 1, 1):
+		_flash_time = FLASH_DURATION
 
 func _process(delta: float) -> void:
 	if _flash_time > 0.0:
@@ -148,8 +160,8 @@ func _process(delta: float) -> void:
 		if _flash_time <= 0.0 and _sprite:
 			_sprite.modulate = Color(0.55, 0.8, 1.3)
 		return
-	elif _flash_time <= 0.0 and _sprite and _sprite.modulate != Color(1, 1, 1):
-		_sprite.modulate = Color(1, 1, 1)   # clear any lingering freeze tint once thawed
+	elif _flash_time <= 0.0 and _sprite and _sprite.modulate != _base_tint:
+		_sprite.modulate = _base_tint   # clear any lingering freeze tint back to the resting tint
 	# Hit-stop: a freshly-struck enemy holds in place for a couple of frames before resuming, so
 	# the impact lands with weight. While it's active it costs no ground, no knockback decay and
 	# no contact. It absorbs only its own slice of the frame's delta — if the freeze ends partway
@@ -280,4 +292,4 @@ func _update_flash() -> void:
 	if _sprite == null:
 		return
 	var flash := _flash_time / FLASH_DURATION
-	_sprite.modulate = Color(1, 1, 1).lerp(Color(4, 4, 4), flash)
+	_sprite.modulate = _base_tint.lerp(Color(4, 4, 4), flash)
