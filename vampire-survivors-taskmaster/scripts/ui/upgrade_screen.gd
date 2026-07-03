@@ -29,6 +29,7 @@ const ICONS := {
 	"area": "res://art/candelabra.png",            # Candelabrador reuses the in-world Candelabrador pickup sprite
 	"projspeed": "res://art/up_projspeed.png",     # Bracer (bracelet sprite)
 	"attract": "res://art/magnet.png",             # Attractorb reuses the in-world Magnet sprite
+	"growth": "res://art/gem.png",                 # Growth reuses the XP gem sprite
 	"armor": "res://art/up_armor.png",             # Armor passive
 	"knife": "res://art/projectile_dagger.png",   # reuse the in-world dagger bolt as the Knife icon
 	"unholy_vespers": "res://art/up_bible.png",   # King Bible evolution reuses the tome icon

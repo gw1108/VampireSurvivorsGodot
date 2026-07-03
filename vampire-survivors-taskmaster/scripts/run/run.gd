@@ -62,6 +62,7 @@ var weapon_count := 1
 var area_mult := 1.0             # Candelabrador: scales AoE weapon reach/radius (garlic, whip, bible, lightning)
 var projectile_speed_mult := 1.0  # Bracer: scales how fast thrown/fired projectiles travel
 var pickup_range_mult := 1.0     # Attractorb: scales the magnet radius of gems/coins/food so pickups fly in from farther
+var xp_gain_mult := 1.0          # Growth: multiplies XP collected from gems so leveling accelerates as it stacks
 var armor := 0                   # Armor: flat damage subtracted from each hit the player takes (min 1 gets through)
 var garlic_level := 0            # 0 = Garlic aura not yet chosen; each pick grows it
 var whip_level := 0              # 0 = Whip melee arc not yet chosen; each pick grows it
@@ -78,6 +79,11 @@ var knife_evolved := false       # true once Knife -> Thousand Edges (knife.gd r
 var evolved := {}
 
 var _pending_levels := 0        # level-ups queued but not yet chosen (XP can span several)
+
+## Carries the sub-integer remainder when xp_gain_mult scales a gem's XP, so the Growth
+## passive isn't lost to rounding on the many 1-XP gems — fractions bank until they make a
+## whole point. Reset only at run start (nothing to carry between runs).
+var _xp_remainder := 0.0
 
 ## Per-run reroll budget for the level-up picker (VS-style build agency). Each reroll
 ## re-rolls the current hand via _roll_upgrades(); Skip is always free. Kept small so it's
@@ -105,6 +111,7 @@ const UPGRADE_POOL := [
 	{"id": "area", "title": "Candelabrador", "desc": "+10% weapon area (aura/whip/bible/lightning reach)", "max": 5},
 	{"id": "projspeed", "title": "Bracer", "desc": "+15% projectile speed", "max": 5},
 	{"id": "attract", "title": "Attractorb", "desc": "+30% pickup range (gems, coins, food fly in from farther)", "max": 4},
+	{"id": "growth", "title": "Growth", "desc": "+8% XP gained (levels come faster)", "max": 5},
 	{"id": "armor", "title": "Armor", "desc": "-1 damage taken per hit (min 1 always lands)", "max": 3},
 	{"id": "garlic", "title": "Garlic", "desc": "Damaging aura around you (grows each pick)", "max": 8},
 	{"id": "whip", "title": "Whip", "desc": "Melee arc lashing your facing side; both sides at Lv 2+", "max": 8},
@@ -609,7 +616,12 @@ func _spawn_gem(at: Vector2, xp_value: int = 1) -> void:
 func collect_xp(amount: int) -> void:
 	if phase != "playing":
 		return
-	xp += amount
+	# Growth scales incoming XP; bank the sub-integer remainder so the bonus accrues even on
+	# the many 1-XP gems (where a per-gem round would otherwise discard it entirely).
+	var scaled := float(amount) * xp_gain_mult + _xp_remainder
+	var gained := int(floor(scaled))
+	_xp_remainder = scaled - float(gained)
+	xp += gained
 	var need := _xp_to_next(level)
 	while xp >= need:
 		xp -= need
@@ -741,6 +753,8 @@ func _apply_upgrade(id: String) -> void:
 			projectile_speed_mult *= 1.15
 		"attract":
 			pickup_range_mult *= 1.30
+		"growth":
+			xp_gain_mult *= 1.08
 		"armor":
 			armor += 1
 		"garlic":
