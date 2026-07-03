@@ -53,9 +53,12 @@ func _break() -> void:
 	_broken = true
 	var parent := get_parent()
 	if parent != null:
-		# Warm shatter bloom so breaking a light source reads as a rewarding little event.
+		# Warm shatter bloom + golden shard burst so breaking a light source reads as a
+		# rewarding, satisfying little event worth seeking out.
 		VSPickupFlash.spawn(parent, position, Color(1.0, 0.82, 0.4))
+		VSCandelabraShatter.spawn(parent, position)
 	if run:
+		run.add_camera_shake(0.25)   # a tiny jolt so the shatter lands with weight
 		run.drop_candelabra_bonus(position)
 	AgentBridge.emit_event("despawn", {"type": "candelabra", "pos": [position.x, position.y]})
 	queue_free()
