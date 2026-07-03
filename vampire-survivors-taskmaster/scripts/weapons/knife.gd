@@ -10,8 +10,10 @@ extends Node2D
 ## enabled/scaled by run.knife_level (0 = not yet picked: no throws, inert). The slice's sixth,
 ## mechanically-distinct weapon.
 
-const BASE_DAMAGE := 6.5
-const DAMAGE_PER_LEVEL := 2.0
+## Base damage + per-level growth live in res://data/balance.csv ("knife_base_damage" /
+## "knife_damage_per_level") so a designer can retune them without touching this script.
+static var BASE_DAMAGE := BalanceData.get_value("knife_base_damage", 6.5)
+static var DAMAGE_PER_LEVEL := BalanceData.get_value("knife_damage_per_level", 2.0)
 const BASE_INTERVAL := 1.0            # seconds between throws — a fast, steady stream
 const INTERVAL_PER_LEVEL := 0.05      # tightens a little per level so it keeps pace late
 const MIN_INTERVAL := 0.55

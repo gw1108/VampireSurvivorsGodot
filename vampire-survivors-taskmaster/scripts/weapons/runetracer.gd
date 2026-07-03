@@ -10,8 +10,11 @@ extends Node2D
 ## enabled/scaled by run.runetracer_level (0 = not yet picked: inert). The slice's seventh,
 ## mechanically-distinct weapon (per the GDD's designed 8-weapon set).
 
-const BASE_DAMAGE := 10.0             # wiki base
-const DAMAGE_PER_LEVEL := 3.0         # Lv1 = 10, Lv8 = 31 — a steady bouncing chip
+## Base damage + per-level growth live in res://data/balance.csv ("runetracer_base_damage" /
+## "runetracer_damage_per_level") so a designer can retune them without touching this script.
+## Lv1 = 10, Lv8 = 31 — a steady bouncing chip.
+static var BASE_DAMAGE := BalanceData.get_value("runetracer_base_damage", 10.0)
+static var DAMAGE_PER_LEVEL := BalanceData.get_value("runetracer_damage_per_level", 3.0)
 const BASE_INTERVAL := 3.0            # wiki cooldown; tightens a little per level so it keeps pace
 const INTERVAL_PER_LEVEL := 0.15
 const MIN_INTERVAL := 1.4

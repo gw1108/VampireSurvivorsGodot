@@ -13,8 +13,10 @@ const RANGE_PER_LEVEL := 18.0
 const ARC_HALF_ANGLE := deg_to_rad(50.0)   # half-width of the damage wedge
 const ATTACK_INTERVAL := 1.2               # seconds between swings
 const SWEEP_TIME := 0.25                   # how long the arc stays visible per swing
-const BASE_DAMAGE := 5.0
-const DAMAGE_PER_LEVEL := 4.0
+## Base damage + per-level growth live in res://data/balance.csv ("whip_base_damage" /
+## "whip_damage_per_level") so a designer can retune them without touching this script.
+static var BASE_DAMAGE := BalanceData.get_value("whip_base_damage", 5.0)
+static var DAMAGE_PER_LEVEL := BalanceData.get_value("whip_damage_per_level", 4.0)
 
 # Evolved (Bloody Tear) profile — applied when run.whip_evolved: a longer, wider, far deadlier
 # lash that always covers both flanks. Gated on Whip already being maxed, so this is the run's

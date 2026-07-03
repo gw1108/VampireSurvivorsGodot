@@ -6,7 +6,9 @@ extends Node2D
 signal died
 signal damaged(amount: float)
 
-const SPEED := 210.0
+## Base move speed lives in res://data/balance.csv (id "player_move_speed") so a designer
+## can retune it without touching this script.
+static var SPEED := BalanceData.get_value("player_move_speed", 210.0)
 const RADIUS := 14.0
 
 ## Hit feedback: on taking damage the avatar flashes red for a sliver of a second so a hit

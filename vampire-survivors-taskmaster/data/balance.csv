@@ -1,0 +1,18 @@
+id,value,description
+player_move_speed,210,Base player movement speed in px/sec (before Swift Boots / Moonwalker multipliers)
+magic_wand_base_damage,2,Magic Wand starting damage before any Power picks
+magic_wand_damage_per_level,1,Magic Wand damage added per Power upgrade pick
+garlic_base_damage,0,Garlic base damage before any levels
+garlic_damage_per_level,1,Garlic damage added per level
+whip_base_damage,5,Whip base damage before any levels
+whip_damage_per_level,4,Whip damage added per level
+king_bible_base_damage,6,King Bible base damage before any levels
+king_bible_damage_per_level,3,King Bible damage added per level
+lightning_base_damage,10,Lightning Ring base damage before any levels
+lightning_damage_per_level,5,Lightning Ring damage added per level
+knife_base_damage,6.5,Knife base damage before any levels
+knife_damage_per_level,2,Knife damage added per level
+runetracer_base_damage,10,Runetracer base damage before any levels
+runetracer_damage_per_level,3,Runetracer damage added per level
+fire_wand_base_damage,20,Fire Wand base damage before any levels
+fire_wand_damage_per_level,6,Fire Wand damage added per level

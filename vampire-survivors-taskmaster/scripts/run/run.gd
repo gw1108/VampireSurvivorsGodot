@@ -62,7 +62,10 @@ var arena_half := Vector2(900, 700)   # world half-extent around origin
 # Run-level stats mutated by level-up upgrades. Weapon/projectile/player read these so
 # a single pickup meaningfully changes how the run plays.
 var player_speed_mult := 1.0
-var weapon_damage := 2.0
+## Magic Wand's current damage. Starting value + per-Power-pick growth live in
+## res://data/balance.csv ("magic_wand_base_damage" / "magic_wand_damage_per_level") so a
+## designer can retune them without touching this script.
+var weapon_damage := BalanceData.get_value("magic_wand_base_damage", 2.0)
 var weapon_fire_interval := 0.6
 var weapon_count := 0            # 0 = Magic Wand not yet chosen; each Multishot pick grows it
 var area_mult := 1.0             # Candelabrador: scales AoE weapon reach/radius (garlic, whip, bible, lightning)
@@ -869,7 +872,7 @@ func _apply_upgrade(id: String) -> void:
 	upgrade_levels[id] = int(upgrade_levels.get(id, 0)) + 1
 	match id:
 		"damage":
-			weapon_damage += 1.0
+			weapon_damage += BalanceData.get_value("magic_wand_damage_per_level", 1.0)
 		"firerate":
 			weapon_fire_interval = maxf(0.12, weapon_fire_interval * 0.85)
 		"speed":

@@ -10,8 +10,11 @@ extends Node2D
 ## mechanically-distinct weapon.
 
 const RANGE := 620.0                 # a strike may reach any enemy within this of the player
-const BASE_DAMAGE := 10.0
-const DAMAGE_PER_LEVEL := 5.0        # Lv1 = 15 (wiki base), Lv8 = 50 — a hard, bursty hit
+## Base damage + per-level growth live in res://data/balance.csv ("lightning_base_damage" /
+## "lightning_damage_per_level") so a designer can retune them without touching this script.
+## Lv1 = 15 (wiki base), Lv8 = 50 — a hard, bursty hit.
+static var BASE_DAMAGE := BalanceData.get_value("lightning_base_damage", 10.0)
+static var DAMAGE_PER_LEVEL := BalanceData.get_value("lightning_damage_per_level", 5.0)
 const BASE_STRIKES := 2              # bolts per volley (wiki Amount 2)…
 const MAX_STRIKES := 6              # …growing by one every three levels, capped here
 const EVO_BONUS_STRIKES := 3        # Thunder Loop rains extra bolts on top of the level count…

@@ -10,8 +10,11 @@ extends Node2D
 ## run.fire_wand_level (0 = not yet picked: inert). The slice's eighth and final weapon, completing
 ## the GDD's designed roster.
 
-const BASE_DAMAGE := 20.0             # wiki base — a hard-hitting bomb
-const DAMAGE_PER_LEVEL := 6.0         # Lv1 = 20, Lv8 = 62 — the roster's heaviest single hit
+## Base damage + per-level growth live in res://data/balance.csv ("fire_wand_base_damage" /
+## "fire_wand_damage_per_level") so a designer can retune them without touching this script.
+## Lv1 = 20, Lv8 = 62 — the roster's heaviest single hit.
+static var BASE_DAMAGE := BalanceData.get_value("fire_wand_base_damage", 20.0)
+static var DAMAGE_PER_LEVEL := BalanceData.get_value("fire_wand_damage_per_level", 6.0)
 const BASE_INTERVAL := 3.0            # wiki cooldown; tightens a little per level so it keeps pace
 const INTERVAL_PER_LEVEL := 0.18
 const MIN_INTERVAL := 1.4

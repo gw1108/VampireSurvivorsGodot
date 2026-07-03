@@ -12,6 +12,11 @@ const RADIUS_PER_LEVEL := 20.0
 const TICK_INTERVAL := 0.5        # seconds between damage pulses
 const FLASH_TIME := 0.18          # aura brightens briefly on each pulse
 
+## Base damage + per-level growth live in res://data/balance.csv ("garlic_base_damage" /
+## "garlic_damage_per_level") so a designer can retune them without touching this script.
+static var BASE_DAMAGE := BalanceData.get_value("garlic_base_damage", 0.0)
+static var DAMAGE_PER_LEVEL := BalanceData.get_value("garlic_damage_per_level", 1.0)
+
 # Evolved (Soul Eater) profile — applied when run.garlic_evolved: a wider, far deadlier
 # devouring aura. Gated on Garlic already being maxed, so this is the run's payoff for
 # maxing Garlic + owning Swift Boots.
@@ -46,7 +51,7 @@ func _is_evolved() -> bool:
 ## Damage every enemy currently inside the aura. Damage scales with garlic level.
 func _pulse(lvl: int) -> void:
 	var r := _radius(lvl)
-	var dmg := float(lvl) * run.might_mult()
+	var dmg := (BASE_DAMAGE + DAMAGE_PER_LEVEL * float(lvl)) * run.might_mult()
 	if _is_evolved():
 		dmg *= EVOLVED_DAMAGE_MULT
 	var hit_any := false
