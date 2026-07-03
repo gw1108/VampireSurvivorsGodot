@@ -70,6 +70,7 @@ var bible_level := 0             # 0 = King Bible orbit not yet chosen; each pic
 var lightning_level := 0         # 0 = Lightning Ring not yet chosen; each pick grows it
 var knife_level := 0             # 0 = Knife directional throw not yet chosen; each pick grows it
 var runetracer_level := 0        # 0 = Runetracer bouncing rune not yet chosen; each pick grows it
+var fire_wand_level := 0          # 0 = Fire Wand fireball not yet chosen; each pick grows it
 var bible_evolved := false       # true once King Bible -> Unholy Vespers (the weapon reads this)
 var whip_evolved := false        # true once Whip -> Bloody Tear (whip.gd reads this)
 var garlic_evolved := false      # true once Garlic -> Soul Eater (garlic.gd reads this)
@@ -120,6 +121,7 @@ const UPGRADE_POOL := [
 	{"id": "lightning", "title": "Lightning Ring", "desc": "Bolts smite random enemies across the field, splashing on impact", "max": 8},
 	{"id": "knife", "title": "Knife", "desc": "Fast blades hurled where you're facing; more per throw as it grows", "max": 8},
 	{"id": "runetracer", "title": "Runetracer", "desc": "A spinning rune that bounces around the arena, striking everything it passes through", "max": 8},
+	{"id": "fire_wand", "title": "Fire Wand", "desc": "Lobs a fireball at a random enemy that detonates on impact, splashing everything nearby", "max": 8},
 ]
 
 ## The signature VS mechanic: a weapon maxed to its UPGRADE_POOL `max` PLUS its paired
@@ -244,6 +246,13 @@ func _build_world() -> void:
 	var runetracer := VSRunetracer.new()
 	runetracer.run = self
 	player.add_child(runetracer)
+
+	# Eighth weapon: the Fire Wand — lobs a detonating fireball at a random enemy. Inert until
+	# fire_wand_level > 0 (a level-up pick). Mounted on the player only to source its spawn point;
+	# each fireball lives in world space as a child of the run so it flies and explodes freely.
+	var fire_wand := VSFireWand.new()
+	fire_wand.run = self
+	player.add_child(fire_wand)
 
 	_spawner = VSSpawner.new()
 	_spawner.run = self
@@ -778,6 +787,8 @@ func _apply_upgrade(id: String) -> void:
 			knife_level += 1
 		"runetracer":
 			runetracer_level += 1
+		"fire_wand":
+			fire_wand_level += 1
 		"unholy_vespers":
 			# King Bible -> Unholy Vespers: flag the evolution so VSKingBible swaps to its
 			# boosted profile, and remember it so the card stops re-rolling.
