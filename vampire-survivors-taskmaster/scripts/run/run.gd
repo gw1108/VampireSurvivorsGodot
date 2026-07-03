@@ -44,6 +44,7 @@ var bible_level := 0             # 0 = King Bible orbit not yet chosen; each pic
 var bible_evolved := false       # true once King Bible -> Unholy Vespers (the weapon reads this)
 var whip_evolved := false        # true once Whip -> Bloody Tear (whip.gd reads this)
 var garlic_evolved := false      # true once Garlic -> Soul Eater (garlic.gd reads this)
+var projectile_evolved := false  # true once Magic Wand -> Holy Wand (weapon.gd reads this)
 
 ## Evolution ids already claimed this run, so _roll_upgrades stops re-offering a done evolution.
 var evolved := {}
@@ -81,6 +82,7 @@ const EVOLUTIONS := [
 	{"id": "unholy_vespers", "title": "Unholy Vespers", "desc": "King Bible EVOLVED — more books, faster orbit, far deadlier sweeps", "weapon": "bible", "passive": "damage"},
 	{"id": "bloody_tear", "title": "Bloody Tear", "desc": "Whip EVOLVED — a wider, longer, far deadlier lash on both flanks", "weapon": "whip", "passive": "health"},
 	{"id": "soul_eater", "title": "Soul Eater", "desc": "Garlic EVOLVED — a wider, far deadlier devouring aura", "weapon": "garlic", "passive": "speed"},
+	{"id": "holy_wand", "title": "Holy Wand", "desc": "Magic Wand EVOLVED — a relentless storm of extra bolts that pierce the horde", "weapon": "multishot", "passive": "firerate"},
 ]
 
 ## Permanent, between-run PowerUps bought in the shop with banked meta-coins. Each level
@@ -483,6 +485,10 @@ func _apply_upgrade(id: String) -> void:
 		"soul_eater":
 			# Garlic -> Soul Eater: VSGarlic reads garlic_evolved for its boosted profile.
 			garlic_evolved = true
+			evolved[id] = true
+		"holy_wand":
+			# Magic Wand -> Holy Wand: VSWeapon reads projectile_evolved for its boosted profile.
+			projectile_evolved = true
 			evolved[id] = true
 	AgentBridge.emit_event("upgrade_chosen", {"id": id, "level": level})
 
