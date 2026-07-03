@@ -74,6 +74,8 @@ func _build_world() -> void:
 
 	var cam := Camera2D.new()
 	cam.position_smoothing_enabled = true
+	# Zoom < 1 zooms the camera out, so the player and everything else read ~20% smaller.
+	cam.zoom = Vector2(0.8, 0.8)
 	player.add_child(cam)
 	cam.make_current()
 
