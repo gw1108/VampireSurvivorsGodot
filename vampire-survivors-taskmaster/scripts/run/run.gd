@@ -187,6 +187,11 @@ func _build_world() -> void:
 	_spawner.run = self
 	add_child(_spawner)
 
+	# Scatter a few destructible candelabra across the arena. A weapon sweep shatters one
+	# for a random bonus pickup (see VSCandelabra / drop_candelabra_bonus), rewarding
+	# exploration and giving the lucky drops a source beyond rare kill drops.
+	_spawn_candelabra()
+
 	hud = VSHud.new()
 	add_child(hud)
 
@@ -370,6 +375,60 @@ func _maybe_drop_coin(at: Vector2, is_elite: bool) -> void:
 	c.value = amount
 	add_child(c)
 	AgentBridge.emit_event("spawn", {"type": "coin", "pos": [at.x, at.y], "gold": amount})
+
+## How many candelabra to scatter at run start, and how far from the player's origin the
+## nearest may sit so they read as something to reach for rather than free at spawn.
+const CANDELABRA_COUNT := 6
+const CANDELABRA_MIN_DIST := 260.0
+
+## Scatter the run's destructible candelabra across the arena (called once at run start).
+## Placed at random interior points, nudged away from the player's start so they reward moving.
+func _spawn_candelabra() -> void:
+	for i in CANDELABRA_COUNT:
+		var pos := Vector2.ZERO
+		for _attempt in 8:
+			pos = Vector2(
+				randf_range(-arena_half.x + 80.0, arena_half.x - 80.0),
+				randf_range(-arena_half.y + 80.0, arena_half.y - 80.0))
+			if pos.length() >= CANDELABRA_MIN_DIST:
+				break
+		var c := VSCandelabra.new()
+		c.position = pos
+		c.run = self
+		add_child(c)
+		AgentBridge.emit_event("spawn", {"type": "candelabra", "pos": [pos.x, pos.y]})
+
+## Roll a random bonus when a candelabra is shattered (VSCandelabra calls this on break).
+## Faithful to VS's "lucky light": mostly a coin bag or floor chicken, sometimes a Magnet,
+## rarely the Rosary screen-clear. Reuses the same pickup nodes the kill-drops spawn.
+func drop_candelabra_bonus(at: Vector2) -> void:
+	var roll := randf()
+	if roll < 0.08:
+		var r := VSRosary.new()
+		r.position = at
+		r.run = self
+		add_child(r)
+		AgentBridge.emit_event("spawn", {"type": "rosary", "pos": [at.x, at.y]})
+	elif roll < 0.33:
+		var m := VSMagnet.new()
+		m.position = at
+		m.run = self
+		add_child(m)
+		AgentBridge.emit_event("spawn", {"type": "magnet", "pos": [at.x, at.y]})
+	elif roll < 0.66:
+		var amount := randi_range(3, 8)
+		var c := VSCoin.new()
+		c.position = at
+		c.run = self
+		c.value = amount
+		add_child(c)
+		AgentBridge.emit_event("spawn", {"type": "coin", "pos": [at.x, at.y], "gold": amount})
+	else:
+		var f := VSFood.new()
+		f.position = at
+		f.run = self
+		add_child(f)
+		AgentBridge.emit_event("spawn", {"type": "food", "pos": [at.x, at.y]})
 
 ## Split a kill's XP across `count` gems scattered in a ring. Elites drop a burst
 ## so the big payout reads as a jackpot; ordinary kills drop a single gem.

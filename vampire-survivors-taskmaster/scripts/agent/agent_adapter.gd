@@ -42,7 +42,7 @@ func _provide() -> Dictionary:
 		"meta": {
 			"tick": game.frame_tick,
 			"elapsed": game.elapsed,
-			"enemies": get_tree().get_nodes_in_group("enemies").size(),
+			"enemies": get_tree().get_nodes_in_group("enemies").size() - get_tree().get_nodes_in_group("candelabra").size(),
 		},
 	}
 
@@ -63,7 +63,13 @@ func _actions(phase: String) -> Array:
 func _entities() -> Array:
 	var out: Array = []
 	for e in get_tree().get_nodes_in_group("enemies"):
+		# Destructible candelabra share the "enemies" group (so weapons hit them) but are
+		# stationary props, not threats — report them under their own type below.
+		if not e is VSEnemy:
+			continue
 		out.append({"id": str(e.get_instance_id()), "type": "enemy", "pos": [e.position.x, e.position.y], "state": "chase"})
+	for c in get_tree().get_nodes_in_group("candelabra"):
+		out.append({"id": str(c.get_instance_id()), "type": "candelabra", "pos": [c.position.x, c.position.y], "state": "idle"})
 	for pr in get_tree().get_nodes_in_group("projectiles"):
 		out.append({"id": str(pr.get_instance_id()), "type": "projectile", "pos": [pr.position.x, pr.position.y], "state": "fly"})
 	for g in get_tree().get_nodes_in_group("gems"):

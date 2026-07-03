@@ -35,6 +35,10 @@ func _nearest_enemy() -> VSEnemy:
 	var best: VSEnemy = null
 	var best_d := RANGE
 	for e in get_tree().get_nodes_in_group("enemies"):
+		# The "enemies" group also holds destructible props (candelabra); the aimed weapon
+		# only targets real enemies so it never wastes bolts on scenery.
+		if not e is VSEnemy:
+			continue
 		var d: float = (e.position - global_position).length()
 		if d < best_d:
 			best_d = d
