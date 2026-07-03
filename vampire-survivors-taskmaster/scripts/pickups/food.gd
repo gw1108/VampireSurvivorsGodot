@@ -31,12 +31,18 @@ func _process(delta: float) -> void:
 	if d < MAGNET and d > 0.5:
 		position += to / d * MAGNET_SPEED * delta
 	if d < PICKUP + VSPlayer.RADIUS:
+		var healed := 0.0
 		if pl.alive and pl.health < pl.max_health:
+			var before := pl.health
 			pl.health = minf(pl.max_health, pl.health + HEAL)
+			healed = pl.health - before
 		AgentBridge.emit_event("pickup", {"type": "food"})
 		# Green healing bloom, parented to the world so it outlives this pickup.
 		var parent := get_parent()
 		if parent != null:
 			VSPickupFlash.spawn(parent, position, Color(0.5, 1.0, 0.55))
+			# Floating "+N" so the recovery reads clearly — only when HP actually rose.
+			if healed > 0.0:
+				VSFloatText.spawn(parent, position, "+%d" % int(round(healed)), Color(0.5, 1.0, 0.55))
 		queue_free()
 		return
