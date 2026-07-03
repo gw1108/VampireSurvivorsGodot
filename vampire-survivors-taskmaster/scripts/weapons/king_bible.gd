@@ -23,6 +23,22 @@ const MAX_BOOKS := 5
 const BOOK_SCALE := 0.5             # 64px source -> ~32px book, legible beside enemies
 const BOOK_TEX := "res://art/up_bible.png"
 
+# The source up_bible.png is a near-full-frame, dark-brown book (avg RGB ~66,37,25) that
+# vanished into the tan skeleton/zombie horde during playtest. In Vampire Survivors the
+# King Bible books are bright BLUE. A plain modulate only multiplies (dark * blue = dark),
+# and the book fills the whole frame so an outside outline would clip — so instead we recolor
+# in a tiny canvas shader: map the book's luminance onto a bright blue, preserving its internal
+# page/cover shading, so each book reads instantly as a glowing blue orbit against the crowd.
+const BOOK_TINT := Color(0.30, 0.58, 1.0)   # VS holy-book blue
+const _BOOK_SHADER := "shader_type canvas_item;
+uniform vec4 tint : source_color = vec4(0.30, 0.58, 1.0, 1.0);
+void fragment() {
+	vec4 c = texture(TEXTURE, UV);
+	float l = dot(c.rgb, vec3(0.299, 0.587, 0.114));
+	float b = clamp(l * 1.6 + 0.35, 0.0, 1.0);   // lift the dark book into a bright blue
+	COLOR = vec4(tint.rgb * b, c.a);
+}"
+
 # Evolved (Unholy Vespers) profile — applied when run.bible_evolved: a full ring of extra
 # books orbiting faster, striking more often, harder, and with a wider reach. Gated on the
 # weapon already being maxed, so this is the run's payoff for maxing Bible + owning Power.
@@ -37,6 +53,7 @@ var _angle := 0.0
 var _cd := 0.0
 var _books: Array[Sprite2D] = []
 var _built_count := 0
+var _book_material: ShaderMaterial
 
 func _process(delta: float) -> void:
 	if run == null:
@@ -111,12 +128,25 @@ func _rebuild(count: int) -> void:
 		b.queue_free()
 	_books.clear()
 	var tex := load(BOOK_TEX) as Texture2D
+	var mat := _get_book_material()
 	for i in count:
 		var s := Sprite2D.new()
 		s.texture = tex
 		s.scale = Vector2(BOOK_SCALE, BOOK_SCALE)
+		s.material = mat
 		add_child(s)
 		_books.append(s)
 	_built_count = count
 	if count > 0:
 		_position_books(count, run.bible_level)
+
+## Lazily build the shared recolor material so every book reads as bright VS-blue. Cached so
+## rebuilds (level picks) reuse one Shader/ShaderMaterial rather than recompiling per book.
+func _get_book_material() -> ShaderMaterial:
+	if _book_material == null:
+		var sh := Shader.new()
+		sh.code = _BOOK_SHADER
+		_book_material = ShaderMaterial.new()
+		_book_material.shader = sh
+		_book_material.set_shader_parameter("tint", BOOK_TINT)
+	return _book_material
