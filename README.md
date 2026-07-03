@@ -2,7 +2,7 @@
 Recreating vampire survivors vertical slice as is to test the capabilities of LLMs.
 
 ## Setup
-Install Godot 4.6.2 https://godotengine.org/
+Install Godot 4.7 https://godotengine.org/
 
 ### MCPs
 
