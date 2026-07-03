@@ -542,7 +542,7 @@ func _refresh_loadout(run: VSRun) -> void:
 	# Fold evolution state into the signature: evolving flips a flag without changing the
 	# upgrade level, so the level-only signature above would otherwise never rebuild and the
 	# panel would keep the pre-evolution name.
-	sig += "e%s%s%s%s%s%s" % [run.whip_evolved, run.garlic_evolved, run.bible_evolved, run.knife_evolved, run.fire_wand_evolved, run.lightning_evolved]
+	sig += "e%s%s%s%s%s%s%s" % [run.whip_evolved, run.garlic_evolved, run.bible_evolved, run.knife_evolved, run.fire_wand_evolved, run.lightning_evolved, run.runetracer_evolved]
 	if sig == _loadout_sig:
 		return
 	_loadout_sig = sig
@@ -623,6 +623,10 @@ func _make_loadout_row(id: String, title: String, lvl: int, mx: int, run: VSRun)
 			evolved = run.lightning_evolved
 			if evolved:
 				disp_name = "Thunder Loop"
+		"runetracer":
+			evolved = run.runetracer_evolved
+			if evolved:
+				disp_name = "NO FUTURE"
 
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override("separation", 0)

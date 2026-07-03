@@ -21,6 +21,15 @@ const BASE_SPEED := 260.0             # px/sec — a brisk carom, not a bullet
 const BASE_LIFE := 4.0               # seconds a rune bounces before dissipating…
 const LIFE_PER_LEVEL := 0.4          # …lasting longer as it levels so late runes cover more ground
 
+# NO FUTURE (evolved): the same bouncing rune, but MORE of them, caroming faster and longer,
+# each a bigger, harder-hitting hazard — set once run.runetracer_evolved flips (see run.gd).
+const EVO_BONUS_AMOUNT := 2          # extra runes per volley on top of the level count…
+const EVO_MAX_AMOUNT := 6            # …raising the cap so a maxed NO FUTURE saturates the arena
+const EVO_DAMAGE_MULT := 1.6         # each rune bites noticeably harder
+const EVO_SPEED_MULT := 1.35         # a faster carom covers the field quicker
+const EVO_LIFE_BONUS := 2.0          # runes linger far longer, ping-ponging through more of the horde
+const EVO_RADIUS := 14.0             # a fatter rune (base 9) sweeps a wider lane through the swarm
+
 var run: VSRun
 var _cd := 0.0
 
@@ -43,16 +52,24 @@ func _interval(lvl: int) -> float:
 	return maxf(MIN_INTERVAL, BASE_INTERVAL - INTERVAL_PER_LEVEL * float(lvl - 1))
 
 ## Runes per volley: base one, plus one for every three levels, capped so the arena never fills
-## with a free lattice of bouncing runes.
+## with a free lattice of bouncing runes. NO FUTURE (evolved) throws extra runes and lifts the cap.
 func _amount(lvl: int) -> int:
-	return clampi(BASE_AMOUNT + lvl / 3, BASE_AMOUNT, MAX_AMOUNT)
+	var evolved: bool = run != null and run.runetracer_evolved
+	var bonus := EVO_BONUS_AMOUNT if evolved else 0
+	var cap := EVO_MAX_AMOUNT if evolved else MAX_AMOUNT
+	return clampi(BASE_AMOUNT + lvl / 3 + bonus, BASE_AMOUNT, cap)
 
 ## One volley: launch `amount` runes from the player in evenly-spread directions so multiple runes
 ## fan out to different corners of the arena rather than overlapping.
 func _fire(lvl: int) -> void:
+	var evolved: bool = run.runetracer_evolved
 	var dmg := (BASE_DAMAGE + DAMAGE_PER_LEVEL * float(lvl - 1)) * run.might_mult()
 	var speed := BASE_SPEED * run.projectile_speed_mult   # Bracer passive speeds the carom up
 	var life := BASE_LIFE + LIFE_PER_LEVEL * float(lvl - 1)
+	if evolved:
+		dmg *= EVO_DAMAGE_MULT
+		speed *= EVO_SPEED_MULT
+		life += EVO_LIFE_BONUS
 	var count := _amount(lvl)
 	var base_ang := randf() * TAU
 	for i in count:
@@ -64,6 +81,8 @@ func _fire(lvl: int) -> void:
 		b.life = life
 		b.life0 = life
 		b.run = run
+		if evolved:
+			b.radius = EVO_RADIUS
 		run.add_child(b)
 	AgentBridge.emit_event("sfx_played", {"name": "runetracer"})
 
@@ -74,7 +93,7 @@ func _fire(lvl: int) -> void:
 class Bolt:
 	extends Node2D
 
-	const RADIUS := 9.0             # rune's own hit radius
+	const BASE_RADIUS := 9.0        # rune's own hit radius (NO FUTURE runes set a fatter one)
 	const REHIT := 0.45            # seconds before a rune may strike the same enemy again
 	const SPRITE_SCALE := 0.9
 
@@ -82,6 +101,7 @@ class Bolt:
 	var damage := 10.0
 	var life := 4.0
 	var life0 := 4.0
+	var radius := BASE_RADIUS      # hit radius; the evolved weapon enlarges it per-rune
 	var run: VSRun
 	var _hit_cd := {}              # enemy -> seconds until it can be struck again
 	var _sprite: Sprite2D
@@ -92,7 +112,9 @@ class Bolt:
 		z_index = 1
 		_sprite = Sprite2D.new()
 		_sprite.texture = load("res://art/weapon_runetracer.png")
-		_sprite.scale = Vector2(SPRITE_SCALE, SPRITE_SCALE)
+		# Scale the sprite with the hit radius so a fatter NO FUTURE rune also reads bigger.
+		var s := SPRITE_SCALE * (radius / BASE_RADIUS)
+		_sprite.scale = Vector2(s, s)
 		add_child(_sprite)
 
 	func _process(delta: float) -> void:
@@ -129,7 +151,7 @@ class Bolt:
 			if not e is VSEnemy:
 				continue
 			var er: float = e.radius if "radius" in e else VSEnemy.RADIUS
-			if (e.position - position).length() < RADIUS + er:
+			if (e.position - position).length() < radius + er:
 				if float(_hit_cd.get(e, 0.0)) > 0.0:
 					continue
 				e.hit(damage, position)

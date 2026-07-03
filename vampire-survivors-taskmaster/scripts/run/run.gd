@@ -78,6 +78,7 @@ var projectile_evolved := false  # true once Magic Wand -> Holy Wand (weapon.gd 
 var knife_evolved := false       # true once Knife -> Thousand Edges (knife.gd reads this)
 var fire_wand_evolved := false   # true once Fire Wand -> Hellfire (fire_wand.gd reads this)
 var lightning_evolved := false   # true once Lightning Ring -> Thunder Loop (lightning.gd reads this)
+var runetracer_evolved := false  # true once Runetracer -> NO FUTURE (runetracer.gd reads this)
 
 ## Evolution ids already claimed this run, so _roll_upgrades stops re-offering a done evolution.
 var evolved := {}
@@ -145,6 +146,7 @@ const EVOLUTIONS := [
 	{"id": "thousand_edges", "title": "Thousand Edges", "desc": "Knife EVOLVED — a near-continuous stream of blades, more per throw, far deadlier", "weapon": "knife", "passive": "firerate"},
 	{"id": "hellfire", "title": "Hellfire", "desc": "Fire Wand EVOLVED — a piercing fireball that tears straight through the horde, no longer stopping to detonate", "weapon": "fire_wand", "passive": "damage"},
 	{"id": "thunder_loop", "title": "Thunder Loop", "desc": "Lightning Ring EVOLVED — more bolts, a wider blast, and every strike re-cracks a second time for double the smiting", "weapon": "lightning", "passive": "projspeed"},
+	{"id": "no_future", "title": "NO FUTURE", "desc": "Runetracer EVOLVED — more runes caroming faster and longer, each a bigger, harder-hitting hazard that owns the whole arena", "weapon": "runetracer", "passive": "area"},
 ]
 
 ## Permanent, between-run PowerUps bought in the shop with banked meta-coins. Each level
@@ -836,6 +838,11 @@ func _apply_upgrade(id: String) -> void:
 			# Lightning Ring -> Thunder Loop: VSLightning reads lightning_evolved for its
 			# boosted profile (more bolts, wider splash, a re-strike per bolt).
 			lightning_evolved = true
+			evolved[id] = true
+		"no_future":
+			# Runetracer -> NO FUTURE: VSRunetracer reads runetracer_evolved for its boosted
+			# profile (more runes, faster carom, bigger hits, longer life).
+			runetracer_evolved = true
 			evolved[id] = true
 	AgentBridge.emit_event("upgrade_chosen", {"id": id, "level": level})
 

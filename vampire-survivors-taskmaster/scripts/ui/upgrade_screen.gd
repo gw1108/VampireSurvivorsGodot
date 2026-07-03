@@ -36,6 +36,7 @@ const ICONS := {
 	"fire_wand": "res://art/up_fire_wand.png",    # the flaming wand sprite (fireball weapon)
 	"unholy_vespers": "res://art/up_bible.png",   # King Bible evolution reuses the tome icon
 	"thunder_loop": "res://art/up_lightning.png", # Lightning Ring evolution reuses the ring icon
+	"no_future": "res://art/weapon_runetracer.png", # Runetracer evolution reuses the rune sprite
 }
 const PANEL_TEX := "res://art/ui_panel.png"       # Kenney RPG panel (brown)
 const PANEL_TEX_SEL := "res://art/ui_panel_sel.png"  # highlighted (blue) for hover/focus
