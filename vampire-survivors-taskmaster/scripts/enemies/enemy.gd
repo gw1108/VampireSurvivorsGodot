@@ -33,9 +33,16 @@ const TYPES := {
 	Type.SKELETON: {"tex": "res://art/enemy_skeleton.png", "speed": 58.0, "health": 4.0,   "damage": 9.0,  "xp": 2},
 	Type.GHOST:    {"tex": "res://art/enemy_ghost.png",    "speed": 78.0, "health": 2.0,   "damage": 7.0,  "xp": 1},
 	Type.MUMMY:    {"tex": "res://art/enemy_mummy.png",    "speed": 34.0, "health": 10.0,  "damage": 12.0, "xp": 3},
-	Type.ELITE:    {"tex": "res://art/enemy_elite.png",    "speed": 40.0, "health": 140.0, "damage": 20.0, "xp": 25, "scale": 2.0, "radius": 22.0, "gems": 5},
-	Type.REAPER:   {"tex": "res://art/enemy_reaper.png",   "speed": 130.0, "health": 600.0, "damage": 34.0, "xp": 60, "scale": 2.6, "radius": 30.0, "gems": 10},
+	Type.ELITE:    {"tex": "res://art/enemy_elite.png",    "speed": 40.0, "health": 140.0, "damage": 20.0, "xp": 25, "scale": 2.0, "radius": 22.0, "gems": 5, "knock": 0.25},
+	Type.REAPER:   {"tex": "res://art/enemy_reaper.png",   "speed": 130.0, "health": 600.0, "damage": 34.0, "xp": 60, "scale": 2.6, "radius": 30.0, "gems": 10, "knock": 0.06},
 }
+
+## Knockback: a weapon hit shoves the enemy directly away from the hit source with an
+## impulse (px/s) that decays fast, so a strike reads as a real shove that buys the player
+## a sliver of breathing room without launching enemies across the arena. `knock` per-type
+## scales it (heavy ELITE/REAPER barely budge, staying the relentless threat they should be).
+const KNOCKBACK_IMPULSE := 230.0   # px/s velocity added on a normal-weight enemy hit
+const KNOCKBACK_DECAY := 1500.0    # px/s^2 the impulse bleeds off — stops in ~0.15s
 
 var type: int = Type.BAT
 var speed := 62.0
@@ -49,6 +56,10 @@ var base_scale := 1.0
 ## How many gems this enemy scatters on death. Elites drop a burst so the big
 ## payout reads as a jackpot instead of one lone gem.
 var gem_drops := 1
+## Per-type knockback resistance (1.0 = full shove, 0 = immovable); read from TYPES.
+var knock_resist := 1.0
+## Current knockback velocity (px/s), decaying to zero in _process; set by hit().
+var _knockback := Vector2.ZERO
 var run: VSRun
 var target: VSPlayer
 var _contact_cd := 0.0
@@ -77,6 +88,7 @@ func _ready() -> void:
 	radius = cfg.get("radius", RADIUS)
 	base_scale = cfg.get("scale", 1.0)
 	gem_drops = cfg.get("gems", 1)
+	knock_resist = cfg.get("knock", 1.0)
 	scale = Vector2(base_scale, base_scale)
 	_sprite = Sprite2D.new()
 	_sprite.texture = load(cfg["tex"])
@@ -109,8 +121,15 @@ func _process(delta: float) -> void:
 	# packs the push counters the inward drive, settling enemies into a surrounding
 	# ring while they still press contact range; when spread out the push fades.
 	var move := desired + _separation() * SEPARATION_STRENGTH
+	var step := Vector2.ZERO
 	if move.length() > 0.001:
-		position += move.normalized() * speed * delta
+		step = move.normalized() * speed * delta
+	# Layer any active knockback on top of the homing step and bleed it off, so a weapon
+	# hit visibly shoves the enemy back for a moment before it resumes its march.
+	if _knockback != Vector2.ZERO:
+		step += _knockback * delta
+		_knockback = _knockback.move_toward(Vector2.ZERO, KNOCKBACK_DECAY * delta)
+	position += step
 	_contact_cd -= delta
 	if d < radius + VSPlayer.RADIUS and _contact_cd <= 0.0 and target.alive:
 		target.take_damage(contact_damage)
@@ -131,12 +150,19 @@ func _separation() -> Vector2:
 			push += away / dist * (1.0 - dist / SEPARATION_RADIUS)
 	return push
 
-func hit(amount: float, _from: Vector2) -> void:
+func hit(amount: float, from: Vector2) -> void:
 	if _dying:
 		return
 	health -= amount
 	_flash_time = FLASH_DURATION
 	_update_flash()
+	# Shove away from the hit source, scaled by this enemy's knockback resistance so
+	# heavy mini-bosses barely flinch. Impulses stack (rapid hits push harder) but decay
+	# fast in _process. A dead-centre hit (from == position) has no direction, so no shove.
+	if knock_resist > 0.0:
+		var away := position - from
+		if away.length() > 0.001:
+			_knockback += away.normalized() * KNOCKBACK_IMPULSE * knock_resist
 	# Floating white damage number so rising power (Might, Power picks, weapon levels)
 	# reads frame-to-frame even when a hit doesn't cross an HP breakpoint. Cosmetic:
 	# spawned into the parent's space with a little x jitter so stacked hits stay legible.
