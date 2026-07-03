@@ -8,6 +8,9 @@ extends Node2D
 const PICKUP := 26.0
 const MAGNET := 110.0          # slightly wider grab than food/gems — a treat worth reaching for
 const MAGNET_SPEED := 240.0
+# The source magnet.png is a 256px canvas — huge beside the ~40px player/enemies.
+# Scale it down to read as a proper grabbable pickup, matching the arena's sprite scale.
+const SPRITE_SCALE := 0.14
 
 var run: VSRun
 var _t := 0.0                 # bob timer
@@ -16,6 +19,7 @@ func _ready() -> void:
 	add_to_group("magnets")
 	var sprite := Sprite2D.new()
 	sprite.texture = load("res://art/magnet.png")
+	sprite.scale = Vector2(SPRITE_SCALE, SPRITE_SCALE)
 	add_child(sprite)
 
 func _process(delta: float) -> void:

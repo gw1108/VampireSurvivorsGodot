@@ -11,6 +11,9 @@ const PICKUP := 26.0
 const MAGNET := 110.0           # same wide grab as the Magnet — a treat worth reaching for
 const MAGNET_SPEED := 240.0
 const SMITE_DAMAGE := 120.0     # enough to clear every normal archetype; bosses (140/600 HP) endure
+# The source pickup_rosary.png is a 256px canvas — huge beside the ~40px player/enemies.
+# Scale it down to read as a proper grabbable pickup, matching the arena's sprite scale.
+const SPRITE_SCALE := 0.14
 
 var run: VSRun
 var _t := 0.0                   # bob timer
@@ -19,6 +22,7 @@ func _ready() -> void:
 	add_to_group("rosaries")
 	var sprite := Sprite2D.new()
 	sprite.texture = load("res://art/pickup_rosary.png")
+	sprite.scale = Vector2(SPRITE_SCALE, SPRITE_SCALE)
 	add_child(sprite)
 
 func _process(delta: float) -> void:

@@ -8,6 +8,9 @@ extends Node2D
 const PICKUP := 26.0
 const MAGNET := 95.0
 const MAGNET_SPEED := 240.0
+# The source gold_coin.png is a 256px canvas — huge beside the ~40px player/enemies.
+# Scale it down to read as a proper grabbable pickup, matching the arena's sprite scale.
+const SPRITE_SCALE := 0.14
 
 var run: VSRun
 var value := 1                # gold banked on pickup
@@ -17,6 +20,7 @@ func _ready() -> void:
 	add_to_group("coins")
 	var sprite := Sprite2D.new()
 	sprite.texture = load("res://art/gold_coin.png")
+	sprite.scale = Vector2(SPRITE_SCALE, SPRITE_SCALE)
 	add_child(sprite)
 
 func _process(delta: float) -> void:
