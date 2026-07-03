@@ -125,7 +125,9 @@ func _pick_type() -> int:
 	else:
 		if roll < 0.28: return VSEnemy.Type.BAT
 		elif roll < 0.46: return VSEnemy.Type.ZOMBIE
-		elif roll < 0.64: return VSEnemy.Type.SKELETON
-		elif roll < 0.78: return VSEnemy.Type.GHOST
-		elif roll < 0.90: return VSEnemy.Type.MANTIS
-		else: return VSEnemy.Type.MUMMY
+		elif roll < 0.63: return VSEnemy.Type.SKELETON
+		elif roll < 0.76: return VSEnemy.Type.GHOST
+		elif roll < 0.88: return VSEnemy.Type.MANTIS
+		elif roll < 0.95: return VSEnemy.Type.MUMMY
+		# The armored Mantis Warrior is a rare late-band mini-elite, deepening the bug faction.
+		else: return VSEnemy.Type.MANTIS_WARRIOR

@@ -45,7 +45,11 @@ const HEALTH_BAR_MIN_MAX_HEALTH := 40.0
 ## MANTIS is a fast insect skirmisher: the quickest non-boss archetype, darting in
 ## from later waves with modest HP but a sharp contact bite, so the horde gains an
 ## agile "outrun you" threat distinct from the slow tanky MUMMY.
-enum Type { BAT, ZOMBIE, SKELETON, GHOST, MUMMY, MANTIS, ELITE, REAPER }
+## MANTIS_WARRIOR is the bug faction's mini-elite: an armored, upscaled Mantis with a
+## deep HP pool (enough to show its health bar) and a heavy contact bite, but it keeps
+## the Mantis lunge so it reads as a fast-but-tanky striker rather than a slow wall. It
+## surfaces in the late (t>=90s) band to deepen the insect threat without a full boss.
+enum Type { BAT, ZOMBIE, SKELETON, GHOST, MUMMY, MANTIS, MANTIS_WARRIOR, ELITE, REAPER }
 
 const TYPES := {
 	Type.BAT:      {"tex": "res://art/enemy_bat.png",      "speed": 62.0, "health": 3.0,   "damage": 8.0,  "xp": 1},
@@ -54,6 +58,7 @@ const TYPES := {
 	Type.GHOST:    {"tex": "res://art/enemy_ghost.png",    "speed": 78.0, "health": 2.0,   "damage": 7.0,  "xp": 1},
 	Type.MUMMY:    {"tex": "res://art/enemy_mummy.png",    "speed": 34.0, "health": 10.0,  "damage": 12.0, "xp": 3},
 	Type.MANTIS:   {"tex": "res://art/enemy_mantis.png",   "speed": 96.0, "health": 5.0,   "damage": 11.0, "xp": 3},
+	Type.MANTIS_WARRIOR: {"tex": "res://art/enemy_mantis_warrior.png", "speed": 84.0, "health": 45.0, "damage": 16.0, "xp": 10, "scale": 1.4, "radius": 16.0, "gems": 2, "knock": 0.4},
 	Type.ELITE:    {"tex": "res://art/enemy_elite.png",    "speed": 40.0, "health": 140.0, "damage": 20.0, "xp": 25, "scale": 2.0, "radius": 22.0, "gems": 5, "knock": 0.25},
 	Type.REAPER:   {"tex": "res://art/enemy_reaper.png",   "speed": 130.0, "health": 600.0, "damage": 34.0, "xp": 60, "scale": 2.6, "radius": 30.0, "gems": 10, "knock": 0.06},
 }
@@ -178,7 +183,7 @@ func _process(delta: float) -> void:
 	# it lunges in bursts. The per-enemy phase (reusing _weave_phase, mapped from radians
 	# onto the cycle length) staggers the darts so the swarm doesn't lunge in unison.
 	var speed_mult := 1.0
-	if type == Type.MANTIS:
+	if type == Type.MANTIS or type == Type.MANTIS_WARRIOR:
 		var t2: float = run.elapsed if run else 0.0
 		var phase := fmod(t2 + _weave_phase / TAU * MANTIS_LUNGE_PERIOD, MANTIS_LUNGE_PERIOD)
 		if phase < MANTIS_LUNGE_DURATION:
