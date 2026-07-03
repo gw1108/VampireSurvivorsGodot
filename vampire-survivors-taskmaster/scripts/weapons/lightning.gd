@@ -76,6 +76,7 @@ func _strike(lvl: int) -> void:
 		return
 	targets.shuffle()
 	var dmg := (BASE_DAMAGE + DAMAGE_PER_LEVEL * float(lvl)) * run.might_mult()
+	var splash := STRIKE_RADIUS * run.area_mult   # Candelabrador passive widens each bolt's splash
 	var n := mini(_strike_count(lvl), targets.size())
 	var hit_any := false
 	for i in n:
@@ -84,7 +85,7 @@ func _strike(lvl: int) -> void:
 			if not other is VSEnemy:
 				continue
 			var er: float = other.radius if "radius" in other else VSEnemy.RADIUS
-			if (other.position - at).length() <= STRIKE_RADIUS + er:
+			if (other.position - at).length() <= splash + er:
 				other.hit(dmg, at)
 				hit_any = true
 		_bolts.append({"pos": at - global_position, "t": FLASH_TIME})
@@ -110,4 +111,4 @@ func _draw() -> void:
 			var jitter := 0.0 if i == 0 or i == segs else sin(f * 23.0 + p.x * 0.5) * 12.0
 			pts.append(base + Vector2(jitter, 0.0))
 		draw_polyline(pts, Color(BOLT_COLOR.r, BOLT_COLOR.g, BOLT_COLOR.b, frac), 2.5)
-		draw_circle(p, STRIKE_RADIUS * (0.45 + 0.55 * frac), Color(GLOW_COLOR.r, GLOW_COLOR.g, GLOW_COLOR.b, 0.5 * frac))
+		draw_circle(p, STRIKE_RADIUS * run.area_mult * (0.45 + 0.55 * frac), Color(GLOW_COLOR.r, GLOW_COLOR.g, GLOW_COLOR.b, 0.5 * frac))

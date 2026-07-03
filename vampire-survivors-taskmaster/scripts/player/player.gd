@@ -37,6 +37,11 @@ func _process(delta: float) -> void:
 func take_damage(amount: float) -> void:
 	if not alive:
 		return
+	# Armor passive subtracts flat damage, but at least 1 always gets through so armor can
+	# never make the player invulnerable (faithful to VS: chip damage still lands).
+	var run := get_parent() as VSRun
+	if run and run.armor > 0:
+		amount = maxf(1.0, amount - float(run.armor))
 	health -= amount
 	AgentBridge.emit_event("damage", {"amount": amount, "to": health})
 	damaged.emit(amount)

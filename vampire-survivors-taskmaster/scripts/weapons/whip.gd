@@ -94,7 +94,7 @@ func _range(lvl: int) -> float:
 	var r := BASE_RANGE + RANGE_PER_LEVEL * float(lvl - 1)
 	if _is_evolved():
 		r += EVOLVED_RANGE_BONUS
-	return r
+	return r * run.area_mult   # Candelabrador passive extends the lash's reach
 
 func _draw() -> void:
 	if run == null or run.whip_level <= 0 or _sweep <= 0.0:

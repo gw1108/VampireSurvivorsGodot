@@ -59,6 +59,9 @@ var player_speed_mult := 1.0
 var weapon_damage := 2.0
 var weapon_fire_interval := 0.6
 var weapon_count := 1
+var area_mult := 1.0             # Candelabrador: scales AoE weapon reach/radius (garlic, whip, bible, lightning)
+var projectile_speed_mult := 1.0  # Bracer: scales how fast thrown/fired projectiles travel
+var armor := 0                   # Armor: flat damage subtracted from each hit the player takes (min 1 gets through)
 var garlic_level := 0            # 0 = Garlic aura not yet chosen; each pick grows it
 var whip_level := 0              # 0 = Whip melee arc not yet chosen; each pick grows it
 var bible_level := 0             # 0 = King Bible orbit not yet chosen; each pick grows it
@@ -97,6 +100,9 @@ const UPGRADE_POOL := [
 	{"id": "speed", "title": "Swift Boots", "desc": "+12% move speed", "max": 5},
 	{"id": "health", "title": "Vitality", "desc": "+20 max HP, heal 20", "max": 5},
 	{"id": "multishot", "title": "Multishot", "desc": "+1 projectile", "max": 4},
+	{"id": "area", "title": "Candelabrador", "desc": "+10% weapon area (aura/whip/bible/lightning reach)", "max": 5},
+	{"id": "projspeed", "title": "Bracer", "desc": "+15% projectile speed", "max": 5},
+	{"id": "armor", "title": "Armor", "desc": "-1 damage taken per hit (min 1 always lands)", "max": 3},
 	{"id": "garlic", "title": "Garlic", "desc": "Damaging aura around you (grows each pick)", "max": 8},
 	{"id": "whip", "title": "Whip", "desc": "Melee arc lashing your facing side; both sides at Lv 2+", "max": 8},
 	{"id": "bible", "title": "King Bible", "desc": "Holy books orbit you, striking enemies they pass through", "max": 8},
@@ -657,6 +663,12 @@ func _apply_upgrade(id: String) -> void:
 				player.health = minf(player.max_health, player.health + 20.0)
 		"multishot":
 			weapon_count += 1
+		"area":
+			area_mult *= 1.10
+		"projspeed":
+			projectile_speed_mult *= 1.15
+		"armor":
+			armor += 1
 		"garlic":
 			garlic_level += 1
 		"whip":

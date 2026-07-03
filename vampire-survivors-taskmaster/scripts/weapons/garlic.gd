@@ -62,7 +62,7 @@ func _radius(lvl: int) -> float:
 	var r := BASE_RADIUS + RADIUS_PER_LEVEL * float(lvl - 1)
 	if _is_evolved():
 		r += EVOLVED_RADIUS_BONUS
-	return r
+	return r * run.area_mult   # Candelabrador passive widens the aura
 
 func _draw() -> void:
 	if run == null or run.garlic_level <= 0:

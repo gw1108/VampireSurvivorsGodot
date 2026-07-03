@@ -67,7 +67,7 @@ func _throw(lvl: int) -> void:
 		var p := VSProjectile.new()
 		p.position = global_position
 		p.dir = base.rotated(offset)
-		p.speed = KNIFE_SPEED
+		p.speed = KNIFE_SPEED * run.projectile_speed_mult   # Bracer passive speeds the knife up
 		p.life = KNIFE_LIFE
 		p.damage = dmg
 		p.run = run

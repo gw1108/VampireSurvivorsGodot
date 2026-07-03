@@ -92,7 +92,7 @@ func _book_count(lvl: int) -> int:
 	return clampi(1 + lvl / 2, 1, MAX_BOOKS)
 
 func _orbit_radius(lvl: int) -> float:
-	return BASE_ORBIT_RADIUS + RADIUS_PER_LEVEL * float(lvl - 1)
+	return (BASE_ORBIT_RADIUS + RADIUS_PER_LEVEL * float(lvl - 1)) * run.area_mult   # Candelabrador widens the orbit
 
 ## Place each book evenly around the ring at the current orbit angle and spin it so the
 ## sprite tumbles as it travels (purely cosmetic).
