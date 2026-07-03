@@ -11,6 +11,11 @@ extends CanvasLayer
 ## reads UPGRADE_POOL, and buys through MetaSave.buy_powerup (atomic coin-debit + level-bump).
 ## Built in code to match the rest of the UI; swap in Kenney art as the UI lane matures.
 
+## Emitted when the shop is dismissed (Esc / B). VSRun listens so that closing the shop
+## reopened FROM the title returns to the title menu; from the game-over screen it's a no-op
+## (the run summary is already behind it). Lets the title -> shop -> back-to-title path work.
+signal closed
+
 const PANEL_TEX := "res://art/ui_panel.png"
 const PANEL_TEX_SEL := "res://art/ui_panel_sel.png"
 
@@ -75,6 +80,7 @@ func open() -> void:
 
 func close() -> void:
 	visible = false
+	closed.emit()
 
 ## Rebuild every PowerUp row against the freshly-loaded coins + purchased levels so the
 ## display always mirrors what's actually on disk after each buy.
