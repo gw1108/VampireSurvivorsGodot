@@ -18,6 +18,15 @@ const MAX_BOOKS := 5
 const BOOK_SCALE := 0.5             # 64px source -> ~32px book, legible beside enemies
 const BOOK_TEX := "res://art/up_bible.png"
 
+# Evolved (Unholy Vespers) profile — applied when run.bible_evolved: a full ring of extra
+# books orbiting faster, striking more often, harder, and with a wider reach. Gated on the
+# weapon already being maxed, so this is the run's payoff for maxing Bible + owning Power.
+const EVOLVED_EXTRA_BOOKS := 2      # 5 -> 7 books, a near-solid wall
+const EVOLVED_DAMAGE_MULT := 2.2
+const EVOLVED_ANGULAR_MULT := 1.35
+const EVOLVED_TICK_MULT := 0.6      # shorter cooldown between a book's hits
+const EVOLVED_HIT_BONUS := 8.0      # wider strike radius per book
+
 var run: VSRun
 var _angle := 0.0
 var _cd := 0.0
@@ -39,15 +48,25 @@ func _process(delta: float) -> void:
 	# weapons gate on phase; they still show where they'll resume from.
 	if run.phase != "playing":
 		return
-	_angle = fmod(_angle + ANGULAR_SPEED * delta, TAU)
+	var ang_speed := ANGULAR_SPEED
+	if _is_evolved():
+		ang_speed *= EVOLVED_ANGULAR_MULT
+	_angle = fmod(_angle + ang_speed * delta, TAU)
 	_position_books(count, lvl)
 	_cd -= delta
 	if _cd <= 0.0:
 		_strike(count, lvl)
-		_cd = TICK_INTERVAL
+		_cd = TICK_INTERVAL * (EVOLVED_TICK_MULT if _is_evolved() else 1.0)
+
+## True once the run has evolved King Bible into Unholy Vespers.
+func _is_evolved() -> bool:
+	return run != null and run.bible_evolved
 
 ## Books grow in number with level so a maxed Bible walls the player in orbiting damage.
+## Evolving fills the ring to its evolved cap regardless of level (evolution needs max level).
 func _book_count(lvl: int) -> int:
+	if _is_evolved():
+		return MAX_BOOKS + EVOLVED_EXTRA_BOOKS
 	return clampi(1 + lvl / 2, 1, MAX_BOOKS)
 
 func _orbit_radius(lvl: int) -> float:
@@ -66,12 +85,16 @@ func _position_books(count: int, lvl: int) -> void:
 ## hits track the orbit; the shared cooldown keeps a lingering enemy from draining per frame.
 func _strike(count: int, lvl: int) -> void:
 	var dmg := (BASE_DAMAGE + DAMAGE_PER_LEVEL * float(lvl)) * run.might_mult()
+	var reach := BOOK_HIT_RADIUS
+	if _is_evolved():
+		dmg *= EVOLVED_DAMAGE_MULT
+		reach += EVOLVED_HIT_BONUS
 	var hit_any := false
 	for i in count:
 		var bp: Vector2 = _books[i].global_position
 		for e in get_tree().get_nodes_in_group("enemies"):
 			var er: float = e.radius if "radius" in e else VSEnemy.RADIUS
-			if (e.position - bp).length() < BOOK_HIT_RADIUS + er:
+			if (e.position - bp).length() < reach + er:
 				e.hit(dmg, bp)
 				hit_any = true
 	if hit_any:

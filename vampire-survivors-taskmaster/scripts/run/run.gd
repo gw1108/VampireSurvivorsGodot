@@ -41,6 +41,10 @@ var weapon_count := 1
 var garlic_level := 0            # 0 = Garlic aura not yet chosen; each pick grows it
 var whip_level := 0              # 0 = Whip melee arc not yet chosen; each pick grows it
 var bible_level := 0             # 0 = King Bible orbit not yet chosen; each pick grows it
+var bible_evolved := false       # true once King Bible -> Unholy Vespers (the weapon reads this)
+
+## Evolution ids already claimed this run, so _roll_upgrades stops re-offering a done evolution.
+var evolved := {}
 
 var _pending_levels := 0        # level-ups queued but not yet chosen (XP can span several)
 
@@ -63,6 +67,15 @@ const UPGRADE_POOL := [
 	{"id": "garlic", "title": "Garlic", "desc": "Damaging aura around you (grows each pick)", "max": 8},
 	{"id": "whip", "title": "Whip", "desc": "Melee arc lashing your facing side; both sides at Lv 2+", "max": 8},
 	{"id": "bible", "title": "King Bible", "desc": "Holy books orbit you, striking enemies they pass through", "max": 8},
+]
+
+## The signature VS mechanic: a weapon maxed to its UPGRADE_POOL `max` PLUS its paired
+## passive owned unlocks an evolved form with a boosted profile. Keyed off UPGRADE_POOL by
+## `weapon` (must be at max level) and `passive` (must be owned, level >= 1). Each evolution
+## id is applied once via _apply_upgrade and remembered in `evolved` so it stops re-rolling.
+## Thin slice: one evolution (King Bible + Power -> Unholy Vespers); add rows to grow it.
+const EVOLUTIONS := [
+	{"id": "unholy_vespers", "title": "Unholy Vespers", "desc": "King Bible EVOLVED — more books, faster orbit, far deadlier sweeps", "weapon": "bible", "passive": "damage"},
 ]
 
 ## Permanent, between-run PowerUps bought in the shop with banked meta-coins. Each level
@@ -384,6 +397,15 @@ func _open_level_up() -> void:
 ## the card can show "Lv N → N+1". Maxed upgrades are excluded so the pool shrinks over
 ## the run and picks stay meaningful. Returns [] only when everything is maxed.
 func _roll_upgrades() -> Array:
+	var options := []
+	# Evolutions take priority: when a weapon is maxed and its paired passive owned, always
+	# surface the evolved card so the player never misses the (one-shot) evolution window.
+	for evo in EVOLUTIONS:
+		if _evolution_available(evo):
+			var card: Dictionary = evo.duplicate()
+			card["evolution"] = true      # no "level" key -> the card skips the Lv N->N+1 line
+			options.append(card)
+	# Fill the remaining slots with normal not-yet-maxed upgrades.
 	var pool := []
 	for opt in UPGRADE_POOL:
 		var lvl: int = upgrade_levels.get(opt["id"], 0)
@@ -392,7 +414,28 @@ func _roll_upgrades() -> Array:
 			display["level"] = lvl        # current level; the pick raises it to lvl+1
 			pool.append(display)
 	pool.shuffle()
-	return pool.slice(0, mini(3, pool.size()))
+	for opt in pool:
+		if options.size() >= 3:
+			break
+		options.append(opt)
+	return options.slice(0, mini(3, options.size()))
+
+## An evolution is offerable when its weapon is at max level, its paired passive is owned
+## (level >= 1, VS-style: the passive need only be present), and it hasn't been taken yet.
+func _evolution_available(evo: Dictionary) -> bool:
+	if evolved.has(evo["id"]):
+		return false
+	var w_lvl: int = upgrade_levels.get(evo["weapon"], 0)
+	if w_lvl < _upgrade_max(evo["weapon"]):
+		return false
+	return int(upgrade_levels.get(evo["passive"], 0)) >= 1
+
+## Look up an upgrade id's cap from UPGRADE_POOL (0 if unknown, so it never reads as maxed).
+func _upgrade_max(id: String) -> int:
+	for opt in UPGRADE_POOL:
+		if opt["id"] == id:
+			return int(opt["max"])
+	return 0
 
 func _on_upgrade_picked(id: String) -> void:
 	_apply_upgrade(id)
@@ -423,6 +466,11 @@ func _apply_upgrade(id: String) -> void:
 			whip_level += 1
 		"bible":
 			bible_level += 1
+		"unholy_vespers":
+			# King Bible -> Unholy Vespers: flag the evolution so VSKingBible swaps to its
+			# boosted profile, and remember it so the card stops re-rolling.
+			bible_evolved = true
+			evolved[id] = true
 	AgentBridge.emit_event("upgrade_chosen", {"id": id, "level": level})
 
 func _on_player_died() -> void:
