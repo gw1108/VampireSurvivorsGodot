@@ -97,6 +97,8 @@ func _die() -> void:
 	_dying = true
 	if run:
 		run.add_kill(position, xp_value, gem_drops)
+		if type == Type.ELITE:
+			run.add_camera_shake(0.8)   # elite pop lands harder than a player hit
 	var tw := create_tween()
 	tw.tween_property(self, "scale", Vector2(base_scale * 1.4, base_scale * 1.4), 0.08)
 	tw.tween_property(self, "scale", Vector2.ZERO, 0.1)

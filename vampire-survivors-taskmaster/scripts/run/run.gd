@@ -13,6 +13,14 @@ var player: VSPlayer
 var hud: VSHud
 var adapter: Node
 var upgrade_screen: VSUpgradeScreen
+var _cam: Camera2D
+
+# Camera screen-shake (trauma model). Impacts add trauma (0..1); it decays to 0 in
+# ~0.2s and the per-frame offset scales with trauma^2 so a small hit reads as a subtle
+# jolt, not nausea. Kept intentionally small — see FEEL-REVIEW's "no screen shake" note.
+var _shake_trauma := 0.0
+const SHAKE_DECAY := 5.0          # trauma/sec — full trauma dissipates in ~0.2s
+const SHAKE_MAX_OFFSET := 14.0    # px of offset at trauma 1.0
 
 var phase := "playing"          # playing | level_up | game_over  (AgentState lifecycle)
 var kills := 0
@@ -74,14 +82,15 @@ func _build_world() -> void:
 
 	player = VSPlayer.new()
 	player.died.connect(_on_player_died)
+	player.damaged.connect(_on_player_damaged)
 	add_child(player)
 
-	var cam := Camera2D.new()
-	cam.position_smoothing_enabled = true
+	_cam = Camera2D.new()
+	_cam.position_smoothing_enabled = true
 	# Zoom < 1 zooms the camera out, so the player and everything else read ~20% smaller.
-	cam.zoom = Vector2(0.8, 0.8)
-	player.add_child(cam)
-	cam.make_current()
+	_cam.zoom = Vector2(0.8, 0.8)
+	player.add_child(_cam)
+	_cam.make_current()
 
 	var weapon := VSWeapon.new()
 	weapon.run = self
@@ -135,8 +144,28 @@ func _process(delta: float) -> void:
 	frame_tick += 1
 	if phase == "playing":
 		elapsed += delta
+	_update_shake(delta)
 	if hud:
 		hud.refresh(self)
+
+## Decay the camera trauma and jitter the camera offset accordingly. Offset scales
+## with trauma^2 so shake ramps down smoothly; snaps back to zero when trauma is spent.
+func _update_shake(delta: float) -> void:
+	if _cam == null:
+		return
+	if _shake_trauma > 0.0:
+		_shake_trauma = maxf(0.0, _shake_trauma - SHAKE_DECAY * delta)
+		var s := _shake_trauma * _shake_trauma
+		_cam.offset = Vector2(randf_range(-1.0, 1.0), randf_range(-1.0, 1.0)) * SHAKE_MAX_OFFSET * s
+	elif _cam.offset != Vector2.ZERO:
+		_cam.offset = Vector2.ZERO
+
+## Add a burst of camera trauma (0..1), capped at 1.0. Called on impacts.
+func add_camera_shake(amount: float) -> void:
+	_shake_trauma = minf(1.0, _shake_trauma + amount)
+
+func _on_player_damaged(_amount: float) -> void:
+	add_camera_shake(0.5)
 
 func add_kill(at: Vector2, xp_value: int = 1, gem_count: int = 1) -> void:
 	kills += 1

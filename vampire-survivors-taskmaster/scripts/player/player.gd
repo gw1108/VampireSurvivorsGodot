@@ -4,6 +4,7 @@ extends Node2D
 ## distance math (no physics bodies) keeps the slice robust. Pixel-art sprite (Antonio).
 
 signal died
+signal damaged(amount: float)
 
 const SPEED := 210.0
 const RADIUS := 14.0
@@ -38,6 +39,7 @@ func take_damage(amount: float) -> void:
 		return
 	health -= amount
 	AgentBridge.emit_event("damage", {"amount": amount, "to": health})
+	damaged.emit(amount)
 	if health <= 0.0:
 		health = 0.0
 		alive = false
