@@ -33,7 +33,10 @@ const HEALTH_BAR_MIN_MAX_HEALTH := 40.0
 ## REAPER is the run's finale: at the survival time limit VSRun summons a single
 ## fast, enormous-HP, huge-contact Reaper (VS's death-at-the-clock enemy) that the
 ## player must outlast for the final ~15s dash to the win — not killed, survived.
-enum Type { BAT, ZOMBIE, SKELETON, GHOST, MUMMY, ELITE, REAPER }
+## MANTIS is a fast insect skirmisher: the quickest non-boss archetype, darting in
+## from later waves with modest HP but a sharp contact bite, so the horde gains an
+## agile "outrun you" threat distinct from the slow tanky MUMMY.
+enum Type { BAT, ZOMBIE, SKELETON, GHOST, MUMMY, MANTIS, ELITE, REAPER }
 
 const TYPES := {
 	Type.BAT:      {"tex": "res://art/enemy_bat.png",      "speed": 62.0, "health": 3.0,   "damage": 8.0,  "xp": 1},
@@ -41,6 +44,7 @@ const TYPES := {
 	Type.SKELETON: {"tex": "res://art/enemy_skeleton.png", "speed": 58.0, "health": 4.0,   "damage": 9.0,  "xp": 2},
 	Type.GHOST:    {"tex": "res://art/enemy_ghost.png",    "speed": 78.0, "health": 2.0,   "damage": 7.0,  "xp": 1},
 	Type.MUMMY:    {"tex": "res://art/enemy_mummy.png",    "speed": 34.0, "health": 10.0,  "damage": 12.0, "xp": 3},
+	Type.MANTIS:   {"tex": "res://art/enemy_mantis.png",   "speed": 96.0, "health": 5.0,   "damage": 11.0, "xp": 3},
 	Type.ELITE:    {"tex": "res://art/enemy_elite.png",    "speed": 40.0, "health": 140.0, "damage": 20.0, "xp": 25, "scale": 2.0, "radius": 22.0, "gems": 5, "knock": 0.25},
 	Type.REAPER:   {"tex": "res://art/enemy_reaper.png",   "speed": 130.0, "health": 600.0, "damage": 34.0, "xp": 60, "scale": 2.6, "radius": 30.0, "gems": 10, "knock": 0.06},
 }

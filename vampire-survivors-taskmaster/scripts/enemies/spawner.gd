@@ -123,8 +123,9 @@ func _pick_type() -> int:
 		elif roll < 0.90: return VSEnemy.Type.SKELETON
 		else: return VSEnemy.Type.GHOST
 	else:
-		if roll < 0.30: return VSEnemy.Type.BAT
-		elif roll < 0.50: return VSEnemy.Type.ZOMBIE
-		elif roll < 0.70: return VSEnemy.Type.SKELETON
-		elif roll < 0.85: return VSEnemy.Type.GHOST
+		if roll < 0.28: return VSEnemy.Type.BAT
+		elif roll < 0.46: return VSEnemy.Type.ZOMBIE
+		elif roll < 0.64: return VSEnemy.Type.SKELETON
+		elif roll < 0.78: return VSEnemy.Type.GHOST
+		elif roll < 0.90: return VSEnemy.Type.MANTIS
 		else: return VSEnemy.Type.MUMMY
