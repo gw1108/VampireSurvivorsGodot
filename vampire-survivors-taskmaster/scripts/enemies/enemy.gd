@@ -158,7 +158,10 @@ func _process(delta: float) -> void:
 	# Orologion time-stop: while a Freeze Clock is active every enemy halts in place and deals
 	# no contact damage — a breather for the player to reposition (weapons still hit them). An
 	# icy tint (when not mid hit-flash) makes the frozen state read at a glance.
-	if run and run.is_frozen():
+	# The finale REAPER is exempt (faithful to VS, where the Orologion never freezes the boss):
+	# freezing it would let a player stockpile a clock, drop it on the summon, and beat on a
+	# motionless, harmless boss — draining all tension from the run's climax.
+	if run and run.is_frozen() and type != Type.REAPER:
 		if _flash_time <= 0.0 and _sprite:
 			_sprite.modulate = Color(0.55, 0.8, 1.3)
 		return
