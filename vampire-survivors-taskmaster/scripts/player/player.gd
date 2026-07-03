@@ -15,6 +15,14 @@ const RADIUS := 14.0
 const HIT_FLASH_DURATION := 0.12
 const HIT_FLASH_COLOR := Color(1.7, 0.35, 0.35)
 
+## Living-avatar motion: a brisk two-step bounce while walking and a slow breathe when standing.
+## Both are a couple of pixels of vertical offset on the sprite alone (position untouched), driven
+## off the run's own `elapsed` clock so they pause cleanly with the game during level-up.
+const WALK_BOB_FREQ := 9.0     # rad/s-ish; a bounce per footfall
+const WALK_BOB_AMP := 2.0      # px, sprite rises on each step
+const IDLE_SWAY_FREQ := 2.2
+const IDLE_SWAY_AMP := 1.2
+
 var max_health := 100.0
 var health := 100.0
 var alive := true
@@ -47,11 +55,21 @@ func _process(delta: float) -> void:
 		_facing = 1 if dir.x > 0.0 else -1
 	if _sprite:
 		_sprite.flip_h = _facing < 0
+		_update_bob(dir, run.elapsed if run else 0.0)
 	var speed_mult := run.player_speed_mult if run else 1.0
 	position += dir * SPEED * speed_mult * delta
 	if run:
 		position.x = clampf(position.x, -run.arena_half.x, run.arena_half.x)
 		position.y = clampf(position.y, -run.arena_half.y, run.arena_half.y)
+
+## Nudge the sprite up and down to sell life: a footfall bounce when a move key is held, a slow
+## breathe when idle. `-absf(sin)` keeps the walk cycle lifting off the ground (up is -y) rather
+## than sinking below it; the idle sway is a plain gentle oscillation around rest.
+func _update_bob(dir: Vector2, elapsed: float) -> void:
+	if dir.length_squared() > 0.0001:
+		_sprite.position.y = -absf(sin(elapsed * WALK_BOB_FREQ)) * WALK_BOB_AMP
+	else:
+		_sprite.position.y = sin(elapsed * IDLE_SWAY_FREQ) * IDLE_SWAY_AMP
 
 ## Decay the hit-flash and lerp the sprite from red back to its normal tint. No-op once spent;
 ## the death grey-out (set in take_damage, with _process returning early while dead) is untouched.
