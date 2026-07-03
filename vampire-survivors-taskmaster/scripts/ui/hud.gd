@@ -18,6 +18,10 @@ var _over: Label
 # any resolution. Purely cosmetic; driven each frame from refresh().
 var _xp_bg: ColorRect
 var _xp_fill: ColorRect
+# Compact "LV N" tag pinned to the left edge of the bar so the track reads as the canonical VS
+# level indicator at a glance, not a nameless line. Tiny + outlined so it stays legible over the
+# cyan fill yet clears the stat line at y=8. Driven each refresh from _refresh_xp.
+var _xp_level_lbl: Label
 const XP_BAR_H := 8.0
 const XP_FILL_COLOR := Color(0.35, 0.8, 1.0)   # bright cyan = the XP/level identity
 # Level-up juice: on each level gained we punch the fill to white and decay back to the cyan
@@ -112,6 +116,17 @@ func _ready() -> void:
 	_xp_fill.color = XP_FILL_COLOR
 	_xp_fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_xp_fill)
+
+	# "LV N" tag over the bar's left edge. Nudged up so its glyphs sit within/over the 8px band
+	# and clear the stat line at y=8; a thin dark outline keeps it readable over track and fill.
+	_xp_level_lbl = Label.new()
+	_xp_level_lbl.position = Vector2(3, -5)
+	_xp_level_lbl.add_theme_font_size_override("font_size", 10)
+	_xp_level_lbl.add_theme_color_override("font_color", Color(1, 1, 1))
+	_xp_level_lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
+	_xp_level_lbl.add_theme_constant_override("outline_size", 2)
+	_xp_level_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_xp_level_lbl)
 
 	_stat = Label.new()
 	_stat.position = Vector2(12, 8)
@@ -362,6 +377,8 @@ func _refresh_xp(run: VSRun) -> void:
 	if need > 0:
 		frac = clampf(float(run.xp) / float(need), 0.0, 1.0)
 	_xp_fill.anchor_right = frac
+	if _xp_level_lbl:
+		_xp_level_lbl.text = "LV %d" % run.level
 
 ## Decay the level-up flash: eases the fill from white back to its resting cyan over
 ## XP_FLASH_TIME so a level-up reads as a bright punch on the bar itself.
