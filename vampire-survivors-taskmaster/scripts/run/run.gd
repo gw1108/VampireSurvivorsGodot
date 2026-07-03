@@ -658,61 +658,88 @@ func _spawn_candelabra() -> void:
 		add_child(c)
 		AgentBridge.emit_event("spawn", {"type": "candelabra", "pos": [pos.x, pos.y]})
 
-## Roll a random bonus when a candelabra is shattered (VSCandelabra calls this on break).
-## Faithful to VS's "lucky light": mostly a coin bag or floor chicken, sometimes a Magnet,
-## rarely the Rosary screen-clear, and very rarely a bonus level-up reroll. Reuses the same
-## pickup nodes the kill-drops spawn; the reroll is granted straight to the run's budget.
+## Light source drop table straight from the wiki's Light_source.md "Drops" table: relative
+## weight and the player level each entry unlocks at (items below their min_level are excluded
+## from the roll, matching the wiki's "unlock level is ignored ... even if the player were to
+## hit it" note — they simply aren't in the pool yet). Gold Coin/Coin Bag/Rich Coin Bag are the
+## wiki's three coin tiers (values 1/10/100) mapped onto the one VSCoin node via `coin_value`.
+## Rerollo's own weight/level are undocumented on the wiki (shown as "?"); given the same
+## rarity tier as Rosary/Nduja/Rich Coin Bag since it's an equally uncommon treat.
+const CANDELABRA_TABLE := [
+	{"id": "gold_coin", "weight": 50.0, "min_level": 0, "coin_value": 1},
+	{"id": "coin_bag", "weight": 10.0, "min_level": 0, "coin_value": 10},
+	{"id": "rich_coin_bag", "weight": 1.0, "min_level": 5, "coin_value": 100},
+	{"id": "rosary", "weight": 1.0, "min_level": 8, "coin_value": 0},
+	{"id": "nduja", "weight": 1.0, "min_level": 0, "coin_value": 0},
+	{"id": "orologion", "weight": 2.0, "min_level": 4, "coin_value": 0},
+	{"id": "vacuum", "weight": 2.0, "min_level": 12, "coin_value": 0},
+	{"id": "floor_chicken", "weight": 12.0, "min_level": 0, "coin_value": 0},
+	{"id": "rerollo", "weight": 1.0, "min_level": 0, "coin_value": 0},
+]
+
+## Roll a random bonus when a candelabra is shattered (VSCandelabra calls this on break),
+## weighted per CANDELABRA_TABLE. Reuses the same pickup nodes the kill-drops spawn; Rerollo
+## is granted straight to the run's reroll budget (no pickup node).
 func drop_candelabra_bonus(at: Vector2) -> void:
-	var roll := randf()
-	if roll < 0.04:
-		# Rarest treat: Nduja Fritta Tanta — a few seconds of fiery invincibility that also burns
-		# the horde you charge through (see VSPlayer / VSNduja). The standout power fantasy of the
-		# light drops, so it's as scarce as the bonus reroll.
-		var n := VSNduja.new()
-		n.position = at
-		n.run = self
-		add_child(n)
-		AgentBridge.emit_event("spawn", {"type": "nduja", "pos": [at.x, at.y]})
-	elif roll < 0.08:
-		# Rare light: a bonus reroll granted directly to the run budget. No pickup node —
-		# the HUD reroll readout refreshes every frame, so the +1 shows immediately. Pop a
-		# floating "+1 Reroll" at the shatter so the silent grant reads as a reward, tinted
-		# the same violet as the HUD reroll token.
-		rerolls_left += 1
-		VSFloatText.spawn(self, at, "+1 Reroll", Color(0.72, 0.6, 1.0))
-		AgentBridge.emit_event("reroll_bonus", {"rerolls_left": rerolls_left})
-	elif roll < 0.12:
-		var r := VSRosary.new()
-		r.position = at
-		r.run = self
-		add_child(r)
-		AgentBridge.emit_event("spawn", {"type": "rosary", "pos": [at.x, at.y]})
-	elif roll < 0.16:
-		var fc := VSFrozenClock.new()
-		fc.position = at
-		fc.run = self
-		add_child(fc)
-		AgentBridge.emit_event("spawn", {"type": "frozen_clock", "pos": [at.x, at.y]})
-	elif roll < 0.33:
-		var m := VSMagnet.new()
-		m.position = at
-		m.run = self
-		add_child(m)
-		AgentBridge.emit_event("spawn", {"type": "magnet", "pos": [at.x, at.y]})
-	elif roll < 0.66:
-		var amount := randi_range(3, 8)
-		var c := VSCoin.new()
-		c.position = at
-		c.run = self
-		c.value = amount
-		add_child(c)
-		AgentBridge.emit_event("spawn", {"type": "coin", "pos": [at.x, at.y], "gold": amount})
-	else:
-		var f := VSFood.new()
-		f.position = at
-		f.run = self
-		add_child(f)
-		AgentBridge.emit_event("spawn", {"type": "food", "pos": [at.x, at.y]})
+	var pool := []
+	var total := 0.0
+	for entry in CANDELABRA_TABLE:
+		if level >= int(entry["min_level"]):
+			pool.append(entry)
+			total += float(entry["weight"])
+	var roll := randf() * total
+	var picked: Dictionary = pool.back()
+	for entry in pool:
+		roll -= float(entry["weight"])
+		if roll < 0.0:
+			picked = entry
+			break
+	match String(picked["id"]):
+		"nduja":
+			var n := VSNduja.new()
+			n.position = at
+			n.run = self
+			add_child(n)
+			AgentBridge.emit_event("spawn", {"type": "nduja", "pos": [at.x, at.y]})
+		"rerollo":
+			# No pickup node — the HUD reroll readout refreshes every frame, so the +1 shows
+			# immediately. Pop a floating "+1 Reroll" tinted the same violet as the HUD token.
+			rerolls_left += 1
+			VSFloatText.spawn(self, at, "+1 Reroll", Color(0.72, 0.6, 1.0))
+			AgentBridge.emit_event("reroll_bonus", {"rerolls_left": rerolls_left})
+		"rosary":
+			var r := VSRosary.new()
+			r.position = at
+			r.run = self
+			add_child(r)
+			AgentBridge.emit_event("spawn", {"type": "rosary", "pos": [at.x, at.y]})
+		"orologion":
+			var fc := VSFrozenClock.new()
+			fc.position = at
+			fc.run = self
+			add_child(fc)
+			AgentBridge.emit_event("spawn", {"type": "frozen_clock", "pos": [at.x, at.y]})
+		"vacuum":
+			var m := VSMagnet.new()
+			m.position = at
+			m.run = self
+			add_child(m)
+			AgentBridge.emit_event("spawn", {"type": "magnet", "pos": [at.x, at.y]})
+		"floor_chicken":
+			var f := VSFood.new()
+			f.position = at
+			f.run = self
+			add_child(f)
+			AgentBridge.emit_event("spawn", {"type": "food", "pos": [at.x, at.y]})
+		_:
+			# gold_coin / coin_bag / rich_coin_bag — same node, wiki-accurate value tier.
+			var amount: int = int(picked["coin_value"])
+			var c := VSCoin.new()
+			c.position = at
+			c.run = self
+			c.value = amount
+			add_child(c)
+			AgentBridge.emit_event("spawn", {"type": "coin", "pos": [at.x, at.y], "gold": amount})
 
 ## Split a kill's XP across `count` gems scattered in a ring. Elites drop a burst
 ## so the big payout reads as a jackpot; ordinary kills drop a single gem.
