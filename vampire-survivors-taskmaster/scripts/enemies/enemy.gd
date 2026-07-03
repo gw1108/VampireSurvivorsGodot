@@ -5,6 +5,9 @@ extends Node2D
 
 const RADIUS := 12.0
 const FLASH_DURATION := 0.1
+## Enemies at or above this max health (mini-bosses like ELITE) get a health bar
+## once damaged, so their long HP pool reads as visible progress.
+const HEALTH_BAR_MIN_MAX_HEALTH := 40.0
 
 ## Enemy archetypes. Each maps to a distinct pixel-art sprite plus stat tuning so
 ## waves have visual and mechanical variety. The spawner sets `type` before the
@@ -26,6 +29,8 @@ const TYPES := {
 var type: int = Type.BAT
 var speed := 62.0
 var health := 3.0
+var max_health := 3.0
+var _show_health_bar := false
 var contact_damage := 8.0
 var xp_value := 1
 var radius := RADIUS
@@ -43,6 +48,8 @@ func _ready() -> void:
 	var cfg: Dictionary = TYPES.get(type, TYPES[Type.BAT])
 	speed = cfg["speed"]
 	health = cfg["health"]
+	max_health = health
+	_show_health_bar = max_health >= HEALTH_BAR_MIN_MAX_HEALTH
 	contact_damage = cfg["damage"]
 	xp_value = cfg["xp"]
 	radius = cfg.get("radius", RADIUS)
@@ -77,6 +84,8 @@ func hit(amount: float, _from: Vector2) -> void:
 	health -= amount
 	_flash_time = FLASH_DURATION
 	_update_flash()
+	if _show_health_bar:
+		queue_redraw()
 	if health <= 0.0:
 		_die()
 
@@ -88,6 +97,19 @@ func _die() -> void:
 	tw.tween_property(self, "scale", Vector2(base_scale * 1.4, base_scale * 1.4), 0.08)
 	tw.tween_property(self, "scale", Vector2.ZERO, 0.1)
 	tw.tween_callback(queue_free)
+
+## Draw a small health bar above mini-boss enemies once they've taken damage.
+## Coordinates are local, so the node's scale sizes the bar to the sprite.
+func _draw() -> void:
+	if not _show_health_bar or _dying or health <= 0.0 or health >= max_health:
+		return
+	var frac := clampf(health / max_health, 0.0, 1.0)
+	var w := radius * 2.0
+	var h := 3.0
+	var top := -radius - 8.0
+	var bg := Rect2(-w * 0.5, top, w, h)
+	draw_rect(bg, Color(0, 0, 0, 0.7))
+	draw_rect(Rect2(bg.position, Vector2(w * frac, h)), Color(0.85, 0.15, 0.15))
 
 ## Brighten the sprite toward white for the duration of a hit flash.
 func _update_flash() -> void:
