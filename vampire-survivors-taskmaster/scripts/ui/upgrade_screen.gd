@@ -13,7 +13,7 @@ signal picked(id: String)
 ## Per-upgrade icon, mapped by option id. Weapon/passive sprites from
 ## SourceArt/extracted_clean (copied into res://art) so each choice reads at a glance:
 ## strength=Power, dusty tome=cooldown/Haste, boots=Swift, heart=Vitality,
-## duplicator ring=Multishot, garlic bulb=Garlic aura. Ids without an entry just render text.
+## duplicator ring=Multishot, garlic bulb=Garlic aura, whip=Whip arc. Ids without an entry just render text.
 const ICONS := {
 	"damage": "res://art/up_damage.png",
 	"firerate": "res://art/up_firerate.png",
@@ -21,6 +21,7 @@ const ICONS := {
 	"health": "res://art/up_health.png",
 	"multishot": "res://art/up_multishot.png",
 	"garlic": "res://art/up_garlic.png",
+	"whip": "res://art/up_whip.png",
 }
 const PANEL_TEX := "res://art/ui_panel.png"       # Kenney RPG panel (brown)
 const PANEL_TEX_SEL := "res://art/ui_panel_sel.png"  # highlighted (blue) for hover/focus
