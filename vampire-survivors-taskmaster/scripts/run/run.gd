@@ -360,6 +360,7 @@ func add_kill(at: Vector2, xp_value: int = 1, gem_count: int = 1, is_elite: bool
 	_maybe_drop_freeze_clock(at, is_elite)
 	if is_elite:
 		_maybe_drop_magnet(at)
+		_maybe_drop_chest(at)
 
 ## True while an Orologion freeze is active — enemies read this each frame and halt (see
 ## VSEnemy._process). Compared against the run's own `elapsed` clock so the freeze window
@@ -398,6 +399,67 @@ func _maybe_drop_magnet(at: Vector2) -> void:
 		m.run = self
 		add_child(m)
 		AgentBridge.emit_event("spawn", {"type": "magnet", "pos": [at.x, at.y]})
+
+## Count of chests opened this run, so open_chest can follow VS's fixed "beginner's luck" item
+## sequence for the first six chests before settling to single-item drops.
+var chests_opened := 0
+
+## VS beginner's luck: the first six Treasure Chests grant this fixed sequence of item counts
+## (1-1-3-1-1-5) — a couple of small spikes building to a big five-item jackpot — after which
+## chests settle to a single item. Luck scaling that would bump these is base-100% in this slice.
+const CHEST_LUCK_SEQ := [1, 1, 3, 1, 1, 5]
+
+## Drop a Treasure Chest at an elite (mini-boss) kill — the VS "bosses drop chests" build-spike.
+## Guaranteed per elite so power ramps on the ~35s elite cadence (the GDD's answer to the lean
+## slice being hard past the midpoint). Suppressed once the finale Reaper is loose: that kill ends
+## the run, so a chest there would never be collectible.
+func _maybe_drop_chest(at: Vector2) -> void:
+	if reaper_active:
+		return
+	var c := VSChest.new()
+	c.position = at
+	c.run = self
+	add_child(c)
+	AgentBridge.emit_event("spawn", {"type": "chest", "pos": [at.x, at.y]})
+
+## Open a Treasure Chest (VSChest calls this on pickup): grant a burst of random not-yet-maxed
+## upgrades (count from the beginner's-luck sequence) plus gold, popping a floating label per item
+## so the spike reads. Any item that can't be granted because everything is maxed converts to extra
+## gold — faithful to VS's "full inventory → gold bag". No evolutions come from chests (slice scope).
+func open_chest(at: Vector2) -> void:
+	var count: int = CHEST_LUCK_SEQ[chests_opened] if chests_opened < CHEST_LUCK_SEQ.size() else 1
+	chests_opened += 1
+	add_camera_shake(0.5)
+	var granted := 0
+	for i in count:
+		var id := _random_open_upgrade()
+		if id == "":
+			break   # everything maxed — remaining items convert to gold below
+		_apply_upgrade(id)
+		VSFloatText.spawn(self, at + Vector2(0.0, -18.0 - float(granted) * 16.0), _upgrade_title(id), Color(1.0, 0.85, 0.3))
+		granted += 1
+	var gold_award := count * randi_range(4, 8) + (count - granted) * 12
+	add_gold(gold_award)
+	VSFloatText.spawn(self, at, "+%d Gold" % gold_award, Color(1.0, 0.85, 0.3))
+	AgentBridge.emit_event("chest_open", {"items": granted, "gold": gold_award})
+
+## Pick a random upgrade id that hasn't hit its cap yet (weapons, passives — never evolutions,
+## which live outside UPGRADE_POOL). Returns "" when everything is maxed so open_chest pays gold.
+func _random_open_upgrade() -> String:
+	var pool := []
+	for opt in UPGRADE_POOL:
+		if int(upgrade_levels.get(opt["id"], 0)) < int(opt["max"]):
+			pool.append(opt["id"])
+	if pool.is_empty():
+		return ""
+	return pool[randi() % pool.size()]
+
+## Human-readable title for an upgrade id, for the chest's floating item labels.
+func _upgrade_title(id: String) -> String:
+	for opt in UPGRADE_POOL:
+		if opt["id"] == id:
+			return opt["title"]
+	return id
 
 ## Rarely drop a Rosary — the VS screen-clear treat that smites every on-screen enemy on
 ## pickup. Very rare from ordinary kills (~0.3%) so a clutch wipe feels like a lucky break,
