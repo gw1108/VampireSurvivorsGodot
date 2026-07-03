@@ -5,6 +5,10 @@ extends Node2D
 
 const RADIUS := 12.0
 const FLASH_DURATION := 0.1
+## REAPER "immune to freeze" shimmer: a red pulse layered over the boss while an Orologion
+## time-stop is active, so its exemption reads as a deliberate design, not a stuck sprite.
+const IMMUNE_SHIMMER_FREQ := 9.0     # rad/s of the sine pulse — a fast, alarming flicker
+const IMMUNE_SHIMMER_AMOUNT := 0.7   # how far the pulse lerps toward the hot red at its peak
 ## Boid separation: enemies repel from neighbours within this radius so the horde
 ## spreads into a mass that SURROUNDS the player instead of every unit collapsing
 ## onto the exact player position into one overlapping column. STRENGTH weights the
@@ -108,6 +112,9 @@ var target: VSPlayer
 var _contact_cd := 0.0
 var _flash_time := 0.0
 var _dying := false
+## Tracks whether an Orologion freeze was active last frame, so the REAPER can fire its
+## one-shot "IMMUNE" telegraph exactly on the frame a freeze begins (not every frame it lasts).
+var _was_frozen := false
 
 var _sprite: Sprite2D
 
@@ -161,12 +168,26 @@ func _process(delta: float) -> void:
 	# The finale REAPER is exempt (faithful to VS, where the Orologion never freezes the boss):
 	# freezing it would let a player stockpile a clock, drop it on the summon, and beat on a
 	# motionless, harmless boss — draining all tension from the run's climax.
-	if run and run.is_frozen() and type != Type.REAPER:
+	if run and run.is_frozen():
+		if type != Type.REAPER:
+			if _flash_time <= 0.0 and _sprite:
+				_sprite.modulate = Color(0.55, 0.8, 1.3)
+			return
+		# The REAPER shrugs the freeze off. Telegraph it so the boss ploughing through a fully
+		# iced horde reads as intentional, not a bug: a one-shot floating "IMMUNE" label the frame
+		# the freeze lands, plus a pulsing red shimmer for as long as it's active — a hot, unfrozen
+		# counterpoint to the icy blue tint on everything around it. The reaper does NOT halt.
+		if not _was_frozen:
+			_was_frozen = true
+			_spawn_immune_label()
 		if _flash_time <= 0.0 and _sprite:
-			_sprite.modulate = Color(0.55, 0.8, 1.3)
-		return
-	elif _flash_time <= 0.0 and _sprite and _sprite.modulate != _base_tint:
-		_sprite.modulate = _base_tint   # clear any lingering freeze tint back to the resting tint
+			var t2: float = run.elapsed if run else 0.0
+			var pulse := 0.5 + 0.5 * sin(t2 * IMMUNE_SHIMMER_FREQ)
+			_sprite.modulate = _base_tint.lerp(Color(1.7, 0.25, 0.25), pulse * IMMUNE_SHIMMER_AMOUNT)
+	else:
+		_was_frozen = false
+		if _flash_time <= 0.0 and _sprite and _sprite.modulate != _base_tint:
+			_sprite.modulate = _base_tint   # clear any lingering freeze/shimmer tint back to resting
 	# Hit-stop: a freshly-struck enemy holds in place for a couple of frames before resuming, so
 	# the impact lands with weight. While it's active it costs no ground, no knockback decay and
 	# no contact. It absorbs only its own slice of the frame's delta — if the freeze ends partway
@@ -291,6 +312,16 @@ func _draw() -> void:
 	var bg := Rect2(-w * 0.5, top, w, h)
 	draw_rect(bg, Color(0, 0, 0, 0.7))
 	draw_rect(Rect2(bg.position, Vector2(w * frac, h)), Color(0.85, 0.15, 0.15))
+
+## Pop a red "IMMUNE" label above the REAPER the instant a Freeze Clock activates, spelling out
+## that the boss ignores the time-stop. Spawned into the parent's space (like the damage numbers)
+## so it rises and fades in world coordinates rather than dragging along with the advancing boss.
+func _spawn_immune_label() -> void:
+	var parent := get_parent()
+	if parent == null:
+		return
+	var at := position + Vector2(0.0, -radius - 10.0)
+	VSFloatText.spawn(parent, at, "IMMUNE", Color(1.0, 0.35, 0.3))
 
 ## Brighten the sprite toward white for the duration of a hit flash.
 func _update_flash() -> void:
