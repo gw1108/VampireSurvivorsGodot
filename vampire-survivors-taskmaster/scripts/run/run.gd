@@ -302,6 +302,7 @@ func add_kill(at: Vector2, xp_value: int = 1, gem_count: int = 1, is_elite: bool
 	_spawn_gems(at, xp_value, gem_count)
 	_maybe_drop_food(at)
 	_maybe_drop_coin(at, is_elite)
+	_maybe_drop_rosary(at, is_elite)
 	if is_elite:
 		_maybe_drop_magnet(at)
 
@@ -336,6 +337,20 @@ func _maybe_drop_magnet(at: Vector2) -> void:
 		m.run = self
 		add_child(m)
 		AgentBridge.emit_event("spawn", {"type": "magnet", "pos": [at.x, at.y]})
+
+## Rarely drop a Rosary — the VS screen-clear treat that smites every on-screen enemy on
+## pickup. Very rare from ordinary kills (~0.3%) so a clutch wipe feels like a lucky break,
+## and a slightly better shot from an elite kill (~10%) as a mini-boss reward. Deliberately
+## much rarer than food/coins: a mass clear is a run-swinging moment, not a staple.
+func _maybe_drop_rosary(at: Vector2, is_elite: bool) -> void:
+	var chance := 0.10 if is_elite else 0.003
+	if randf() >= chance:
+		return
+	var r := VSRosary.new()
+	r.position = at
+	r.run = self
+	add_child(r)
+	AgentBridge.emit_event("spawn", {"type": "rosary", "pos": [at.x, at.y]})
 
 ## Occasionally drop a gold coin on a kill so the run banks a little meta-currency. Ordinary
 ## kills pay out rarely (~2%) and a single coin; elites are a jackpot — a guaranteed coin
