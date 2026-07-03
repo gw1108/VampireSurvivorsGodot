@@ -52,7 +52,7 @@ func _process(delta: float) -> void:
 ## Cooldown between volleys, shrinking modestly with level (never below MIN_INTERVAL so a maxed
 ## Runetracer stays a periodic hazard rather than a constant screen-full of runes).
 func _interval(lvl: int) -> float:
-	return maxf(MIN_INTERVAL, BASE_INTERVAL - INTERVAL_PER_LEVEL * float(lvl - 1))
+	return maxf(MIN_INTERVAL, BASE_INTERVAL - INTERVAL_PER_LEVEL * float(lvl - 1)) * run.haste_mult()
 
 ## Runes per volley: base one, plus one for every three levels, capped so the arena never fills
 ## with a free lattice of bouncing runes. NO FUTURE (evolved) throws extra runes and lifts the cap.
@@ -66,7 +66,7 @@ func _amount(lvl: int) -> int:
 ## fan out to different corners of the arena rather than overlapping.
 func _fire(lvl: int) -> void:
 	var evolved: bool = run.runetracer_evolved
-	var dmg := (BASE_DAMAGE + DAMAGE_PER_LEVEL * float(lvl - 1)) * run.might_mult()
+	var dmg := (BASE_DAMAGE + DAMAGE_PER_LEVEL * float(lvl - 1)) * run.might_mult() * run.power_mult()
 	var speed := BASE_SPEED * run.projectile_speed_mult   # Bracer passive speeds the carom up
 	var life := BASE_LIFE + LIFE_PER_LEVEL * float(lvl - 1)
 	if evolved:

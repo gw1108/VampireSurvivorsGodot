@@ -67,6 +67,12 @@ var player_speed_mult := 1.0
 ## designer can retune them without touching this script.
 var weapon_damage := BalanceData.get_value("magic_wand_base_damage", 2.0)
 var weapon_fire_interval := 0.6
+## Baseline snapshot of the two vars above, captured at construction (before any Power/Haste
+## picks or meta PowerUps land) so power_mult()/haste_mult() below can express their growth as
+## a ratio every weapon shares, not just the Magic Wand (which reads weapon_damage/
+## weapon_fire_interval directly instead).
+var _weapon_damage_base := weapon_damage
+var _weapon_fire_interval_base := weapon_fire_interval
 var weapon_count := 0            # 0 = Magic Wand not yet chosen; each Multishot pick grows it
 var area_mult := 1.0             # Candelabrador: scales AoE weapon reach/radius (garlic, whip, bible, lightning)
 var projectile_speed_mult := 1.0  # Bracer: scales how fast thrown/fired projectiles travel
@@ -349,6 +355,19 @@ func _init_character() -> void:
 ## harder across the board, not just via picked upgrades.
 func might_mult() -> float:
 	return 1.0 + 0.10 * float(clampi(level / 10, 0, 5))
+
+## Global damage multiplier from Power level-up picks and the Might PowerUp: expresses how much
+## weapon_damage has grown above its baseline, so every OTHER owned weapon (whip, garlic, bible,
+## lightning, knife, runetracer, fire wand) can apply the same build-wide bonus their card text
+## promises, not just the Magic Wand (which reads weapon_damage directly instead).
+func power_mult() -> float:
+	return weapon_damage / _weapon_damage_base if _weapon_damage_base > 0.0 else 1.0
+
+## Global fire-rate multiplier from Haste level-up picks and the Cooldown PowerUp: mirrors
+## power_mult() but for attack speed, shrinking every other weapon's own attack interval by the
+## same ratio the Magic Wand's weapon_fire_interval shrank.
+func haste_mult() -> float:
+	return weapon_fire_interval / _weapon_fire_interval_base if _weapon_fire_interval_base > 0.0 else 1.0
 
 ## Read permanent PowerUps bought in the shop and fold them into this run's starting stats.
 ## Called once at run start so every run reflects the between-run meta-progression. Uses the

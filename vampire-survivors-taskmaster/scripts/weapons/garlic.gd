@@ -41,7 +41,7 @@ func _process(delta: float) -> void:
 	_cd -= delta
 	if _cd <= 0.0:
 		_pulse(lvl)
-		_cd = TICK_INTERVAL
+		_cd = TICK_INTERVAL * run.haste_mult()
 		_flash = FLASH_TIME
 
 ## True once the run has evolved Garlic into Soul Eater.
@@ -51,7 +51,7 @@ func _is_evolved() -> bool:
 ## Damage every enemy currently inside the aura. Damage scales with garlic level.
 func _pulse(lvl: int) -> void:
 	var r := _radius(lvl)
-	var dmg := (BASE_DAMAGE + DAMAGE_PER_LEVEL * float(lvl)) * run.might_mult()
+	var dmg := (BASE_DAMAGE + DAMAGE_PER_LEVEL * float(lvl)) * run.might_mult() * run.power_mult()
 	if _is_evolved():
 		dmg *= EVOLVED_DAMAGE_MULT
 	var hit_any := false

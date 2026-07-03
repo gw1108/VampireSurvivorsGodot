@@ -66,7 +66,7 @@ func _process(delta: float) -> void:
 	_cd -= delta
 	if _cd <= 0.0:
 		_swing(lvl)
-		_cd = ATTACK_INTERVAL
+		_cd = ATTACK_INTERVAL * run.haste_mult()
 
 ## One swing: damage every enemy inside the facing-side wedge (both sides from level 2, or
 ## always once evolved into Bloody Tear).
@@ -76,7 +76,7 @@ func _swing(lvl: int) -> void:
 	var r := _range(lvl)
 	var arc := _arc_half()
 	_play_vfx(r)
-	var dmg := (BASE_DAMAGE + DAMAGE_PER_LEVEL * float(lvl)) * run.might_mult()
+	var dmg := (BASE_DAMAGE + DAMAGE_PER_LEVEL * float(lvl)) * run.might_mult() * run.power_mult()
 	if _is_evolved():
 		dmg *= EVOLVED_DAMAGE_MULT
 	var hit_any := false

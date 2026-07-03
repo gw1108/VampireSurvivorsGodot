@@ -50,7 +50,7 @@ func _process(delta: float) -> void:
 ## Cooldown between volleys, shrinking modestly with level (never below MIN_INTERVAL so a maxed
 ## Fire Wand stays a periodic bomb rather than a constant stream of explosions).
 func _interval(lvl: int) -> float:
-	return maxf(MIN_INTERVAL, BASE_INTERVAL - INTERVAL_PER_LEVEL * float(lvl - 1))
+	return maxf(MIN_INTERVAL, BASE_INTERVAL - INTERVAL_PER_LEVEL * float(lvl - 1)) * run.haste_mult()
 
 ## Fireballs per volley: base one, plus one for every three levels, capped at the wiki Amount 3
 ## so the arena never fills with a free wall of explosions.
@@ -80,7 +80,7 @@ func _fire(lvl: int) -> void:
 		dmg_base *= HELLFIRE_DAMAGE_MULT
 		blast *= HELLFIRE_BLAST_MULT
 		life *= HELLFIRE_LIFE_MULT
-	var dmg := dmg_base * run.might_mult()
+	var dmg := dmg_base * run.might_mult() * run.power_mult()
 	var count := mini(_amount(lvl), enemies.size())
 	for i in count:
 		var target: VSEnemy = enemies[i]

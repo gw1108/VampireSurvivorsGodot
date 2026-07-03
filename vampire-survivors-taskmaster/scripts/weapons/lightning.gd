@@ -60,7 +60,7 @@ func _process(delta: float) -> void:
 ## Cooldown between volleys, shrinking modestly with level so the ring keeps firing as the run
 ## escalates (never below MIN_INTERVAL so it stays a burst weapon, not a stream).
 func _interval(lvl: int) -> float:
-	return maxf(MIN_INTERVAL, BASE_INTERVAL - INTERVAL_PER_LEVEL * float(lvl - 1))
+	return maxf(MIN_INTERVAL, BASE_INTERVAL - INTERVAL_PER_LEVEL * float(lvl - 1)) * run.haste_mult()
 
 ## Bolts per volley: base two, plus one for every three levels, capped so a maxed ring rains
 ## a satisfying cluster without smiting the entire screen for free. Thunder Loop (evolved) adds
@@ -85,7 +85,7 @@ func _strike(lvl: int) -> void:
 		return
 	targets.shuffle()
 	var evolved: bool = run.lightning_evolved
-	var dmg := (BASE_DAMAGE + DAMAGE_PER_LEVEL * float(lvl)) * run.might_mult()
+	var dmg := (BASE_DAMAGE + DAMAGE_PER_LEVEL * float(lvl)) * run.might_mult() * run.power_mult()
 	var splash := STRIKE_RADIUS * run.area_mult   # Candelabrador passive widens each bolt's splash
 	if evolved:
 		splash *= EVO_SPLASH_MULT                 # Thunder Loop's blast reaches wider

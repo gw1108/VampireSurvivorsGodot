@@ -80,7 +80,7 @@ func _process(delta: float) -> void:
 	_cd -= delta
 	if _cd <= 0.0:
 		_strike(count, lvl)
-		_cd = TICK_INTERVAL * (EVOLVED_TICK_MULT if _is_evolved() else 1.0)
+		_cd = TICK_INTERVAL * (EVOLVED_TICK_MULT if _is_evolved() else 1.0) * run.haste_mult()
 
 ## True once the run has evolved King Bible into Unholy Vespers.
 func _is_evolved() -> bool:
@@ -108,7 +108,7 @@ func _position_books(count: int, lvl: int) -> void:
 ## Damage every enemy currently touching a book. Per-book world position is checked so
 ## hits track the orbit; the shared cooldown keeps a lingering enemy from draining per frame.
 func _strike(count: int, lvl: int) -> void:
-	var dmg := (BASE_DAMAGE + DAMAGE_PER_LEVEL * float(lvl)) * run.might_mult()
+	var dmg := (BASE_DAMAGE + DAMAGE_PER_LEVEL * float(lvl)) * run.might_mult() * run.power_mult()
 	var reach := BOOK_HIT_RADIUS
 	if _is_evolved():
 		dmg *= EVOLVED_DAMAGE_MULT
