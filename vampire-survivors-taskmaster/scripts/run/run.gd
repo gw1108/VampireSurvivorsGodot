@@ -40,6 +40,7 @@ const RUN_DURATION := 300.0
 const REAPER_DURATION := 15.0
 var reaper_active := false        # true once the Reaper has been summoned at the time limit
 var reaper_deadline := 0.0        # elapsed time at which surviving the Reaper wins the run
+var reaper_slain := false         # true if the player KILLED the Reaper (a kill-win) rather than outlasting it
 var xp := 0
 var level := 1
 var gold := 0                   # run coins banked from coin pickups; seed of the VS meta-currency
@@ -545,6 +546,17 @@ func _on_victory() -> void:
 	phase = "victory"
 	var meta_coins := MetaSave.add_coins(gold)
 	AgentBridge.emit_event("victory", {"type": "player", "run_gold": gold, "meta_coins": meta_coins})
+
+## The player actually KILLED the Reaper — a strong build overpowering the finale — instead of
+## merely outlasting it. Flip straight to victory now rather than waiting out reaper_deadline, with
+## the run's heaviest jolt, and flag reaper_slain so the HUD crowns the win 'YOU SLEW THE REAPER'.
+## Guarded via _on_victory's phase check so a death on the same frame still can't be overridden.
+func on_reaper_slain() -> void:
+	if phase != "playing":
+		return
+	reaper_slain = true
+	add_camera_shake(1.0)   # the heaviest jolt in the run — the finale falls
+	_on_victory()
 
 func _unhandled_input(event: InputEvent) -> void:
 	if phase != "game_over" and phase != "victory":

@@ -7,6 +7,7 @@ var _stat: Label
 var _build: Label
 var _meta: Label
 var _reaper: Label
+var _slain: Label
 var _over: Label
 
 # Active permanent PowerUps are fixed for the whole run (applied once at start), so we read
@@ -63,6 +64,18 @@ func _ready() -> void:
 	_reaper.visible = false
 	add_child(_reaper)
 
+	# Kill-win banner: when the player actually SLAYS the Reaper (not just outlasts it), a large
+	# gold banner crowns the climactic payout above the run summary, distinct from the timeout win.
+	_slain = Label.new()
+	_slain.text = "YOU SLEW THE REAPER"
+	_slain.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_slain.position = Vector2(150, 190)
+	_slain.size = Vector2(700, 0)
+	_slain.add_theme_font_size_override("font_size", 34)
+	_slain.modulate = Color(1.0, 0.85, 0.3)
+	_slain.visible = false
+	add_child(_slain)
+
 	_over = Label.new()
 	_over.text = "YOU DIED\nPress Enter to retry"
 	_over.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -98,6 +111,9 @@ func refresh(run: VSRun) -> void:
 		var left := int(ceil(maxf(0.0, run.reaper_deadline - run.elapsed)))
 		_reaper.text = "THE REAPER COMES\nSURVIVE  %ds" % left
 	var won := run.phase == "victory"
+	# The extra kill-win banner rides above the summary only when the Reaper was actually slain.
+	if _slain:
+		_slain.visible = won and run.reaper_slain
 	_over.visible = run.phase == "game_over" or won
 	if _over.visible:
 		# Run summary: give the run's end some closure by showing what it achieved. The gold
@@ -105,7 +121,9 @@ func refresh(run: VSRun) -> void:
 		# refresh, so MetaSave.load_coins() reflects the post-deposit total. A survived run leads
 		# with a golden "YOU SURVIVED!"; a death leads with the crimson "YOU DIED".
 		var banked := MetaSave.load_coins()
-		var heading := "YOU SURVIVED!" if won else "YOU DIED"
+		var heading := "YOU DIED"
+		if won:
+			heading = "YOU SLEW THE REAPER!" if run.reaper_slain else "YOU SURVIVED!"
 		_over.modulate = Color(1.0, 0.9, 0.4) if won else Color(1, 1, 1)
 		_over.text = "%s\n\nTime Survived  %s\nKills  %d\nLevel Reached  %d\nGold This Run  %d\nCoins Banked  %d\n\nPress B for the PowerUp shop\nPress Enter to retry" % [heading, _mmss(run.elapsed), run.kills, run.level, run.gold, banked]
 

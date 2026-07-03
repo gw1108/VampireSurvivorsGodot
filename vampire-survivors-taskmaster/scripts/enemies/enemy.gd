@@ -147,6 +147,8 @@ func _die() -> void:
 		run.add_kill(position, xp_value, gem_drops, big)
 		if big:
 			run.add_camera_shake(0.8)   # elite/reaper pop lands harder than a player hit
+		if type == Type.REAPER:
+			run.on_reaper_slain()       # overpowering the finale wins the run instantly
 	var tw := create_tween()
 	tw.tween_property(self, "scale", Vector2(base_scale * 1.4, base_scale * 1.4), 0.08)
 	tw.tween_property(self, "scale", Vector2.ZERO, 0.1)
