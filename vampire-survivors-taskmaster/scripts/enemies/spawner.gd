@@ -104,6 +104,9 @@ func spawn_reaper() -> void:
 	e.run = run
 	e.target = run.player
 	run.add_child(e)
+	# Telegraph the off-ring arrival with a crimson screen vignette so it reads as an
+	# event, echoing the HUD 'THE REAPER COMES' banner.
+	VSReaperVignette.spawn(run)
 	AgentBridge.emit_event("spawn", {"type": "reaper", "pos": [pos.x, pos.y]})
 
 ## Weighted enemy-type roll that introduces tougher archetypes as the run ramps.
