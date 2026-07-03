@@ -42,6 +42,8 @@ var garlic_level := 0            # 0 = Garlic aura not yet chosen; each pick gro
 var whip_level := 0              # 0 = Whip melee arc not yet chosen; each pick grows it
 var bible_level := 0             # 0 = King Bible orbit not yet chosen; each pick grows it
 var bible_evolved := false       # true once King Bible -> Unholy Vespers (the weapon reads this)
+var whip_evolved := false        # true once Whip -> Bloody Tear (whip.gd reads this)
+var garlic_evolved := false      # true once Garlic -> Soul Eater (garlic.gd reads this)
 
 ## Evolution ids already claimed this run, so _roll_upgrades stops re-offering a done evolution.
 var evolved := {}
@@ -73,9 +75,12 @@ const UPGRADE_POOL := [
 ## passive owned unlocks an evolved form with a boosted profile. Keyed off UPGRADE_POOL by
 ## `weapon` (must be at max level) and `passive` (must be owned, level >= 1). Each evolution
 ## id is applied once via _apply_upgrade and remembered in `evolved` so it stops re-rolling.
-## Thin slice: one evolution (King Bible + Power -> Unholy Vespers); add rows to grow it.
+## Faithful to VS pairings where the passive exists in our pool: Bible+Power, Whip+Vitality
+## (Hollow Heart), Garlic+Swift Boots. Add rows to grow the evolution roster.
 const EVOLUTIONS := [
 	{"id": "unholy_vespers", "title": "Unholy Vespers", "desc": "King Bible EVOLVED — more books, faster orbit, far deadlier sweeps", "weapon": "bible", "passive": "damage"},
+	{"id": "bloody_tear", "title": "Bloody Tear", "desc": "Whip EVOLVED — a wider, longer, far deadlier lash on both flanks", "weapon": "whip", "passive": "health"},
+	{"id": "soul_eater", "title": "Soul Eater", "desc": "Garlic EVOLVED — a wider, far deadlier devouring aura", "weapon": "garlic", "passive": "speed"},
 ]
 
 ## Permanent, between-run PowerUps bought in the shop with banked meta-coins. Each level
@@ -470,6 +475,14 @@ func _apply_upgrade(id: String) -> void:
 			# King Bible -> Unholy Vespers: flag the evolution so VSKingBible swaps to its
 			# boosted profile, and remember it so the card stops re-rolling.
 			bible_evolved = true
+			evolved[id] = true
+		"bloody_tear":
+			# Whip -> Bloody Tear: VSWhip reads whip_evolved for its boosted profile.
+			whip_evolved = true
+			evolved[id] = true
+		"soul_eater":
+			# Garlic -> Soul Eater: VSGarlic reads garlic_evolved for its boosted profile.
+			garlic_evolved = true
 			evolved[id] = true
 	AgentBridge.emit_event("upgrade_chosen", {"id": id, "level": level})
 

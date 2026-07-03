@@ -16,6 +16,13 @@ const SWEEP_TIME := 0.25                   # how long the arc stays visible per 
 const BASE_DAMAGE := 5.0
 const DAMAGE_PER_LEVEL := 4.0
 
+# Evolved (Bloody Tear) profile — applied when run.whip_evolved: a longer, wider, far deadlier
+# lash that always covers both flanks. Gated on Whip already being maxed, so this is the run's
+# payoff for maxing Whip + owning Vitality (Hollow Heart).
+const EVOLVED_DAMAGE_MULT := 2.2
+const EVOLVED_RANGE_BONUS := 60.0                 # px added to reach
+const EVOLVED_ARC_BONUS := deg_to_rad(20.0)       # widens each wedge's half-angle
+
 var run: VSRun
 var _cd := 0.0
 var _sweep := 0.0          # remaining time on the current swing's visual
@@ -43,14 +50,18 @@ func _process(delta: float) -> void:
 		_swing(lvl)
 		_cd = ATTACK_INTERVAL
 
-## One swing: damage every enemy inside the facing-side wedge (both sides from level 2).
+## One swing: damage every enemy inside the facing-side wedge (both sides from level 2, or
+## always once evolved into Bloody Tear).
 func _swing(lvl: int) -> void:
 	_swing_facing = _facing
-	_swing_both = lvl >= 2
+	_swing_both = lvl >= 2 or _is_evolved()
 	_sweep = SWEEP_TIME
 	queue_redraw()
 	var r := _range(lvl)
+	var arc := _arc_half()
 	var dmg := (BASE_DAMAGE + DAMAGE_PER_LEVEL * float(lvl)) * run.might_mult()
+	if _is_evolved():
+		dmg *= EVOLVED_DAMAGE_MULT
 	var hit_any := false
 	for s in _sides():
 		var facing_vec := Vector2(s, 0)
@@ -61,37 +72,50 @@ func _swing(lvl: int) -> void:
 			if d > r + er:
 				continue
 			# On top of us, or inside the angular wedge on this side.
-			if d < 1.0 or absf(to.angle_to(facing_vec)) <= ARC_HALF_ANGLE:
+			if d < 1.0 or absf(to.angle_to(facing_vec)) <= arc:
 				e.hit(dmg, global_position)
 				hit_any = true
 	if hit_any:
 		AgentBridge.emit_event("sfx_played", {"name": "whip"})
+
+## True once the run has evolved Whip into Bloody Tear.
+func _is_evolved() -> bool:
+	return run != null and run.whip_evolved
+
+## Half-width of the damage/visual wedge, widened once evolved into Bloody Tear.
+func _arc_half() -> float:
+	return ARC_HALF_ANGLE + (EVOLVED_ARC_BONUS if _is_evolved() else 0.0)
 
 ## The facing signs this swing covers: just the facing side, or both from level 2.
 func _sides() -> Array:
 	return [1, -1] if _swing_both else [_swing_facing]
 
 func _range(lvl: int) -> float:
-	return BASE_RANGE + RANGE_PER_LEVEL * float(lvl - 1)
+	var r := BASE_RANGE + RANGE_PER_LEVEL * float(lvl - 1)
+	if _is_evolved():
+		r += EVOLVED_RANGE_BONUS
+	return r
 
 func _draw() -> void:
 	if run == null or run.whip_level <= 0 or _sweep <= 0.0:
 		return
 	var r := _range(run.whip_level)
+	var arc := _arc_half()
 	var t := _sweep / SWEEP_TIME               # 1 at swing start -> 0 as it fades
-	var fill := Color(1.0, 0.95, 0.7, 0.22 * t)
-	var edge := Color(1.0, 1.0, 0.85, 0.7 * t)
+	# Bloody Tear tints the lash a deep crimson so the evolution reads at a glance.
+	var fill := Color(1.0, 0.35, 0.35, 0.28 * t) if _is_evolved() else Color(1.0, 0.95, 0.7, 0.22 * t)
+	var edge := Color(1.0, 0.55, 0.55, 0.8 * t) if _is_evolved() else Color(1.0, 1.0, 0.85, 0.7 * t)
 	for s in _sides():
 		var center := 0.0 if s > 0 else PI
-		_draw_wedge(center, r, fill)
+		_draw_wedge(center, r, arc, fill)
 		# Bright leading edge sweeps across the wedge as the swing plays out.
-		var edge_ang: float = center + lerp(ARC_HALF_ANGLE, -ARC_HALF_ANGLE, t)
+		var edge_ang: float = center + lerp(arc, -arc, t)
 		draw_line(Vector2.ZERO, Vector2(cos(edge_ang), sin(edge_ang)) * r, edge, 3.0)
 
-func _draw_wedge(center: float, r: float, col: Color) -> void:
+func _draw_wedge(center: float, r: float, arc: float, col: Color) -> void:
 	var pts := PackedVector2Array([Vector2.ZERO])
 	var segs := 12
 	for i in segs + 1:
-		var a := center - ARC_HALF_ANGLE + (2.0 * ARC_HALF_ANGLE) * float(i) / float(segs)
+		var a := center - arc + (2.0 * arc) * float(i) / float(segs)
 		pts.append(Vector2(cos(a), sin(a)) * r)
 	draw_colored_polygon(pts, col)
