@@ -37,6 +37,65 @@ static func add_coins(amount: int) -> int:
 	return total
 
 
+## Spend `amount` coins if the balance covers it, persisting the reduced total. Returns
+## true on success (balance debited + saved), false with no change if `amount` is
+## non-positive or exceeds the banked coins. This is the withdraw half of the economy —
+## the PowerUp shop's primitive for turning banked coins into permanent boosts.
+static func spend_coins(amount: int) -> bool:
+	if amount <= 0:
+		return false
+	var data := _load_data()
+	var current := _sanitize(data.get("coins", 0))
+	if amount > current:
+		return false
+	data["coins"] = current - amount
+	data["version"] = SCHEMA_VERSION
+	_save_data(data)
+	return true
+
+
+## Purchased permanent-PowerUp levels, id -> level. Missing/garbage reads as {} so a
+## fresh or corrupt save simply grants no boosts. Non-int levels are dropped, not crashed.
+static func load_powerups() -> Dictionary:
+	var raw: Variant = _load_data().get("powerups", {})
+	if typeof(raw) != TYPE_DICTIONARY:
+		return {}
+	var out := {}
+	for id in raw.keys():
+		out[str(id)] = _sanitize(raw[id])
+	return out
+
+
+## Current purchased level of one PowerUp id (0 if never bought).
+static func powerup_level(id: String) -> int:
+	return _sanitize(load_powerups().get(id, 0))
+
+
+## Buy one level of PowerUp `id`: atomically debit `cost` coins and bump its level, but
+## only if the player can afford it AND it's below `max_level`. Coins and the level are
+## written in a SINGLE save so the two can never drift apart (a crash can't leave a paid
+## level un-granted or vice-versa). Returns true on a successful purchase.
+static func buy_powerup(id: String, cost: int, max_level: int) -> bool:
+	if cost < 0:
+		return false
+	var data := _load_data()
+	var current := _sanitize(data.get("coins", 0))
+	if cost > current:
+		return false
+	var powerups: Variant = data.get("powerups", {})
+	if typeof(powerups) != TYPE_DICTIONARY:
+		powerups = {}
+	var lvl := _sanitize(powerups.get(id, 0))
+	if lvl >= max_level:
+		return false
+	powerups[id] = lvl + 1
+	data["powerups"] = powerups
+	data["coins"] = current - cost
+	data["version"] = SCHEMA_VERSION
+	_save_data(data)
+	return true
+
+
 ## Coerce whatever came off disk (int, float, string, or garbage) into a valid,
 ## in-range coin count. Anything non-numeric collapses to 0.
 static func _sanitize(value: Variant) -> int:

@@ -13,6 +13,7 @@ var player: VSPlayer
 var hud: VSHud
 var adapter: Node
 var upgrade_screen: VSUpgradeScreen
+var shop_screen: VSShopScreen
 var _cam: Camera2D
 
 # Camera screen-shake (trauma model). Impacts add trauma (0..1); it decays to 0 in
@@ -62,6 +63,17 @@ const UPGRADE_POOL := [
 	{"id": "whip", "title": "Whip", "desc": "Melee arc lashing your facing side; both sides at Lv 2+", "max": 8},
 ]
 
+## Permanent, between-run PowerUps bought in the shop with banked meta-coins. Each level
+## boosts a starting stat, applied fresh every run start via _apply_meta_powerups. Levels
+## + coins persist in MetaSave (user://meta_save.json); the shop screen reads this catalog
+## for its rows (title/desc/cost/max) exactly as the level-up screen reads UPGRADE_POOL.
+const POWERUPS := [
+	{"id": "might", "title": "Might", "desc": "+2 starting weapon damage per level", "cost": 60, "max": 5},
+	{"id": "armor", "title": "Armor", "desc": "+20 max HP per level", "cost": 80, "max": 5},
+	{"id": "haste", "title": "Cooldown", "desc": "-5% weapon cooldown per level", "cost": 100, "max": 5},
+	{"id": "boots", "title": "Moonwalker", "desc": "+5% move speed per level", "cost": 70, "max": 5},
+]
+
 func _ready() -> void:
 	_ensure_input()
 	seed(hash("vs-slice"))            # deterministic-ish; override via set_seed command
@@ -78,6 +90,7 @@ func _ensure_input() -> void:
 		"upgrade_1": [KEY_1, KEY_KP_1],
 		"upgrade_2": [KEY_2, KEY_KP_2],
 		"upgrade_3": [KEY_3, KEY_KP_3],
+		"open_shop": [KEY_B],
 	}
 	for action in defaults.keys():
 		if not InputMap.has_action(action):
@@ -131,8 +144,36 @@ func _build_world() -> void:
 	upgrade_screen.picked.connect(_on_upgrade_picked)
 	add_child(upgrade_screen)
 
+	# Between-run PowerUp shop, opened from the game-over screen (key B). Spends banked
+	# meta-coins on permanent boosts; hidden until the run ends.
+	shop_screen = VSShopScreen.new()
+	add_child(shop_screen)
+
+	# Apply persisted PowerUps to this run's starting stats. Runs after the player exists
+	# (armor bumps max_health) but before any firing, so weapon_damage/interval land first.
+	_apply_meta_powerups()
+
 	adapter = preload("res://scripts/agent/agent_adapter.gd").new()
 	add_child(adapter)
+
+## Read permanent PowerUps bought in the shop and fold them into this run's starting stats.
+## Called once at run start so every run reflects the between-run meta-progression. Uses the
+## POWERUPS catalog's ids; unknown/zero levels are simply no-ops.
+func _apply_meta_powerups() -> void:
+	var levels := MetaSave.load_powerups()
+	var might := int(levels.get("might", 0))
+	if might > 0:
+		weapon_damage += 2.0 * might
+	var armor := int(levels.get("armor", 0))
+	if armor > 0 and player:
+		player.max_health += 20.0 * armor
+		player.health = player.max_health
+	var haste := int(levels.get("haste", 0))
+	if haste > 0:
+		weapon_fire_interval *= pow(0.95, haste)
+	var boots := int(levels.get("boots", 0))
+	if boots > 0:
+		player_speed_mult *= pow(1.05, boots)
 
 ## Repeating grass ground so the arena reads as a place — motion and position are
 ## legible against a textured field instead of flat gray (see FEEL-REVIEW). A single
@@ -355,7 +396,16 @@ func _on_player_died() -> void:
 	AgentBridge.emit_event("death", {"type": "player", "run_gold": gold, "meta_coins": meta_coins})
 
 func _unhandled_input(event: InputEvent) -> void:
-	if phase == "game_over" and event.is_action_pressed("ui_accept"):
+	if phase != "game_over":
+		return
+	# The shop swallows its own input while open; retry only fires from the bare
+	# game-over screen so Enter doesn't yank the player out mid-purchase.
+	if shop_screen and shop_screen.visible:
+		return
+	if event.is_action_pressed("open_shop"):
+		get_viewport().set_input_as_handled()
+		shop_screen.open()
+	elif event.is_action_pressed("ui_accept"):
 		get_tree().reload_current_scene()
 
 func reseed(value: int) -> void:

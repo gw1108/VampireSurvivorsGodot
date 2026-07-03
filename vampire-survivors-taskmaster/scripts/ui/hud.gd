@@ -70,7 +70,7 @@ func refresh(run: VSRun) -> void:
 		var secs := int(run.elapsed)
 		var mmss := "%d:%02d" % [secs / 60, secs % 60]
 		var banked := MetaSave.load_coins()
-		_over.text = "YOU DIED\n\nTime Survived  %s\nKills  %d\nLevel Reached  %d\nGold This Run  %d\nCoins Banked  %d\n\nPress Enter to retry" % [mmss, run.kills, run.level, run.gold, banked]
+		_over.text = "YOU DIED\n\nTime Survived  %s\nKills  %d\nLevel Reached  %d\nGold This Run  %d\nCoins Banked  %d\n\nPress B for the PowerUp shop\nPress Enter to retry" % [mmss, run.kills, run.level, run.gold, banked]
 
 ## Show each owned upgrade as an icon + "Lv N/max" row, ordered by VSRun.UPGRADE_POOL so
 ## the layout is stable as picks come in. Rebuilds only when the levels change (cheap
