@@ -198,7 +198,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		close()
 		return
 	for i in VSRun.POWERUPS.size():
-		if i < 3 and event.is_action_pressed("upgrade_%d" % (i + 1)):
+		var action := "upgrade_%d" % (i + 1)
+		if InputMap.has_action(action) and event.is_action_pressed(action):
 			get_viewport().set_input_as_handled()
 			_buy(i)
 			return

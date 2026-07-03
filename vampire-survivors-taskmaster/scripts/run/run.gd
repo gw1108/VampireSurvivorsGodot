@@ -147,6 +147,8 @@ func _ensure_input() -> void:
 		"upgrade_1": [KEY_1, KEY_KP_1],
 		"upgrade_2": [KEY_2, KEY_KP_2],
 		"upgrade_3": [KEY_3, KEY_KP_3],
+		"upgrade_4": [KEY_4, KEY_KP_4],
+		"upgrade_5": [KEY_5, KEY_KP_5],
 		"upgrade_reroll": [KEY_R],
 		"upgrade_skip": [KEY_F],
 		"open_shop": [KEY_B],
