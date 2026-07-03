@@ -41,6 +41,7 @@ const REAPER_DURATION := 15.0
 var reaper_active := false        # true once the Reaper has been summoned at the time limit
 var reaper_deadline := 0.0        # elapsed time at which surviving the Reaper wins the run
 var reaper_slain := false         # true if the player KILLED the Reaper (a kill-win) rather than outlasting it
+var reaper_enemy: VSEnemy         # the summoned Reaper node, so the HUD can show its boss health bar
 
 ## Orologion time-stop: while `elapsed < freeze_until` every enemy halts in place (see
 ## VSEnemy._process). Set by the Freeze Clock pickup (VSFrozenClock); measured in the run's
@@ -639,7 +640,7 @@ func _summon_reaper() -> void:
 	reaper_deadline = elapsed + REAPER_DURATION
 	add_camera_shake(1.0)   # the Reaper's arrival lands as the run's hardest jolt
 	if _spawner:
-		_spawner.spawn_reaper()
+		reaper_enemy = _spawner.spawn_reaper()   # keep the node so the HUD can bar its HP
 	AgentBridge.emit_event("reaper", {"deadline": reaper_deadline})
 
 ## Player outlasted RUN_DURATION — the run is WON. Freezes the world (every entity halts on

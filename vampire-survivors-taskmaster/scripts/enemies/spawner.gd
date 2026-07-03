@@ -92,8 +92,9 @@ func _spawn_wave(minute: int) -> void:
 
 ## Summon the finale Reaper on the spawn ring. Modeled on _spawn_elite (bypasses the
 ## enemy cap, tags its event) but injects the single, near-unkillable REAPER that VSRun
-## triggers at the survival time limit for the run's climactic last stand.
-func spawn_reaper() -> void:
+## triggers at the survival time limit for the run's climactic last stand. Returns the
+## node so the run can hand it to the HUD for the boss health bar.
+func spawn_reaper() -> VSEnemy:
 	var ang := randf() * TAU
 	var pos := run.player.position + Vector2(cos(ang), sin(ang)) * SPAWN_RING
 	pos.x = clampf(pos.x, -run.arena_half.x, run.arena_half.x)
@@ -108,6 +109,7 @@ func spawn_reaper() -> void:
 	# event, echoing the HUD 'THE REAPER COMES' banner.
 	VSReaperVignette.spawn(run)
 	AgentBridge.emit_event("spawn", {"type": "reaper", "pos": [pos.x, pos.y]})
+	return e
 
 ## Weighted enemy-type roll that introduces tougher archetypes as the run ramps.
 func _pick_type() -> int:

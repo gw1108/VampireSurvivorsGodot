@@ -10,6 +10,17 @@ var _reaper: Label
 var _slain: Label
 var _over: Label
 
+# Reaper boss health bar: a top-center crimson track that drains as the finale Reaper takes
+# damage, so the (celebrated) kill-win path reads as visible progress rather than a mystery.
+# Three stacked ColorRects — border, empty track, draining fill — shown only during the finale.
+var _boss_border: ColorRect
+var _boss_bg: ColorRect
+var _boss_fill: ColorRect
+const BOSS_BAR_W := 560.0
+const BOSS_BAR_H := 18.0
+const BOSS_BAR_X := 360.0    # centered under the "THE REAPER COMES" banner in the 1280-wide viewport
+const BOSS_BAR_Y := 116.0
+
 # Orologion freeze feedback: a full-screen icy vignette + centered "FROZEN n" countdown that
 # reads the run's time-stop (VSRun.is_frozen) so the breather is unmistakable. Purely cosmetic.
 var _freeze_vig: ColorRect
@@ -95,6 +106,29 @@ func _ready() -> void:
 	_slain.visible = false
 	add_child(_slain)
 
+	# Reaper boss health bar (top-center), hidden until the finale summons the Reaper. Added
+	# border -> track -> fill so the draining fill draws on top; driven each frame in _refresh_boss.
+	_boss_border = ColorRect.new()
+	_boss_border.color = Color(0, 0, 0, 0.75)
+	_boss_border.position = Vector2(BOSS_BAR_X - 3.0, BOSS_BAR_Y - 3.0)
+	_boss_border.size = Vector2(BOSS_BAR_W + 6.0, BOSS_BAR_H + 6.0)
+	_boss_border.visible = false
+	add_child(_boss_border)
+
+	_boss_bg = ColorRect.new()
+	_boss_bg.color = Color(0.18, 0.02, 0.02, 0.9)
+	_boss_bg.position = Vector2(BOSS_BAR_X, BOSS_BAR_Y)
+	_boss_bg.size = Vector2(BOSS_BAR_W, BOSS_BAR_H)
+	_boss_bg.visible = false
+	add_child(_boss_bg)
+
+	_boss_fill = ColorRect.new()
+	_boss_fill.color = Color(0.88, 0.14, 0.14)
+	_boss_fill.position = Vector2(BOSS_BAR_X, BOSS_BAR_Y)
+	_boss_fill.size = Vector2(BOSS_BAR_W, BOSS_BAR_H)
+	_boss_fill.visible = false
+	add_child(_boss_fill)
+
 	# Icy freeze vignette, stretched over the whole viewport and kept behind the HUD text.
 	# Starts invisible (strength 0) and is driven each frame from refresh() while frozen.
 	_freeze_vig = ColorRect.new()
@@ -154,6 +188,7 @@ func refresh(run: VSRun) -> void:
 	if in_finale:
 		var left := int(ceil(maxf(0.0, run.reaper_deadline - run.elapsed)))
 		_reaper.text = "THE REAPER COMES\nSURVIVE  %ds" % left
+	_refresh_boss(run)
 	var won := run.phase == "victory"
 	# The extra kill-win banner rides above the summary only when the Reaper was actually slain.
 	if _slain:
@@ -170,6 +205,24 @@ func refresh(run: VSRun) -> void:
 			heading = "YOU SLEW THE REAPER!" if run.reaper_slain else "YOU SURVIVED!"
 		_over.modulate = Color(1.0, 0.9, 0.4) if won else Color(1, 1, 1)
 		_over.text = "%s\n\nTime Survived  %s\nKills  %d\nLevel Reached  %d\nGold This Run  %d\nCoins Banked  %d\n\nPress B for the PowerUp shop\nPress Enter to retry" % [heading, _mmss(run.elapsed), run.kills, run.level, run.gold, banked]
+
+## Drive the Reaper boss health bar. Shown only while the finale Reaper is loose (summoned,
+## run still playing, node alive with HP left); the fill width tracks its health fraction so
+## the player can see the kill-win path advancing as they whittle the boss down. Once the Reaper
+## dies (node freed) or the run ends, the bar hides.
+func _refresh_boss(run: VSRun) -> void:
+	if _boss_fill == null:
+		return
+	var boss := run.reaper_enemy
+	var show := run.reaper_active and run.phase == "playing" \
+		and boss != null and is_instance_valid(boss) and boss.health > 0.0
+	_boss_border.visible = show
+	_boss_bg.visible = show
+	_boss_fill.visible = show
+	if not show:
+		return
+	var frac := clampf(boss.health / maxf(boss.max_health, 1.0), 0.0, 1.0)
+	_boss_fill.size = Vector2(BOSS_BAR_W * frac, BOSS_BAR_H)
 
 ## Drive the Orologion freeze feedback from the run's time-stop. While VSRun.is_frozen() the
 ## icy vignette and "FROZEN n" countdown show; the vignette's strength (and the label's fade)
