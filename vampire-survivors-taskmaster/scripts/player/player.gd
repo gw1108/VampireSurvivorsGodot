@@ -15,6 +15,13 @@ const RADIUS := 14.0
 const HIT_FLASH_DURATION := 0.12
 const HIT_FLASH_COLOR := Color(1.7, 0.35, 0.35)
 
+## Invulnerability frames: after a landed hit the player ignores all further contact damage
+## for a brief window (GDD "Damage, Crit, Knockback, I-Frames": base 240 ms). This is what
+## lets you tank *through* a crowd — without it, every enemy overlapping you the same instant
+## lands its hit independently (each enemy has its own contact cooldown), stacking damage and
+## deleting the player unfairly the moment the horde closes in. Ticks only while playing.
+const IFRAME_DURATION := 0.24
+
 ## Living-avatar motion: a brisk two-step bounce while walking and a slow breathe when standing.
 ## Both are a couple of pixels of vertical offset on the sprite alone (position untouched), driven
 ## off the run's own `elapsed` clock so they pause cleanly with the game during level-up.
@@ -34,6 +41,9 @@ var _sprite: Sprite2D
 var _facing := 1
 ## Remaining hit-flash time (s), counting down in _process; set by take_damage.
 var _flash_time := 0.0
+## Remaining invulnerability time (s), armed by a landed hit and counted down each playing
+## frame; while > 0 take_damage is a no-op so overlapping enemies can't stack simultaneous hits.
+var _iframe_time := 0.0
 
 func _ready() -> void:
 	add_to_group("player")
@@ -48,6 +58,10 @@ func _process(delta: float) -> void:
 	var run := get_parent() as VSRun
 	if run and run.phase != "playing":
 		return                       # freeze while the level-up screen is up
+	# Bleed off invulnerability only during live play, matching the enemy contact clocks that
+	# also halt on freeze, so a paused/level-up screen never silently burns the i-frame window.
+	if _iframe_time > 0.0:
+		_iframe_time = maxf(0.0, _iframe_time - delta)
 	var dir := Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	# Face the way we move: latch facing off the horizontal axis (unchanged on pure-vertical
 	# movement, so the avatar keeps its last heading) and mirror the sprite accordingly.
@@ -84,12 +98,18 @@ func _update_hit_flash(delta: float) -> void:
 func take_damage(amount: float) -> void:
 	if not alive:
 		return
+	# Invulnerability window: while a prior hit's i-frames are still up, ignore the hit entirely.
+	# This is the shared window VS uses so a wall of enemies overlapping you deals ONE hit, not one
+	# per body — the per-enemy contact cooldowns alone can't provide it.
+	if _iframe_time > 0.0:
+		return
 	# Armor passive subtracts flat damage, but at least 1 always gets through so armor can
 	# never make the player invulnerable (faithful to VS: chip damage still lands).
 	var run := get_parent() as VSRun
 	if run and run.armor > 0:
 		amount = maxf(1.0, amount - float(run.armor))
 	health -= amount
+	_iframe_time = IFRAME_DURATION
 	_flash_time = HIT_FLASH_DURATION
 	AgentBridge.emit_event("damage", {"amount": amount, "to": health})
 	damaged.emit(amount)
