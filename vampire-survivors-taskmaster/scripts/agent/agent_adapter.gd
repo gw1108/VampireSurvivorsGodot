@@ -57,6 +57,11 @@ func _actions(phase: String) -> Array:
 		var out: Array = []
 		for i in n:
 			out.append("upgrade_%d" % (i + 1))
+		# Build-agency actions: Skip is always legal on the picker; Reroll only with budget.
+		if game.upgrade_screen and is_instance_valid(game.upgrade_screen):
+			out.append("upgrade_skip")
+			if game.upgrade_screen.has_rerolls():
+				out.append("upgrade_reroll")
 		return out
 	return ["move_up", "move_down", "move_left", "move_right"]
 

@@ -9,6 +9,8 @@ extends CanvasLayer
 ## so this node processes input normally without touching get_tree().paused.
 
 signal picked(id: String)
+signal rerolled           ## player asked for a fresh hand (VSRun spends a reroll + re-presents)
+signal skipped            ## player waved off the level-up (VSRun resumes with no pick)
 
 ## Per-upgrade icon, mapped by option id. Weapon/passive sprites from
 ## SourceArt/extracted_clean (copied into res://art) so each choice reads at a glance:
@@ -31,6 +33,9 @@ const PANEL_TEX_SEL := "res://art/ui_panel_sel.png"  # highlighted (blue) for ho
 var _root: Control
 var _cards: VBoxContainer
 var _options: Array = []
+var _reroll_btn: Button
+var _skip_btn: Button
+var _rerolls_left := 0
 
 func _ready() -> void:
 	layer = 10                       # above the HUD
@@ -66,16 +71,54 @@ func _ready() -> void:
 	_cards.add_theme_constant_override("separation", 8)
 	col.add_child(_cards)
 
+	# Build-agency row: Reroll (limited, spends a per-run budget) and Skip (always available)
+	# so a weak hand is never forced. Buttons are small and sit under the cards; keys R / F
+	# drive them too (see _unhandled_input).
+	var actions := HBoxContainer.new()
+	actions.alignment = BoxContainer.ALIGNMENT_CENTER
+	actions.add_theme_constant_override("separation", 12)
+	col.add_child(actions)
+
+	_reroll_btn = Button.new()
+	_reroll_btn.custom_minimum_size = Vector2(220, 40)
+	_reroll_btn.pressed.connect(_on_reroll_pressed)
+	actions.add_child(_reroll_btn)
+
+	_skip_btn = Button.new()
+	_skip_btn.text = "Skip  [F]"
+	_skip_btn.custom_minimum_size = Vector2(160, 40)
+	_skip_btn.pressed.connect(_on_skip_pressed)
+	actions.add_child(_skip_btn)
+
 ## options: Array of { "id": String, "title": String, "desc": String }.
-func present(options: Array) -> void:
+## rerolls_left: remaining reroll budget; the Reroll button disables at 0.
+func present(options: Array, rerolls_left: int = 0) -> void:
 	_options = options
+	_rerolls_left = rerolls_left
 	for c in _cards.get_children():
 		c.queue_free()
 	for i in options.size():
 		_cards.add_child(_make_card(i, options[i]))
+	_refresh_action_buttons()
 	visible = true
 	if _cards.get_child_count() > 0:
 		(_cards.get_child(0) as Button).grab_focus()
+
+func _refresh_action_buttons() -> void:
+	_reroll_btn.text = "Reroll (%d)  [R]" % _rerolls_left
+	_reroll_btn.disabled = _rerolls_left <= 0
+
+func has_rerolls() -> bool:
+	return _rerolls_left > 0
+
+func _on_reroll_pressed() -> void:
+	if _rerolls_left <= 0:
+		return
+	rerolled.emit()
+
+func _on_skip_pressed() -> void:
+	visible = false
+	skipped.emit()
 
 ## Build one upgrade card: a Kenney panel Button with a number badge, weapon/passive
 ## icon, and title/description. Inner controls ignore the mouse so the whole card is
@@ -187,6 +230,15 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 			_choose(i)
 			return
+	if event.is_action_pressed("upgrade_reroll") and _rerolls_left > 0:
+		get_viewport().set_input_as_handled()
+		rerolled.emit()
+		return
+	if event.is_action_pressed("upgrade_skip"):
+		get_viewport().set_input_as_handled()
+		visible = false
+		skipped.emit()
+		return
 
 func _choose(index: int) -> void:
 	if index < 0 or index >= _options.size():

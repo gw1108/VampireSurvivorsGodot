@@ -72,6 +72,11 @@ var evolved := {}
 
 var _pending_levels := 0        # level-ups queued but not yet chosen (XP can span several)
 
+## Per-run reroll budget for the level-up picker (VS-style build agency). Each reroll
+## re-rolls the current hand via _roll_upgrades(); Skip is always free. Kept small so it's
+## a meaningful choice, not a slot machine.
+var rerolls_left := 3
+
 ## Discrete level per upgrade id (0 = never picked). Incremented on each pick and used
 ## to (a) cap upgrades at their `max` so the pool shrinks as things top out — no infinite
 ## single-stat stacking — and (b) show "Lv N → N+1" on the cards. Kept in lock-step with
@@ -139,6 +144,8 @@ func _ensure_input() -> void:
 		"upgrade_1": [KEY_1, KEY_KP_1],
 		"upgrade_2": [KEY_2, KEY_KP_2],
 		"upgrade_3": [KEY_3, KEY_KP_3],
+		"upgrade_reroll": [KEY_R],
+		"upgrade_skip": [KEY_F],
 		"open_shop": [KEY_B],
 	}
 	for action in defaults.keys():
@@ -203,6 +210,8 @@ func _build_world() -> void:
 
 	upgrade_screen = VSUpgradeScreen.new()
 	upgrade_screen.picked.connect(_on_upgrade_picked)
+	upgrade_screen.rerolled.connect(_on_upgrade_rerolled)
+	upgrade_screen.skipped.connect(_on_upgrade_skipped)
 	add_child(upgrade_screen)
 
 	# Between-run PowerUp shop, opened from the game-over screen (key B). Spends banked
@@ -525,7 +534,7 @@ func _open_level_up() -> void:
 			phase = "playing"
 		return
 	phase = "level_up"
-	upgrade_screen.present(options)
+	upgrade_screen.present(options, rerolls_left)
 
 ## Pick up to 3 distinct not-yet-maxed options, each annotated with its current level so
 ## the card can show "Lv N → N+1". Maxed upgrades are excluded so the pool shrinks over
@@ -573,6 +582,25 @@ func _upgrade_max(id: String) -> int:
 
 func _on_upgrade_picked(id: String) -> void:
 	_apply_upgrade(id)
+	_pending_levels -= 1
+	if _pending_levels > 0:
+		_open_level_up()
+	else:
+		phase = "playing"
+
+## Spend a reroll to re-roll the SAME level-up (the pending count is untouched), giving a
+## fresh hand from _roll_upgrades(). Guarded on budget so a stale signal can't overspend.
+func _on_upgrade_rerolled() -> void:
+	if rerolls_left <= 0:
+		return
+	rerolls_left -= 1
+	AgentBridge.emit_event("upgrade_reroll", {"rerolls_left": rerolls_left})
+	_open_level_up()
+
+## Wave off this level-up with no pick — resolves one pending level and resumes (or opens the
+## next queued level-up). Skip is always free; the run never soft-locks on a declined hand.
+func _on_upgrade_skipped() -> void:
+	AgentBridge.emit_event("upgrade_skip", {"level": level})
 	_pending_levels -= 1
 	if _pending_levels > 0:
 		_open_level_up()
