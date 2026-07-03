@@ -62,6 +62,7 @@ var weapon_count := 1
 var garlic_level := 0            # 0 = Garlic aura not yet chosen; each pick grows it
 var whip_level := 0              # 0 = Whip melee arc not yet chosen; each pick grows it
 var bible_level := 0             # 0 = King Bible orbit not yet chosen; each pick grows it
+var lightning_level := 0         # 0 = Lightning Ring not yet chosen; each pick grows it
 var bible_evolved := false       # true once King Bible -> Unholy Vespers (the weapon reads this)
 var whip_evolved := false        # true once Whip -> Bloody Tear (whip.gd reads this)
 var garlic_evolved := false      # true once Garlic -> Soul Eater (garlic.gd reads this)
@@ -98,6 +99,7 @@ const UPGRADE_POOL := [
 	{"id": "garlic", "title": "Garlic", "desc": "Damaging aura around you (grows each pick)", "max": 8},
 	{"id": "whip", "title": "Whip", "desc": "Melee arc lashing your facing side; both sides at Lv 2+", "max": 8},
 	{"id": "bible", "title": "King Bible", "desc": "Holy books orbit you, striking enemies they pass through", "max": 8},
+	{"id": "lightning", "title": "Lightning Ring", "desc": "Bolts smite random enemies across the field, splashing on impact", "max": 8},
 ]
 
 ## The signature VS mechanic: a weapon maxed to its UPGRADE_POOL `max` PLUS its paired
@@ -200,6 +202,13 @@ func _build_world() -> void:
 	bible.run = self
 	bible.z_index = 1
 	player.add_child(bible)
+
+	# Fifth weapon: the Lightning Ring — random-target smites across the field. Inert until
+	# lightning_level > 0 (a level-up pick). z_index above the player so its bolts read on top.
+	var lightning := VSLightning.new()
+	lightning.run = self
+	lightning.z_index = 1
+	player.add_child(lightning)
 
 	_spawner = VSSpawner.new()
 	_spawner.run = self
@@ -645,6 +654,8 @@ func _apply_upgrade(id: String) -> void:
 			whip_level += 1
 		"bible":
 			bible_level += 1
+		"lightning":
+			lightning_level += 1
 		"unholy_vespers":
 			# King Bible -> Unholy Vespers: flag the evolution so VSKingBible swaps to its
 			# boosted profile, and remember it so the card stops re-rolling.

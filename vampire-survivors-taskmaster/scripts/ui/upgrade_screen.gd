@@ -25,6 +25,7 @@ const ICONS := {
 	"garlic": "res://art/up_garlic.png",
 	"whip": "res://art/up_whip.png",
 	"bible": "res://art/up_bible.png",
+	"lightning": "res://art/up_lightning.png",
 	"unholy_vespers": "res://art/up_bible.png",   # King Bible evolution reuses the tome icon
 }
 const PANEL_TEX := "res://art/ui_panel.png"       # Kenney RPG panel (brown)
