@@ -49,6 +49,15 @@ func _provide() -> Dictionary:
 func _actions(phase: String) -> Array:
 	if phase == "game_over":
 		return ["ui_accept"]
+	if phase == "level_up":
+		# Only expose the choices actually on screen.
+		var n := 0
+		if game.upgrade_screen and is_instance_valid(game.upgrade_screen):
+			n = game.upgrade_screen.option_count()
+		var out: Array = []
+		for i in n:
+			out.append("upgrade_%d" % (i + 1))
+		return out
 	return ["move_up", "move_down", "move_left", "move_right"]
 
 func _entities() -> Array:

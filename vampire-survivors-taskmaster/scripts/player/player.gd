@@ -18,9 +18,12 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	if not alive:
 		return
-	var dir := Input.get_vector("move_left", "move_right", "move_up", "move_down")
-	position += dir * SPEED * delta
 	var run := get_parent() as VSRun
+	if run and run.phase != "playing":
+		return                       # freeze while the level-up screen is up
+	var dir := Input.get_vector("move_left", "move_right", "move_up", "move_down")
+	var speed_mult := run.player_speed_mult if run else 1.0
+	position += dir * SPEED * speed_mult * delta
 	if run:
 		position.x = clampf(position.x, -run.arena_half.x, run.arena_half.x)
 		position.y = clampf(position.y, -run.arena_half.y, run.arena_half.y)

@@ -1,10 +1,11 @@
 class_name VSWeapon
 extends Node2D
-## Auto-attacking weapon mounted on the player. On a timer it fires a projectile at the
-## nearest enemy in range. The core "you move, the weapon fights" Vampire Survivors loop.
+## Auto-attacking weapon mounted on the player. On a timer it fires at the nearest enemy
+## in range. The core "you move, the weapon fights" Vampire Survivors loop. Fire rate,
+## damage, and projectile count come from VSRun stats mutated by level-up upgrades.
 
-const FIRE_INTERVAL := 0.6
 const RANGE := 620.0
+const SPREAD := 0.14            # radians between extra multishot projectiles
 
 var run: VSRun
 var _cd := 0.0
@@ -17,7 +18,7 @@ func _process(delta: float) -> void:
 		var t := _nearest_enemy()
 		if t != null:
 			_fire_at(t)
-			_cd = FIRE_INTERVAL
+			_cd = run.weapon_fire_interval
 
 func _nearest_enemy() -> VSEnemy:
 	var best: VSEnemy = null
@@ -30,9 +31,15 @@ func _nearest_enemy() -> VSEnemy:
 	return best
 
 func _fire_at(t: VSEnemy) -> void:
-	var p := VSProjectile.new()
-	p.position = global_position
-	p.dir = (t.position - global_position).normalized()
-	p.run = run
-	run.add_child(p)
+	var base := (t.position - global_position).normalized()
+	var count: int = maxi(1, run.weapon_count)
+	# Fan extra multishot projectiles symmetrically around the aim direction.
+	for i in count:
+		var offset := (i - (count - 1) * 0.5) * SPREAD
+		var p := VSProjectile.new()
+		p.position = global_position
+		p.dir = base.rotated(offset)
+		p.damage = run.weapon_damage
+		p.run = run
+		run.add_child(p)
 	AgentBridge.emit_event("sfx_played", {"name": "shoot"})

@@ -14,7 +14,7 @@ func _ready() -> void:
 	add_to_group("gems")
 
 func _process(delta: float) -> void:
-	if run == null or run.player == null or not is_instance_valid(run.player):
+	if run == null or run.phase != "playing" or run.player == null or not is_instance_valid(run.player):
 		return
 	var pl := run.player
 	var to := pl.position - position
