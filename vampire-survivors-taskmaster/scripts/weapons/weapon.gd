@@ -39,7 +39,7 @@ func _fire_at(t: VSEnemy) -> void:
 		var p := VSProjectile.new()
 		p.position = global_position
 		p.dir = base.rotated(offset)
-		p.damage = run.weapon_damage
+		p.damage = run.weapon_damage * run.might_mult()
 		p.run = run
 		run.add_child(p)
 	AgentBridge.emit_event("sfx_played", {"name": "shoot"})

@@ -36,7 +36,7 @@ func _process(delta: float) -> void:
 ## Damage every enemy currently inside the aura. Damage scales with garlic level.
 func _pulse(lvl: int) -> void:
 	var r := _radius(lvl)
-	var dmg := float(lvl)
+	var dmg := float(lvl) * run.might_mult()
 	var hit_any := false
 	for e in get_tree().get_nodes_in_group("enemies"):
 		var er: float = e.radius if "radius" in e else VSEnemy.RADIUS

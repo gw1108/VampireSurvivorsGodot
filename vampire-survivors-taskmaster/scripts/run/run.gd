@@ -164,12 +164,35 @@ func _build_world() -> void:
 	shop_screen = VSShopScreen.new()
 	add_child(shop_screen)
 
+	# Establish the character (Antonio Belpaese) — his starting weapon (Whip) and initial
+	# stats — before meta-PowerUps stack on top and before any firing.
+	_init_character()
+
 	# Apply persisted PowerUps to this run's starting stats. Runs after the player exists
 	# (armor bumps max_health) but before any firing, so weapon_damage/interval land first.
 	_apply_meta_powerups()
 
 	adapter = preload("res://scripts/agent/agent_adapter.gd").new()
 	add_child(adapter)
+
+## Antonio Belpaese — the default (and currently only) playable character. Faithful to the
+## offline wiki: he begins wielding the Whip (his starting weapon) and with +20 Max Health
+## (120 total), and gains +10% Might (a global weapon-damage multiplier, see might_mult) every
+## 10 levels. Applied once at run start; upgrade_levels["whip"] is kept in lock-step with
+## whip_level so the HUD build panel and the level-up cap logic see the whip as owned at Lv 1.
+func _init_character() -> void:
+	whip_level = 1
+	upgrade_levels["whip"] = 1
+	if player:
+		player.max_health += 20.0
+		player.health = player.max_health
+
+## Antonio's signature Might scaling: +10% weapon Damage for every 10 character levels,
+## capped at +50% (reached at level 50), mirroring the wiki table (1-9 → x1.0, 10-19 → x1.1,
+## …, 50+ → x1.5). Every weapon multiplies its damage by this so a higher-level Antonio hits
+## harder across the board, not just via picked upgrades.
+func might_mult() -> float:
+	return 1.0 + 0.10 * float(clampi(level / 10, 0, 5))
 
 ## Read permanent PowerUps bought in the shop and fold them into this run's starting stats.
 ## Called once at run start so every run reflects the between-run meta-progression. Uses the

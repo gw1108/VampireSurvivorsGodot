@@ -50,7 +50,7 @@ func _swing(lvl: int) -> void:
 	_sweep = SWEEP_TIME
 	queue_redraw()
 	var r := _range(lvl)
-	var dmg := BASE_DAMAGE + DAMAGE_PER_LEVEL * float(lvl)
+	var dmg := (BASE_DAMAGE + DAMAGE_PER_LEVEL * float(lvl)) * run.might_mult()
 	var hit_any := false
 	for s in _sides():
 		var facing_vec := Vector2(s, 0)

@@ -65,7 +65,7 @@ func _position_books(count: int, lvl: int) -> void:
 ## Damage every enemy currently touching a book. Per-book world position is checked so
 ## hits track the orbit; the shared cooldown keeps a lingering enemy from draining per frame.
 func _strike(count: int, lvl: int) -> void:
-	var dmg := BASE_DAMAGE + DAMAGE_PER_LEVEL * float(lvl)
+	var dmg := (BASE_DAMAGE + DAMAGE_PER_LEVEL * float(lvl)) * run.might_mult()
 	var hit_any := false
 	for i in count:
 		var bp: Vector2 = _books[i].global_position
