@@ -54,6 +54,22 @@ func _spawn_elite() -> void:
 	run.add_child(e)
 	AgentBridge.emit_event("spawn", {"type": "elite", "pos": [pos.x, pos.y]})
 
+## Summon the finale Reaper on the spawn ring. Modeled on _spawn_elite (bypasses the
+## enemy cap, tags its event) but injects the single, near-unkillable REAPER that VSRun
+## triggers at the survival time limit for the run's climactic last stand.
+func spawn_reaper() -> void:
+	var ang := randf() * TAU
+	var pos := run.player.position + Vector2(cos(ang), sin(ang)) * SPAWN_RING
+	pos.x = clampf(pos.x, -run.arena_half.x, run.arena_half.x)
+	pos.y = clampf(pos.y, -run.arena_half.y, run.arena_half.y)
+	var e := VSEnemy.new()
+	e.type = VSEnemy.Type.REAPER
+	e.position = pos
+	e.run = run
+	e.target = run.player
+	run.add_child(e)
+	AgentBridge.emit_event("spawn", {"type": "reaper", "pos": [pos.x, pos.y]})
+
 ## Weighted enemy-type roll that introduces tougher archetypes as the run ramps.
 func _pick_type() -> int:
 	var t := run.elapsed

@@ -6,6 +6,7 @@ extends CanvasLayer
 var _stat: Label
 var _build: Label
 var _meta: Label
+var _reaper: Label
 var _over: Label
 
 # Active permanent PowerUps are fixed for the whole run (applied once at start), so we read
@@ -51,6 +52,17 @@ func _ready() -> void:
 	_loadout.offset_top = 10
 	add_child(_loadout)
 
+	# Finale banner: while the Reaper is loose (the last stand before victory), a crimson
+	# centered countdown so the timer flip reads as a climactic survive-check, not a silent win.
+	_reaper = Label.new()
+	_reaper.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_reaper.position = Vector2(300, 60)
+	_reaper.size = Vector2(400, 0)
+	_reaper.add_theme_font_size_override("font_size", 22)
+	_reaper.modulate = Color(1.0, 0.3, 0.32)
+	_reaper.visible = false
+	add_child(_reaper)
+
 	_over = Label.new()
 	_over.text = "YOU DIED\nPress Enter to retry"
 	_over.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -79,6 +91,12 @@ func refresh(run: VSRun) -> void:
 		_build.text += "    Whip Lv %d" % run.whip_level
 	_refresh_meta()
 	_refresh_loadout(run)
+	# Reaper finale countdown, live only during the last stand (Reaper summoned, run not yet won).
+	var in_finale := run.reaper_active and run.phase == "playing"
+	_reaper.visible = in_finale
+	if in_finale:
+		var left := int(ceil(maxf(0.0, run.reaper_deadline - run.elapsed)))
+		_reaper.text = "THE REAPER COMES\nSURVIVE  %ds" % left
 	var won := run.phase == "victory"
 	_over.visible = run.phase == "game_over" or won
 	if _over.visible:

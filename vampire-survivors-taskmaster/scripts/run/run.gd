@@ -14,6 +14,7 @@ var hud: VSHud
 var adapter: Node
 var upgrade_screen: VSUpgradeScreen
 var shop_screen: VSShopScreen
+var _spawner: VSSpawner
 var _cam: Camera2D
 
 # Camera screen-shake (trauma model). Impacts add trauma (0..1); it decays to 0 in
@@ -32,6 +33,13 @@ var elapsed := 0.0
 ## enemy HP/damage ramp cap (~6 min) so the late run is at its most dangerous right as the
 ## timer runs out. Named so it's the single knob to tune the run length.
 const RUN_DURATION := 300.0
+
+## The finale: rather than flipping straight to victory at RUN_DURATION, the run summons the
+## Reaper (VS's death-at-the-clock enemy) and the player must outlast it for this many extra
+## seconds before the win lands — a climactic last stand instead of a silent clock flip.
+const REAPER_DURATION := 15.0
+var reaper_active := false        # true once the Reaper has been summoned at the time limit
+var reaper_deadline := 0.0        # elapsed time at which surviving the Reaper wins the run
 var xp := 0
 var level := 1
 var gold := 0                   # run coins banked from coin pickups; seed of the VS meta-currency
@@ -174,9 +182,9 @@ func _build_world() -> void:
 	bible.z_index = 1
 	player.add_child(bible)
 
-	var spawner := VSSpawner.new()
-	spawner.run = self
-	add_child(spawner)
+	_spawner = VSSpawner.new()
+	_spawner.run = self
+	add_child(_spawner)
 
 	hud = VSHud.new()
 	add_child(hud)
@@ -259,7 +267,10 @@ func _process(delta: float) -> void:
 	frame_tick += 1
 	if phase == "playing":
 		elapsed += delta
-		if elapsed >= RUN_DURATION:
+		if not reaper_active:
+			if elapsed >= RUN_DURATION:
+				_summon_reaper()
+		elif elapsed >= reaper_deadline:
 			_on_victory()
 	_update_shake(delta)
 	if hud:
@@ -509,6 +520,20 @@ func _on_player_died() -> void:
 	# can only deposit once, never double-banking on repeated death signals.
 	var meta_coins := MetaSave.add_coins(gold)
 	AgentBridge.emit_event("death", {"type": "player", "run_gold": gold, "meta_coins": meta_coins})
+
+## Reached RUN_DURATION — summon the finale Reaper instead of winning outright. The run stays
+## in "playing" so the world keeps moving; surviving until reaper_deadline (REAPER_DURATION
+## seconds later) is what flips it to victory via _process. Guarded by reaper_active so it fires
+## exactly once, and only while still playing (a death at the buzzer must not raise the Reaper).
+func _summon_reaper() -> void:
+	if reaper_active or phase != "playing":
+		return
+	reaper_active = true
+	reaper_deadline = elapsed + REAPER_DURATION
+	add_camera_shake(1.0)   # the Reaper's arrival lands as the run's hardest jolt
+	if _spawner:
+		_spawner.spawn_reaper()
+	AgentBridge.emit_event("reaper", {"deadline": reaper_deadline})
 
 ## Player outlasted RUN_DURATION — the run is WON. Freezes the world (every entity halts on
 ## phase != "playing") and banks this run's coins into the meta purse exactly like death, so a

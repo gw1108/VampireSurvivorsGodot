@@ -22,7 +22,10 @@ const HEALTH_BAR_MIN_MAX_HEALTH := 40.0
 ## ELITE is a periodic mini-boss: a much larger sprite, far more health, a bigger
 ## contact hit, and a big XP payout to break up the wave rhythm. The spawner
 ## injects it on a timer rather than through the normal weighted roll.
-enum Type { BAT, ZOMBIE, SKELETON, GHOST, MUMMY, ELITE }
+## REAPER is the run's finale: at the survival time limit VSRun summons a single
+## fast, enormous-HP, huge-contact Reaper (VS's death-at-the-clock enemy) that the
+## player must outlast for the final ~15s dash to the win — not killed, survived.
+enum Type { BAT, ZOMBIE, SKELETON, GHOST, MUMMY, ELITE, REAPER }
 
 const TYPES := {
 	Type.BAT:      {"tex": "res://art/enemy_bat.png",      "speed": 62.0, "health": 3.0,   "damage": 8.0,  "xp": 1},
@@ -31,6 +34,7 @@ const TYPES := {
 	Type.GHOST:    {"tex": "res://art/enemy_ghost.png",    "speed": 78.0, "health": 2.0,   "damage": 7.0,  "xp": 1},
 	Type.MUMMY:    {"tex": "res://art/enemy_mummy.png",    "speed": 34.0, "health": 10.0,  "damage": 12.0, "xp": 3},
 	Type.ELITE:    {"tex": "res://art/enemy_elite.png",    "speed": 40.0, "health": 140.0, "damage": 20.0, "xp": 25, "scale": 2.0, "radius": 22.0, "gems": 5},
+	Type.REAPER:   {"tex": "res://art/enemy_reaper.png",   "speed": 130.0, "health": 600.0, "damage": 34.0, "xp": 60, "scale": 2.6, "radius": 30.0, "gems": 10},
 }
 
 var type: int = Type.BAT
@@ -139,9 +143,10 @@ func hit(amount: float, _from: Vector2) -> void:
 func _die() -> void:
 	_dying = true
 	if run:
-		run.add_kill(position, xp_value, gem_drops, type == Type.ELITE)
-		if type == Type.ELITE:
-			run.add_camera_shake(0.8)   # elite pop lands harder than a player hit
+		var big := type == Type.ELITE or type == Type.REAPER
+		run.add_kill(position, xp_value, gem_drops, big)
+		if big:
+			run.add_camera_shake(0.8)   # elite/reaper pop lands harder than a player hit
 	var tw := create_tween()
 	tw.tween_property(self, "scale", Vector2(base_scale * 1.4, base_scale * 1.4), 0.08)
 	tw.tween_property(self, "scale", Vector2.ZERO, 0.1)
