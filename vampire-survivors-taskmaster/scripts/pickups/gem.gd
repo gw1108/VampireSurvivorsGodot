@@ -9,6 +9,7 @@ const MAGNET := 95.0
 const MAGNET_SPEED := 240.0
 
 var run: VSRun
+var value := 1   # XP granted on pickup; scaled by the enemy that dropped it
 
 func _ready() -> void:
 	add_to_group("gems")
@@ -25,7 +26,7 @@ func _process(delta: float) -> void:
 	if d < MAGNET and d > 0.5:
 		position += to / d * MAGNET_SPEED * delta
 	if d < PICKUP + VSPlayer.RADIUS:
-		run.collect_xp(1)
+		run.collect_xp(value)
 		AgentBridge.emit_event("pickup", {"type": "xp"})
 		queue_free()
 		return

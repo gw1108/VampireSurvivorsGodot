@@ -12,17 +12,18 @@ const FLASH_DURATION := 0.1
 enum Type { BAT, ZOMBIE, SKELETON, GHOST, MUMMY }
 
 const TYPES := {
-	Type.BAT:      {"tex": "res://art/enemy_bat.png",      "speed": 62.0, "health": 3.0,  "damage": 8.0},
-	Type.ZOMBIE:   {"tex": "res://art/enemy_zombie.png",   "speed": 42.0, "health": 6.0,  "damage": 10.0},
-	Type.SKELETON: {"tex": "res://art/enemy_skeleton.png", "speed": 58.0, "health": 4.0,  "damage": 9.0},
-	Type.GHOST:    {"tex": "res://art/enemy_ghost.png",    "speed": 78.0, "health": 2.0,  "damage": 7.0},
-	Type.MUMMY:    {"tex": "res://art/enemy_mummy.png",    "speed": 34.0, "health": 10.0, "damage": 12.0},
+	Type.BAT:      {"tex": "res://art/enemy_bat.png",      "speed": 62.0, "health": 3.0,  "damage": 8.0,  "xp": 1},
+	Type.ZOMBIE:   {"tex": "res://art/enemy_zombie.png",   "speed": 42.0, "health": 6.0,  "damage": 10.0, "xp": 2},
+	Type.SKELETON: {"tex": "res://art/enemy_skeleton.png", "speed": 58.0, "health": 4.0,  "damage": 9.0,  "xp": 2},
+	Type.GHOST:    {"tex": "res://art/enemy_ghost.png",    "speed": 78.0, "health": 2.0,  "damage": 7.0,  "xp": 1},
+	Type.MUMMY:    {"tex": "res://art/enemy_mummy.png",    "speed": 34.0, "health": 10.0, "damage": 12.0, "xp": 3},
 }
 
 var type: int = Type.BAT
 var speed := 62.0
 var health := 3.0
 var contact_damage := 8.0
+var xp_value := 1
 var run: VSRun
 var target: VSPlayer
 var _contact_cd := 0.0
@@ -37,6 +38,7 @@ func _ready() -> void:
 	speed = cfg["speed"]
 	health = cfg["health"]
 	contact_damage = cfg["damage"]
+	xp_value = cfg["xp"]
 	_sprite = Sprite2D.new()
 	_sprite.texture = load(cfg["tex"])
 	add_child(_sprite)
@@ -72,7 +74,7 @@ func hit(amount: float, _from: Vector2) -> void:
 func _die() -> void:
 	_dying = true
 	if run:
-		run.add_kill(position)
+		run.add_kill(position, xp_value)
 	var tw := create_tween()
 	tw.tween_property(self, "scale", Vector2(1.4, 1.4), 0.08)
 	tw.tween_property(self, "scale", Vector2.ZERO, 0.1)

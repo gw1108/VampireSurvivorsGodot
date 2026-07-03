@@ -100,15 +100,16 @@ func _process(delta: float) -> void:
 	if hud:
 		hud.refresh(self)
 
-func add_kill(at: Vector2) -> void:
+func add_kill(at: Vector2, xp_value: int = 1) -> void:
 	kills += 1
 	AgentBridge.emit_event("despawn", {"type": "enemy", "pos": [at.x, at.y]})
-	_spawn_gem(at)
+	_spawn_gem(at, xp_value)
 
-func _spawn_gem(at: Vector2) -> void:
+func _spawn_gem(at: Vector2, xp_value: int = 1) -> void:
 	var g := VSGem.new()
 	g.position = at
 	g.run = self
+	g.value = xp_value
 	add_child(g)
 
 func collect_xp(amount: int) -> void:
