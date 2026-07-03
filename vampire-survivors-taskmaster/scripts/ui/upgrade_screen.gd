@@ -52,6 +52,12 @@ var _rerolls_left := 0
 ## current build while weighing a pick; the rail restores that readout. Populated in present().
 var _rail_panel: PanelContainer
 var _rail_body: VBoxContainer
+## Live run kept from present() so a card's focus/hover can re-render the rail with a
+## before -> after preview of that pick's impact (the picker's dim hides the HUD readout).
+var _run: VSRun
+## Id of the currently keyboard-focused card; the rail falls back to previewing this when the
+## mouse leaves a hovered card, so the readout tracks the pick you're actually about to commit.
+var _focused_id := ""
 
 func _ready() -> void:
 	layer = 10                       # above the HUD
@@ -128,6 +134,8 @@ func _ready() -> void:
 func present(options: Array, rerolls_left: int = 0, run: VSRun = null) -> void:
 	_options = options
 	_rerolls_left = rerolls_left
+	_run = run
+	_focused_id = ""
 	for c in _cards.get_children():
 		c.queue_free()
 	for i in options.size():
@@ -141,7 +149,10 @@ func present(options: Array, rerolls_left: int = 0, run: VSRun = null) -> void:
 ## Populate the left build rail from the run's live stats and owned upgrades — the GDD's
 ## "full live stat readout and inventory grid" beside the choices. Hidden when no run is passed
 ## (backward-compatible callers). Rebuilt each present() so it always reflects the latest picks.
-func _refresh_stat_rail(run: VSRun) -> void:
+## preview_id: an upgrade option id (or "") — when set, the rail line(s) that pick would change
+## render "before -> after" and highlight, so the impact reads before you commit (driven by card
+## focus/hover). The preview map is keyed by the exact rail-line/item label it affects.
+func _refresh_stat_rail(run: VSRun, preview_id := "") -> void:
 	if _rail_panel == null:
 		return
 	if run == null:
@@ -150,23 +161,24 @@ func _refresh_stat_rail(run: VSRun) -> void:
 	_rail_panel.visible = true
 	for c in _rail_body.get_children():
 		c.queue_free()
+	var pv := _compute_preview(run, preview_id) if preview_id != "" else {}
 	_add_rail_header("YOUR BUILD")
 	var hp := 0
 	var mhp := 0
 	if run.player:
 		hp = int(ceil(run.player.health))
 		mhp = int(round(run.player.max_health))
-	_add_rail_line("HP", "%d/%d" % [hp, mhp])
-	_add_rail_line("Damage", "%.0f" % run.weapon_damage)
+	_add_rail_line("HP", "%d/%d" % [hp, mhp], pv.get("HP", ""))
+	_add_rail_line("Damage", "%.0f" % run.weapon_damage, pv.get("Damage", ""))
 	var rate := 1.0 / run.weapon_fire_interval if run.weapon_fire_interval > 0.0 else 0.0
-	_add_rail_line("Fire Rate", "%.2f/s" % rate)
-	_add_rail_line("Move Speed", "%d%%" % int(round(run.player_speed_mult * 100.0)))
-	_add_rail_line("Shots", "%d" % run.weapon_count)
-	_add_rail_line("Area", "%d%%" % int(round(run.area_mult * 100.0)))
-	_add_rail_line("Proj Speed", "%d%%" % int(round(run.projectile_speed_mult * 100.0)))
-	_add_rail_line("Pickup", "%d%%" % int(round(run.pickup_range_mult * 100.0)))
-	_add_rail_line("XP Gain", "%d%%" % int(round(run.xp_gain_mult * 100.0)))
-	_add_rail_line("Armor", "%d" % run.armor)
+	_add_rail_line("Fire Rate", "%.2f/s" % rate, pv.get("Fire Rate", ""))
+	_add_rail_line("Move Speed", "%d%%" % int(round(run.player_speed_mult * 100.0)), pv.get("Move Speed", ""))
+	_add_rail_line("Shots", "%d" % run.weapon_count, pv.get("Shots", ""))
+	_add_rail_line("Area", "%d%%" % int(round(run.area_mult * 100.0)), pv.get("Area", ""))
+	_add_rail_line("Proj Speed", "%d%%" % int(round(run.projectile_speed_mult * 100.0)), pv.get("Proj Speed", ""))
+	_add_rail_line("Pickup", "%d%%" % int(round(run.pickup_range_mult * 100.0)), pv.get("Pickup", ""))
+	_add_rail_line("XP Gain", "%d%%" % int(round(run.xp_gain_mult * 100.0)), pv.get("XP Gain", ""))
+	_add_rail_line("Armor", "%d" % run.armor, pv.get("Armor", ""))
 	_add_rail_line("Might", "%d%%" % int(round(run.might_mult() * 100.0)))
 	# Owned inventory, in UPGRADE_POOL order so the list stays stable as picks come in.
 	var owned := 0
@@ -176,7 +188,47 @@ func _refresh_stat_rail(run: VSRun) -> void:
 			if owned == 0:
 				_add_rail_header("ITEMS")
 			owned += 1
-			_add_rail_line(str(opt["title"]), "Lv %d" % lvl)
+			_add_rail_line(str(opt["title"]), "Lv %d" % lvl, pv.get(str(opt["title"]), ""))
+
+## Map an upgrade option id to the rail line(s) it would change, keyed by the exact label the
+## rail renders, valued with the "after" string in that line's own format. Mirrors _apply_upgrade
+## in run.gd (+1 damage, x0.85 fire interval, x1.12 speed, ...) — keep the two in sync. Weapons/
+## passives also bump their ITEMS "Lv N" line. Returns {} for ids with no rail impact.
+func _compute_preview(run: VSRun, id: String) -> Dictionary:
+	var out := {}
+	match id:
+		"damage":
+			out["Damage"] = "%.0f" % (run.weapon_damage + 1.0)
+		"firerate":
+			var ni := maxf(0.12, run.weapon_fire_interval * 0.85)
+			out["Fire Rate"] = "%.2f/s" % (1.0 / ni if ni > 0.0 else 0.0)
+		"speed":
+			out["Move Speed"] = "%d%%" % int(round(run.player_speed_mult * 1.12 * 100.0))
+		"health":
+			var mhp := 0.0
+			var hp := 0.0
+			if run.player:
+				mhp = run.player.max_health + 20.0
+				hp = minf(mhp, run.player.health + 20.0)
+			out["HP"] = "%d/%d" % [int(ceil(hp)), int(round(mhp))]
+		"multishot":
+			out["Shots"] = "%d" % (run.weapon_count + 1)
+		"area":
+			out["Area"] = "%d%%" % int(round(run.area_mult * 1.10 * 100.0))
+		"projspeed":
+			out["Proj Speed"] = "%d%%" % int(round(run.projectile_speed_mult * 1.15 * 100.0))
+		"attract":
+			out["Pickup"] = "%d%%" % int(round(run.pickup_range_mult * 1.30 * 100.0))
+		"growth":
+			out["XP Gain"] = "%d%%" % int(round(run.xp_gain_mult * 1.08 * 100.0))
+		"armor":
+			out["Armor"] = "%d" % (run.armor + 1)
+	# Owned weapons/passives also advance their ITEMS "Lv N" line (only rendered when owned).
+	for opt in VSRun.UPGRADE_POOL:
+		if str(opt["id"]) == id:
+			var lvl: int = run.upgrade_levels.get(id, 0)
+			out[str(opt["title"])] = "Lv %d" % (lvl + 1)
+	return out
 
 ## A dim section header row for the build rail (e.g. "YOUR BUILD", "ITEMS"), with a little
 ## top padding on any header after the first so the sections read apart.
@@ -194,8 +246,11 @@ func _add_rail_header(text: String) -> void:
 	_rail_body.add_child(head)
 
 ## One name/value row on the build rail: the label left, the value right-aligned so the
-## column of numbers reads cleanly.
-func _add_rail_line(name: String, value: String) -> void:
+## column of numbers reads cleanly. When `after` is a non-empty value different from the
+## current one, the row renders "before -> after" and turns green to flag the focused/hovered
+## pick's impact on that stat.
+func _add_rail_line(name: String, value: String, after := "") -> void:
+	var changed := after != "" and after != value
 	var row := HBoxContainer.new()
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var name_lbl := Label.new()
@@ -203,12 +258,14 @@ func _add_rail_line(name: String, value: String) -> void:
 	name_lbl.add_theme_font_size_override("font_size", 13)
 	name_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	name_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	if changed:
+		name_lbl.modulate = Color(0.55, 1.0, 0.55)
 	row.add_child(name_lbl)
 	var val_lbl := Label.new()
-	val_lbl.text = value
+	val_lbl.text = "%s → %s" % [value, after] if changed else value
 	val_lbl.add_theme_font_size_override("font_size", 13)
 	val_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	val_lbl.modulate = Color(0.85, 0.92, 1.0)
+	val_lbl.modulate = Color(0.55, 1.0, 0.55) if changed else Color(0.85, 0.92, 1.0)
 	val_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_child(val_lbl)
 	_rail_body.add_child(row)
@@ -229,6 +286,25 @@ func _on_skip_pressed() -> void:
 	visible = false
 	skipped.emit()
 
+## Keyboard focus landed on card `index` — make it the sticky preview (restored when a
+## hovered card is left) and re-render the rail with this pick's before -> after.
+func _on_card_focus(index: int) -> void:
+	_focused_id = _option_id(index)
+	_refresh_stat_rail(_run, _focused_id)
+
+## Mouse hovered card `index` — preview it without disturbing the focused card.
+func _on_card_hover(index: int) -> void:
+	_refresh_stat_rail(_run, _option_id(index))
+
+## Mouse left a hovered card — fall back to previewing the keyboard-focused card.
+func _on_card_unhover() -> void:
+	_refresh_stat_rail(_run, _focused_id)
+
+func _option_id(index: int) -> String:
+	if index < 0 or index >= _options.size():
+		return ""
+	return str(_options[index].get("id", ""))
+
 ## Build one upgrade card: a Kenney panel Button with a number badge, weapon/passive
 ## icon, and title/description. Inner controls ignore the mouse so the whole card is
 ## the click target and keyboard focus still highlights the selection.
@@ -243,6 +319,11 @@ func _make_card(index: int, opt: Dictionary) -> Button:
 	card.add_theme_stylebox_override("pressed", _panel_style(true, is_evo))
 	card.add_theme_stylebox_override("focus", _panel_style(true, is_evo))
 	card.pressed.connect(_choose.bind(index))
+	# Drive the rail's before -> after preview from this card: keyboard focus sets the sticky
+	# preview, mouse hover overrides it, and leaving the hover falls back to the focused card.
+	card.focus_entered.connect(_on_card_focus.bind(index))
+	card.mouse_entered.connect(_on_card_hover.bind(index))
+	card.mouse_exited.connect(_on_card_unhover)
 
 	var margin := MarginContainer.new()
 	margin.set_anchors_preset(Control.PRESET_FULL_RECT)
