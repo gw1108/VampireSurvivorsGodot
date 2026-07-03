@@ -41,4 +41,6 @@ func refresh(run: VSRun) -> void:
 	var fire_rate := 1.0 / run.weapon_fire_interval if run.weapon_fire_interval > 0.0 else 0.0
 	var move_speed := int(round(VSPlayer.SPEED * run.player_speed_mult))
 	_build.text = "DMG %.0f    Rate %.2f/s    Speed %d    Shots %d" % [run.weapon_damage, fire_rate, move_speed, run.weapon_count]
+	if run.garlic_level > 0:
+		_build.text += "    Garlic Lv %d" % run.garlic_level
 	_over.visible = run.phase == "game_over"

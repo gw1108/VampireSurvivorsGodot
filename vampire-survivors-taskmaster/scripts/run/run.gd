@@ -28,6 +28,7 @@ var player_speed_mult := 1.0
 var weapon_damage := 2.0
 var weapon_fire_interval := 0.6
 var weapon_count := 1
+var garlic_level := 0            # 0 = Garlic aura not yet chosen; each pick grows it
 
 var _pending_levels := 0        # level-ups queued but not yet chosen (XP can span several)
 
@@ -38,6 +39,7 @@ const UPGRADE_POOL := [
 	{"id": "speed", "title": "Swift Boots", "desc": "+12% move speed"},
 	{"id": "health", "title": "Vitality", "desc": "+20 max HP, heal 20"},
 	{"id": "multishot", "title": "Multishot", "desc": "+1 projectile"},
+	{"id": "garlic", "title": "Garlic", "desc": "Damaging aura around you (grows each pick)"},
 ]
 
 func _ready() -> void:
@@ -78,6 +80,13 @@ func _build_world() -> void:
 	var weapon := VSWeapon.new()
 	weapon.run = self
 	player.add_child(weapon)
+
+	# Second weapon: the Garlic aura. Inert until garlic_level > 0 (a level-up pick).
+	# z_index below the player sprite so the aura reads as ground-level, under enemies.
+	var garlic := VSGarlic.new()
+	garlic.run = self
+	garlic.z_index = -1
+	player.add_child(garlic)
 
 	var spawner := VSSpawner.new()
 	spawner.run = self
@@ -172,6 +181,8 @@ func _apply_upgrade(id: String) -> void:
 				player.health = minf(player.max_health, player.health + 20.0)
 		"multishot":
 			weapon_count += 1
+		"garlic":
+			garlic_level += 1
 	AgentBridge.emit_event("upgrade_chosen", {"id": id, "level": level})
 
 func _on_player_died() -> void:
