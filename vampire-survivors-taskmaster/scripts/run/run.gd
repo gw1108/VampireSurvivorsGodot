@@ -77,6 +77,7 @@ var garlic_evolved := false      # true once Garlic -> Soul Eater (garlic.gd rea
 var projectile_evolved := false  # true once Magic Wand -> Holy Wand (weapon.gd reads this)
 var knife_evolved := false       # true once Knife -> Thousand Edges (knife.gd reads this)
 var fire_wand_evolved := false   # true once Fire Wand -> Hellfire (fire_wand.gd reads this)
+var lightning_evolved := false   # true once Lightning Ring -> Thunder Loop (lightning.gd reads this)
 
 ## Evolution ids already claimed this run, so _roll_upgrades stops re-offering a done evolution.
 var evolved := {}
@@ -138,6 +139,7 @@ const EVOLUTIONS := [
 	{"id": "holy_wand", "title": "Holy Wand", "desc": "Magic Wand EVOLVED — a relentless storm of extra bolts that pierce the horde", "weapon": "multishot", "passive": "firerate"},
 	{"id": "thousand_edges", "title": "Thousand Edges", "desc": "Knife EVOLVED — a near-continuous stream of blades, more per throw, far deadlier", "weapon": "knife", "passive": "firerate"},
 	{"id": "hellfire", "title": "Hellfire", "desc": "Fire Wand EVOLVED — a piercing fireball that tears straight through the horde, no longer stopping to detonate", "weapon": "fire_wand", "passive": "damage"},
+	{"id": "thunder_loop", "title": "Thunder Loop", "desc": "Lightning Ring EVOLVED — more bolts, a wider blast, and every strike re-cracks a second time for double the smiting", "weapon": "lightning", "passive": "projspeed"},
 ]
 
 ## Permanent, between-run PowerUps bought in the shop with banked meta-coins. Each level
@@ -818,6 +820,11 @@ func _apply_upgrade(id: String) -> void:
 			# Fire Wand -> Hellfire: VSFireWand reads fire_wand_evolved for its boosted,
 			# piercing profile.
 			fire_wand_evolved = true
+			evolved[id] = true
+		"thunder_loop":
+			# Lightning Ring -> Thunder Loop: VSLightning reads lightning_evolved for its
+			# boosted profile (more bolts, wider splash, a re-strike per bolt).
+			lightning_evolved = true
 			evolved[id] = true
 	AgentBridge.emit_event("upgrade_chosen", {"id": id, "level": level})
 

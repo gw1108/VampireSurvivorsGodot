@@ -14,6 +14,9 @@ const BASE_DAMAGE := 10.0
 const DAMAGE_PER_LEVEL := 5.0        # Lv1 = 15 (wiki base), Lv8 = 50 — a hard, bursty hit
 const BASE_STRIKES := 2              # bolts per volley (wiki Amount 2)…
 const MAX_STRIKES := 6              # …growing by one every three levels, capped here
+const EVO_BONUS_STRIKES := 3        # Thunder Loop rains extra bolts on top of the level count…
+const EVO_MAX_STRIKES := 10         # …raising the per-volley cap so a maxed evolved ring saturates
+const EVO_SPLASH_MULT := 1.6        # Thunder Loop's blast is wider than the base ring's
 const STRIKE_RADIUS := 46.0          # AoE splash around each bolt's impact
 const BASE_INTERVAL := 4.5           # wiki cooldown; shrinks a little per level so it keeps pace
 const INTERVAL_PER_LEVEL := 0.3
@@ -57,8 +60,11 @@ func _interval(lvl: int) -> float:
 	return maxf(MIN_INTERVAL, BASE_INTERVAL - INTERVAL_PER_LEVEL * float(lvl - 1))
 
 ## Bolts per volley: base two, plus one for every three levels, capped so a maxed ring rains
-## a satisfying cluster without smiting the entire screen for free.
+## a satisfying cluster without smiting the entire screen for free. Thunder Loop (evolved) adds
+## a flat bonus and lifts the cap so the whole horde lights up.
 func _strike_count(lvl: int) -> int:
+	if run != null and run.lightning_evolved:
+		return clampi(BASE_STRIKES + lvl / 3 + EVO_BONUS_STRIKES, BASE_STRIKES, EVO_MAX_STRIKES)
 	return clampi(BASE_STRIKES + lvl / 3, BASE_STRIKES, MAX_STRIKES)
 
 ## One volley: pick a random subset of in-range enemies and smite each, splashing every enemy
@@ -75,8 +81,14 @@ func _strike(lvl: int) -> void:
 	if targets.is_empty():
 		return
 	targets.shuffle()
+	var evolved: bool = run.lightning_evolved
 	var dmg := (BASE_DAMAGE + DAMAGE_PER_LEVEL * float(lvl)) * run.might_mult()
 	var splash := STRIKE_RADIUS * run.area_mult   # Candelabrador passive widens each bolt's splash
+	if evolved:
+		splash *= EVO_SPLASH_MULT                 # Thunder Loop's blast reaches wider
+	# Thunder Loop re-cracks each bolt: every impact lands its damage twice, so a maxed evolved
+	# ring smites each point for double the base ring's toll.
+	var strikes_per_bolt := 2 if evolved else 1
 	var n := mini(_strike_count(lvl), targets.size())
 	var hit_any := false
 	for i in n:
@@ -86,7 +98,8 @@ func _strike(lvl: int) -> void:
 				continue
 			var er: float = other.radius if "radius" in other else VSEnemy.RADIUS
 			if (other.position - at).length() <= splash + er:
-				other.hit(dmg, at)
+				for _s in strikes_per_bolt:
+					other.hit(dmg, at)
 				hit_any = true
 		_bolts.append({"pos": at - global_position, "t": FLASH_TIME})
 	if hit_any:
@@ -110,5 +123,8 @@ func _draw() -> void:
 			# Deterministic zigzag (no RNG in _draw so the bolt doesn't jitter each frame).
 			var jitter := 0.0 if i == 0 or i == segs else sin(f * 23.0 + p.x * 0.5) * 12.0
 			pts.append(base + Vector2(jitter, 0.0))
+		var glow := STRIKE_RADIUS * run.area_mult
+		if run.lightning_evolved:
+			glow *= EVO_SPLASH_MULT   # match the wider Thunder Loop blast the damage now covers
 		draw_polyline(pts, Color(BOLT_COLOR.r, BOLT_COLOR.g, BOLT_COLOR.b, frac), 2.5)
-		draw_circle(p, STRIKE_RADIUS * run.area_mult * (0.45 + 0.55 * frac), Color(GLOW_COLOR.r, GLOW_COLOR.g, GLOW_COLOR.b, 0.5 * frac))
+		draw_circle(p, glow * (0.45 + 0.55 * frac), Color(GLOW_COLOR.r, GLOW_COLOR.g, GLOW_COLOR.b, 0.5 * frac))
