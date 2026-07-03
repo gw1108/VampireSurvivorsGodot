@@ -43,6 +43,11 @@ const TYPES := {
 ## scales it (heavy ELITE/REAPER barely budge, staying the relentless threat they should be).
 const KNOCKBACK_IMPULSE := 230.0   # px/s velocity added on a normal-weight enemy hit
 const KNOCKBACK_DECAY := 1500.0    # px/s^2 the impulse bleeds off — stops in ~0.15s
+## Hit-stop: on a weapon hit the enemy freezes in place for a sliver of a second (a couple of
+## frames at 60fps) before resuming its march, so each impact reads as a weighty CRUNCH rather
+## than a frictionless nudge — the classic freeze-frame juice, complementing knockback. Kept
+## tiny so it's felt, not seen as a stutter, even when an AoE sweep freezes a whole pack at once.
+const HITSTOP_DURATION := 0.045    # seconds the enemy holds on hit — ~2-3 frames
 
 var type: int = Type.BAT
 var speed := 62.0
@@ -60,6 +65,8 @@ var gem_drops := 1
 var knock_resist := 1.0
 ## Current knockback velocity (px/s), decaying to zero in _process; set by hit().
 var _knockback := Vector2.ZERO
+## Remaining hit-stop freeze time (s), counting down in _process; set by hit().
+var _hitstop := 0.0
 var run: VSRun
 var target: VSPlayer
 var _contact_cd := 0.0
@@ -113,6 +120,17 @@ func _process(delta: float) -> void:
 		return
 	elif _flash_time <= 0.0 and _sprite and _sprite.modulate != Color(1, 1, 1):
 		_sprite.modulate = Color(1, 1, 1)   # clear any lingering freeze tint once thawed
+	# Hit-stop: a freshly-struck enemy holds in place for a couple of frames before resuming, so
+	# the impact lands with weight. While it's active it costs no ground, no knockback decay and
+	# no contact. It absorbs only its own slice of the frame's delta — if the freeze ends partway
+	# through a frame the leftover time still drives movement, so long frames never lose motion
+	# (and the knockback test's single big _process step still advances the enemy).
+	if _hitstop > 0.0:
+		if _hitstop >= delta:
+			_hitstop -= delta
+			return
+		delta -= _hitstop
+		_hitstop = 0.0
 	var to := target.position - position
 	var d := to.length()
 	var desired := to / d if d > 0.5 else Vector2.ZERO
@@ -156,6 +174,11 @@ func hit(amount: float, from: Vector2) -> void:
 	health -= amount
 	_flash_time = FLASH_DURATION
 	_update_flash()
+	# Freeze-frame juice: hold the enemy for a couple of frames so the hit reads as a real crunch.
+	# Skipped during an Orologion time-stop — enemies are already halted, so a hit-stop would be
+	# invisible and could linger a beat past the thaw.
+	if not (run and run.is_frozen()):
+		_hitstop = HITSTOP_DURATION
 	# Shove away from the hit source, scaled by this enemy's knockback resistance so
 	# heavy mini-bosses barely flinch. Impulses stack (rapid hits push harder) but decay
 	# fast in _process. A dead-centre hit (from == position) has no direction, so no shove.
