@@ -65,9 +65,12 @@ func refresh(run: VSRun) -> void:
 	_over.visible = run.phase == "game_over"
 	if _over.visible:
 		# Run summary: give the death some closure by showing what the run achieved.
+		# The run's gold was banked into the persisted purse in VSRun._on_player_died
+		# before this refresh, so MetaSave.load_coins() reflects the post-deposit total.
 		var secs := int(run.elapsed)
 		var mmss := "%d:%02d" % [secs / 60, secs % 60]
-		_over.text = "YOU DIED\n\nTime Survived  %s\nKills  %d\nLevel Reached  %d\n\nPress Enter to retry" % [mmss, run.kills, run.level]
+		var banked := MetaSave.load_coins()
+		_over.text = "YOU DIED\n\nTime Survived  %s\nKills  %d\nLevel Reached  %d\nGold This Run  %d\nCoins Banked  %d\n\nPress Enter to retry" % [mmss, run.kills, run.level, run.gold, banked]
 
 ## Show each owned upgrade as an icon + "Lv N/max" row, ordered by VSRun.UPGRADE_POOL so
 ## the layout is stable as picks come in. Rebuilds only when the levels change (cheap
