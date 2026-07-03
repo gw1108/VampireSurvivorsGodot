@@ -499,6 +499,33 @@ func open_chest(at: Vector2) -> void:
 	if hud:
 		hud.show_chest_reveal(titles, gold_award)
 	AgentBridge.emit_event("chest_open", {"items": granted, "gold": gold_award})
+	_maybe_drop_chest_consumable(at)
+
+## Occasionally have an opened chest also cough up a consumable power-up — the Nduja berserk,
+## the Rosary screen-clear, or the Orologion freeze — so chests hand out temporary run-swinging
+## treats, not just permanent upgrades and gold. Kept to a small chance (~15%) so it stays a
+## lucky surprise; when it fires it picks one of the three treats at random. Spawned at the
+## player (the chest's own position, where they're standing) so it's grabbed almost instantly.
+func _maybe_drop_chest_consumable(at: Vector2) -> void:
+	if randf() >= 0.15:
+		return
+	var here := player.position if (player != null and is_instance_valid(player)) else at
+	var node: Node2D
+	var kind: String
+	match randi() % 3:
+		0:
+			node = VSNduja.new()
+			kind = "nduja"
+		1:
+			node = VSRosary.new()
+			kind = "rosary"
+		_:
+			node = VSFrozenClock.new()
+			kind = "frozen_clock"
+	node.position = here
+	node.set("run", self)
+	add_child(node)
+	AgentBridge.emit_event("spawn", {"type": kind, "pos": [here.x, here.y]})
 
 ## Pick a random upgrade id that hasn't hit its cap yet (weapons, passives — never evolutions,
 ## which live outside UPGRADE_POOL). Returns "" when everything is maxed so open_chest pays gold.
