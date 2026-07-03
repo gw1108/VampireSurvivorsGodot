@@ -74,6 +74,20 @@ void fragment() {
 }
 """
 
+# Nduja berserk countdown: while run.is_nduja_active() a small fiery bar sits bottom-center of the
+# screen, its fill shrinking as the ~8s invincibility window burns down so the player can read how
+# long they can keep charging the horde untouchable. Border -> track -> shrinking fire fill plus a
+# "NDUJA n" label; driven each frame from _refresh_nduja and hidden the instant the buff lapses.
+var _nduja_border: ColorRect
+var _nduja_bg: ColorRect
+var _nduja_fill: ColorRect
+var _nduja_label: Label
+const NDUJA_BAR_W := 220.0
+const NDUJA_BAR_H := 12.0
+const NDUJA_BAR_X := 530.0    # centered in the 1280-wide viewport (530 + 220/2 = 640)
+const NDUJA_BAR_Y := 664.0    # low on the screen so it clears the top HUD clutter
+const NDUJA_COLOR := Color(1.5, 0.55, 0.2)   # matches VSNduja.FIRE — reads as the same berserk event
+
 # Swarm-surge telegraph: when the spawner marches a directional wall in from a flank it calls
 # telegraph_surge(dir); we flash a crimson arrow near the screen edge pointing at the flank the
 # wall is coming from, so the player can juke perpendicular before it closes. Purely cosmetic —
@@ -266,6 +280,46 @@ func _ready() -> void:
 	_freeze_label.visible = false
 	add_child(_freeze_label)
 
+	# Nduja berserk countdown bar (bottom-center), hidden until a Nduja buff is active. Added
+	# border -> track -> fill so the shrinking fire fill draws on top; driven each frame in
+	# _refresh_nduja. Mouse-ignored so it never eats input.
+	_nduja_border = ColorRect.new()
+	_nduja_border.color = Color(0, 0, 0, 0.75)
+	_nduja_border.position = Vector2(NDUJA_BAR_X - 3.0, NDUJA_BAR_Y - 3.0)
+	_nduja_border.size = Vector2(NDUJA_BAR_W + 6.0, NDUJA_BAR_H + 6.0)
+	_nduja_border.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_nduja_border.visible = false
+	add_child(_nduja_border)
+
+	_nduja_bg = ColorRect.new()
+	_nduja_bg.color = Color(0.14, 0.05, 0.02, 0.9)
+	_nduja_bg.position = Vector2(NDUJA_BAR_X, NDUJA_BAR_Y)
+	_nduja_bg.size = Vector2(NDUJA_BAR_W, NDUJA_BAR_H)
+	_nduja_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_nduja_bg.visible = false
+	add_child(_nduja_bg)
+
+	_nduja_fill = ColorRect.new()
+	_nduja_fill.color = NDUJA_COLOR
+	_nduja_fill.position = Vector2(NDUJA_BAR_X, NDUJA_BAR_Y)
+	_nduja_fill.size = Vector2(NDUJA_BAR_W, NDUJA_BAR_H)
+	_nduja_fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_nduja_fill.visible = false
+	add_child(_nduja_fill)
+
+	# "NDUJA n" label centered just above the bar so the countdown reads as the fiery berserk window.
+	_nduja_label = Label.new()
+	_nduja_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_nduja_label.position = Vector2(NDUJA_BAR_X, NDUJA_BAR_Y - 22.0)
+	_nduja_label.size = Vector2(NDUJA_BAR_W, 0)
+	_nduja_label.add_theme_font_size_override("font_size", 15)
+	_nduja_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
+	_nduja_label.add_theme_constant_override("outline_size", 3)
+	_nduja_label.modulate = NDUJA_COLOR
+	_nduja_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_nduja_label.visible = false
+	add_child(_nduja_label)
+
 	# Surge telegraph arrow: a screen-space dart parented to the HUD layer, hidden until a
 	# wall marches in. telegraph_surge() positions/rotates it toward the flank and _process
 	# fades it out. Drawn above the world but under the stat text is fine — it's an edge marker.
@@ -391,6 +445,7 @@ func refresh(run: VSRun) -> void:
 	_refresh_loadout(run)
 	_refresh_xp(run)
 	_refresh_freeze(run)
+	_refresh_nduja(run)
 	# Reaper finale countdown, live only during the last stand (Reaper summoned, run not yet won).
 	var in_finale := run.reaper_active and run.phase == "playing"
 	_reaper.visible = in_finale
@@ -490,6 +545,29 @@ func _refresh_freeze(run: VSRun) -> void:
 	(_freeze_vig.material as ShaderMaterial).set_shader_parameter("strength", strength)
 	_freeze_label.text = "FROZEN  %d" % int(ceil(remaining))
 	_freeze_label.modulate = Color(FREEZE_TINT.r, FREEZE_TINT.g, FREEZE_TINT.b, strength)
+
+## Drive the Nduja berserk countdown from the run's fiery invincibility window. While
+## run.is_nduja_active() the bottom-center bar shows and its fill shrinks from full to empty as
+## nduja_until approaches (fraction of VSNduja.DURATION remaining), with a "NDUJA n" label; a
+## subtle flicker on the fill keeps it reading as live flame. Hidden the instant the buff lapses.
+func _refresh_nduja(run: VSRun) -> void:
+	if _nduja_fill == null:
+		return
+	var active := run.is_nduja_active() and run.phase == "playing"
+	_nduja_border.visible = active
+	_nduja_bg.visible = active
+	_nduja_fill.visible = active
+	_nduja_label.visible = active
+	if not active:
+		return
+	var remaining := maxf(0.0, run.nduja_until - run.elapsed)
+	var frac := clampf(remaining / VSNduja.DURATION, 0.0, 1.0)
+	_nduja_fill.size = Vector2(NDUJA_BAR_W * frac, NDUJA_BAR_H)
+	# Flicker the fire fill between hot orange and near-white so the pip reads as a live flame
+	# rather than a flat bar; the pulse rides the remaining time so it always animates.
+	var flick := 0.85 + 0.15 * absf(sin(remaining * 18.0))
+	_nduja_fill.color = Color(NDUJA_COLOR.r * flick, NDUJA_COLOR.g * flick, NDUJA_COLOR.b * flick)
+	_nduja_label.text = "NDUJA  %d" % int(ceil(remaining))
 
 ## Build the paused overlay's text: the PAUSED heading, a one-line live build summary so the
 ## player can size up their run while stopped, and the two controls the pause menu offers
