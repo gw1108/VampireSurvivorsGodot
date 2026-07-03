@@ -12,8 +12,13 @@ config_version=5
 
 config/name="VampireSurvivorsTaskmaster"
 config/version="0.0.1"
+<<<<<<< Updated upstream
 run/main_scene="res://scenes/run.tscn"
 config/features=PackedStringArray("4.6", "GL Compatibility")
+=======
+run/main_scene="res://scenes/main_menu.tscn"
+config/features=PackedStringArray("4.7", "GL Compatibility")
+>>>>>>> Stashed changes
 config/icon="res://icon.svg"
 
 [autoload]
