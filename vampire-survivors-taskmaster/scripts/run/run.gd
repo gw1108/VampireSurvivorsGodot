@@ -74,7 +74,9 @@ var _pending_levels := 0        # level-ups queued but not yet chosen (XP can sp
 
 ## Per-run reroll budget for the level-up picker (VS-style build agency). Each reroll
 ## re-rolls the current hand via _roll_upgrades(); Skip is always free. Kept small so it's
-## a meaningful choice, not a slot machine.
+## a meaningful choice, not a slot machine. This is the BASE budget; the Reroll PowerUp
+## (see POWERUPS / _apply_meta_powerups) adds to it, and a rare candelabra bonus grants +1
+## mid-run (see drop_candelabra_bonus), so build agency scales with investment.
 var rerolls_left := 3
 
 ## Discrete level per upgrade id (0 = never picked). Incremented on each pick and used
@@ -120,6 +122,7 @@ const POWERUPS := [
 	{"id": "armor", "title": "Armor", "desc": "+20 max HP per level", "cost": 80, "max": 5},
 	{"id": "haste", "title": "Cooldown", "desc": "-5% weapon cooldown per level", "cost": 100, "max": 5},
 	{"id": "boots", "title": "Moonwalker", "desc": "+5% move speed per level", "cost": 70, "max": 5},
+	{"id": "reroll", "title": "Reroll", "desc": "+1 level-up reroll per run per level", "cost": 90, "max": 5},
 ]
 
 ## Coin price of buying the NEXT PowerUp level, given its catalog `base` cost and the count
@@ -267,6 +270,9 @@ func _apply_meta_powerups() -> void:
 	var boots := int(levels.get("boots", 0))
 	if boots > 0:
 		player_speed_mult *= pow(1.05, boots)
+	var reroll := int(levels.get("reroll", 0))
+	if reroll > 0:
+		rerolls_left += reroll
 
 ## Repeating grass ground so the arena reads as a place — motion and position are
 ## legible against a textured field instead of flat gray (see FEEL-REVIEW). A single
@@ -436,10 +442,16 @@ func _spawn_candelabra() -> void:
 
 ## Roll a random bonus when a candelabra is shattered (VSCandelabra calls this on break).
 ## Faithful to VS's "lucky light": mostly a coin bag or floor chicken, sometimes a Magnet,
-## rarely the Rosary screen-clear. Reuses the same pickup nodes the kill-drops spawn.
+## rarely the Rosary screen-clear, and very rarely a bonus level-up reroll. Reuses the same
+## pickup nodes the kill-drops spawn; the reroll is granted straight to the run's budget.
 func drop_candelabra_bonus(at: Vector2) -> void:
 	var roll := randf()
-	if roll < 0.08:
+	if roll < 0.04:
+		# Rarest light: a bonus reroll granted directly to the run budget. No pickup node —
+		# the HUD reroll readout refreshes every frame, so the +1 shows immediately.
+		rerolls_left += 1
+		AgentBridge.emit_event("reroll_bonus", {"rerolls_left": rerolls_left})
+	elif roll < 0.12:
 		var r := VSRosary.new()
 		r.position = at
 		r.run = self
