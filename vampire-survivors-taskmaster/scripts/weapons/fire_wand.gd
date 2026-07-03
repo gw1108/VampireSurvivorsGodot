@@ -21,6 +21,13 @@ const BASE_SPEED := 300.0             # px/sec — a lobbed bomb, slower than a 
 const BASE_LIFE := 2.2               # seconds a fireball flies before self-detonating if it hits nothing
 const BLAST_RADIUS := 58.0           # AoE splash around the detonation point
 
+## Hellfire (Fire Wand + Might/Spinach EVOLVED): the fireball stops detonating and instead PIERCES,
+## tearing straight through the horde and searing everything in its widened swath as it flies. Faithful
+## to the wiki's non-detonating, piercing evolution. Applied on top of the level-scaled base profile.
+const HELLFIRE_DAMAGE_MULT := 1.6    # each searing pass hits far harder than a plain fireball
+const HELLFIRE_BLAST_MULT := 1.55    # a wider trail of flame reaches enemies it doesn't graze
+const HELLFIRE_LIFE_MULT := 1.7      # flies longer, since it no longer stops on the first body
+
 var run: VSRun
 var _cd := 0.0
 
@@ -61,9 +68,16 @@ func _fire(lvl: int) -> void:
 	if enemies.is_empty():
 		return
 	enemies.shuffle()
-	var dmg := (BASE_DAMAGE + DAMAGE_PER_LEVEL * float(lvl - 1)) * run.might_mult()
+	var evolved: bool = run.fire_wand_evolved
+	var dmg_base := BASE_DAMAGE + DAMAGE_PER_LEVEL * float(lvl - 1)
 	var speed := BASE_SPEED * run.projectile_speed_mult   # Bracer passive speeds the lob up
 	var blast := BLAST_RADIUS * run.area_mult             # Candelabrador passive widens the blast
+	var life := BASE_LIFE
+	if evolved:                                           # Hellfire: harder, wider, longer-lived, piercing
+		dmg_base *= HELLFIRE_DAMAGE_MULT
+		blast *= HELLFIRE_BLAST_MULT
+		life *= HELLFIRE_LIFE_MULT
+	var dmg := dmg_base * run.might_mult()
 	var count := mini(_amount(lvl), enemies.size())
 	for i in count:
 		var target: VSEnemy = enemies[i]
@@ -75,7 +89,8 @@ func _fire(lvl: int) -> void:
 		b.vel = dir.normalized() * speed
 		b.damage = dmg
 		b.blast = blast
-		b.life = BASE_LIFE
+		b.life = life
+		b.pierce = evolved
 		b.run = run
 		run.add_child(b)
 	AgentBridge.emit_event("sfx_played", {"name": "fire_wand"})
@@ -97,10 +112,12 @@ class Fireball:
 	var damage := 20.0
 	var blast := 58.0
 	var life := 2.2
+	var pierce := false              # Hellfire: sear through enemies instead of detonating on the first
 	var run: VSRun
 	var _flicker := 0.0
 	var _exploding := false
 	var _flash := 0.0                # seconds of detonation flash remaining while _exploding
+	var _seared := {}                # ids of enemies a piercing ball has already burned (hit each once)
 
 	func _ready() -> void:
 		add_to_group("projectiles")
@@ -121,19 +138,39 @@ class Fireball:
 			return
 		life -= delta
 		if life <= 0.0:
-			_detonate()
+			# Hellfire never detonates — it simply burns out at the end of its long flight.
+			if pierce:
+				queue_free()
+			else:
+				_detonate()
 			return
 		position += vel * delta
-		# Detonate on the first enemy the ball touches.
+		# On contact: a plain fireball detonates on the first enemy; Hellfire sears through it and
+		# keeps going, burning everything in its widened swath (each enemy only once).
 		for e in get_tree().get_nodes_in_group("enemies"):
 			if not e is VSEnemy:
 				continue
 			var er: float = e.radius if "radius" in e else VSEnemy.RADIUS
 			if (e.position - position).length() < RADIUS + er:
-				_detonate()
-				return
+				if pierce:
+					_sear()
+					break
+				else:
+					_detonate()
+					return
 		_flicker += delta * 18.0
 		queue_redraw()
+
+	## Hellfire's pass: burn every not-yet-seared enemy within `blast` of the ball and remember them
+	## so a piercing ball damages each enemy exactly once as it tears through the horde.
+	func _sear() -> void:
+		for e in get_tree().get_nodes_in_group("enemies"):
+			if not e is VSEnemy:
+				continue
+			var er: float = e.radius if "radius" in e else VSEnemy.RADIUS
+			if (e.position - position).length() <= blast + er and not _seared.has(e.get_instance_id()):
+				_seared[e.get_instance_id()] = true
+				e.hit(damage, position)
 
 	## Explode: deal full damage to every enemy within `blast`, kick a little camera trauma, and
 	## switch to the brief flash state before freeing. Guarded so a fireball detonates exactly once.
@@ -162,6 +199,8 @@ class Fireball:
 			draw_circle(Vector2.ZERO, r * 0.55, Color(CORE_COLOR.r, CORE_COLOR.g, CORE_COLOR.b, 0.6 * frac))
 			return
 		# Flickering orb: an orange body with a jittering white-hot core so it reads as live fire.
+		# Hellfire burns bigger and hotter — a swollen, whiter comet so its piercing pass reads at a glance.
 		var pulse := 1.0 + 0.15 * sin(_flicker)
-		draw_circle(Vector2.ZERO, RADIUS * pulse, Color(FLAME_COLOR.r, FLAME_COLOR.g, FLAME_COLOR.b, 0.9))
-		draw_circle(Vector2.ZERO, RADIUS * 0.5 * pulse, CORE_COLOR)
+		var r := RADIUS * (1.5 if pierce else 1.0) * pulse
+		draw_circle(Vector2.ZERO, r, Color(FLAME_COLOR.r, FLAME_COLOR.g, FLAME_COLOR.b, 0.9))
+		draw_circle(Vector2.ZERO, r * (0.62 if pierce else 0.5), CORE_COLOR)

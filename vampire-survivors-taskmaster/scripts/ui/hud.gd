@@ -571,6 +571,10 @@ func _make_loadout_row(id: String, title: String, lvl: int, mx: int, run: VSRun)
 			evolved = run.knife_evolved
 			if evolved:
 				disp_name = "Thousand Edges"
+		"fire_wand":
+			evolved = run.fire_wand_evolved
+			if evolved:
+				disp_name = "Hellfire"
 
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override("separation", 0)
