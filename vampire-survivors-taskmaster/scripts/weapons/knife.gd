@@ -21,6 +21,15 @@ const KNIFE_SPEED := 540.0            # faster than the aimed wand's bolt — th
 const KNIFE_LIFE := 1.1
 const SPREAD := 0.10                  # radians between stacked knives when amount > 1
 
+# Evolved (Thousand Edges) profile — applied when run.knife_evolved: the Knife's cadence
+# collapses toward a continuous stream (interval scaled right down, floor lowered far), it
+# hurls a wider fan of knives per throw, and each blade bites much harder. The payoff for
+# maxing the Knife alongside Haste. Mirrors the Whip / King Bible / Holy Wand evolution pattern.
+const EVOLVED_INTERVAL_MULT := 0.30   # ~a third the cadence — a near-solid stream of blades
+const EVOLVED_MIN_INTERVAL := 0.14    # far lower floor so late Thousand Edges barely pauses
+const EVOLVED_AMOUNT_BONUS := 3       # +3 knives per throw over the base fan
+const EVOLVED_DAMAGE_MULT := 1.7      # each blade bites much deeper
+
 var run: VSRun
 var _cd := 0.0
 var _facing := 1          # persistent horizontal facing: +1 right, -1 left (mirrors VSWhip)
@@ -46,12 +55,22 @@ func _process(delta: float) -> void:
 ## Cooldown between throws, shrinking modestly with level (never below MIN_INTERVAL so it stays
 ## a fast stream rather than a solid wall of blades).
 func _interval(lvl: int) -> float:
-	return maxf(MIN_INTERVAL, BASE_INTERVAL - INTERVAL_PER_LEVEL * float(lvl - 1))
+	var base := maxf(MIN_INTERVAL, BASE_INTERVAL - INTERVAL_PER_LEVEL * float(lvl - 1))
+	if _is_evolved():
+		return maxf(EVOLVED_MIN_INTERVAL, base * EVOLVED_INTERVAL_MULT)
+	return base
+
+## True once the run has evolved Knife into Thousand Edges.
+func _is_evolved() -> bool:
+	return run != null and run.knife_evolved
 
 ## Knives per throw: base one, plus one for every two levels, capped so a maxed Knife throws a
 ## satisfying fan without blanketing the screen for free.
 func _amount(lvl: int) -> int:
-	return clampi(BASE_AMOUNT + lvl / 2, BASE_AMOUNT, MAX_AMOUNT)
+	var amount := clampi(BASE_AMOUNT + lvl / 2, BASE_AMOUNT, MAX_AMOUNT)
+	if _is_evolved():
+		amount += EVOLVED_AMOUNT_BONUS
+	return amount
 
 ## One throw: hurl `amount` fast bolts in the current facing direction (persistent horizontal axis
 ## + current vertical input), fanned symmetrically so extra knives read as a tight spread.
@@ -61,6 +80,8 @@ func _throw(lvl: int) -> void:
 	# as the player steers. Standing still (mv.y == 0) throws dead ahead.
 	var base := Vector2(float(_facing), mv.y).normalized()
 	var dmg := (BASE_DAMAGE + DAMAGE_PER_LEVEL * float(lvl - 1)) * run.might_mult()
+	if _is_evolved():
+		dmg *= EVOLVED_DAMAGE_MULT
 	var count := _amount(lvl)
 	for i in count:
 		var offset := (i - (count - 1) * 0.5) * SPREAD
