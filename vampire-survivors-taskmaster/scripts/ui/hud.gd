@@ -47,9 +47,13 @@ var _meta_built := false
 
 # Top-right "build" panel: one row per owned upgrade (icon + "Lv N/max"), like VS's
 # weapon/accessory rows. Rebuilt only when the level signature changes so it costs
-# nothing on the common frame.
+# nothing on the common frame. Split into a WEAPONS section and an ITEMS (passive stat)
+# section so the player can read their weapons apart from the stat boosts stacking behind
+# them, mirroring VS's two-row build readout.
 var _loadout: VBoxContainer
 var _loadout_sig := ""
+# Which UPGRADE_POOL ids are weapons; everything else in the pool is a passive stat item.
+const WEAPON_IDS := ["garlic", "whip", "bible", "lightning", "knife"]
 
 func _ready() -> void:
 	_stat = Label.new()
@@ -302,12 +306,33 @@ func _refresh_loadout(run: VSRun) -> void:
 	_loadout_sig = sig
 	for c in _loadout.get_children():
 		c.queue_free()
+	# Weapons first, then passive stat items — each section skipped when empty so an
+	# early-game build (whip only, no passives yet) shows just the one header.
+	_add_loadout_section(run, "WEAPONS", true)
+	_add_loadout_section(run, "ITEMS", false)
+
+## Append one build-panel section: a dim header plus a row per owned upgrade whose
+## weapon/passive class matches `weapons`, in UPGRADE_POOL order. Nothing is added when
+## the section has no owned upgrades yet.
+func _add_loadout_section(run: VSRun, header: String, weapons: bool) -> void:
+	var rows: Array = []
 	for opt in VSRun.UPGRADE_POOL:
 		var id := str(opt["id"])
+		if WEAPON_IDS.has(id) != weapons:
+			continue
 		var lvl: int = run.upgrade_levels.get(id, 0)
 		if lvl <= 0:
 			continue
-		_loadout.add_child(_make_loadout_row(id, str(opt["title"]), lvl, int(opt["max"]), run))
+		rows.append(_make_loadout_row(id, str(opt["title"]), lvl, int(opt["max"]), run))
+	if rows.is_empty():
+		return
+	var head := Label.new()
+	head.text = header
+	head.add_theme_font_size_override("font_size", 11)
+	head.modulate = Color(0.7, 0.72, 0.8)
+	_loadout.add_child(head)
+	for r in rows:
+		_loadout.add_child(r)
 
 ## One build-panel row: the upgrade's icon (skipped if missing) plus a two-line name +
 ## "Lv N/max" column. A weapon whose evolution flag is set on the run shows its evolved name
