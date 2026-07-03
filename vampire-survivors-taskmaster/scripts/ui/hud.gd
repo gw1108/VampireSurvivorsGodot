@@ -43,4 +43,6 @@ func refresh(run: VSRun) -> void:
 	_build.text = "DMG %.0f    Rate %.2f/s    Speed %d    Shots %d" % [run.weapon_damage, fire_rate, move_speed, run.weapon_count]
 	if run.garlic_level > 0:
 		_build.text += "    Garlic Lv %d" % run.garlic_level
+	if run.whip_level > 0:
+		_build.text += "    Whip Lv %d" % run.whip_level
 	_over.visible = run.phase == "game_over"

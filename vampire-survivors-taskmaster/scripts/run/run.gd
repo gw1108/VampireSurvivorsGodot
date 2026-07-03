@@ -29,6 +29,7 @@ var weapon_damage := 2.0
 var weapon_fire_interval := 0.6
 var weapon_count := 1
 var garlic_level := 0            # 0 = Garlic aura not yet chosen; each pick grows it
+var whip_level := 0              # 0 = Whip melee arc not yet chosen; each pick grows it
 
 var _pending_levels := 0        # level-ups queued but not yet chosen (XP can span several)
 
@@ -40,6 +41,7 @@ const UPGRADE_POOL := [
 	{"id": "health", "title": "Vitality", "desc": "+20 max HP, heal 20"},
 	{"id": "multishot", "title": "Multishot", "desc": "+1 projectile"},
 	{"id": "garlic", "title": "Garlic", "desc": "Damaging aura around you (grows each pick)"},
+	{"id": "whip", "title": "Whip", "desc": "Melee arc lashing your facing side; both sides at Lv 2+"},
 ]
 
 func _ready() -> void:
@@ -89,6 +91,13 @@ func _build_world() -> void:
 	garlic.run = self
 	garlic.z_index = -1
 	player.add_child(garlic)
+
+	# Third weapon: the Whip melee arc. Inert until whip_level > 0 (a level-up pick).
+	# z_index above the player so the lash reads on top of enemies it sweeps.
+	var whip := VSWhip.new()
+	whip.run = self
+	whip.z_index = 1
+	player.add_child(whip)
 
 	var spawner := VSSpawner.new()
 	spawner.run = self
@@ -185,6 +194,8 @@ func _apply_upgrade(id: String) -> void:
 			weapon_count += 1
 		"garlic":
 			garlic_level += 1
+		"whip":
+			whip_level += 1
 	AgentBridge.emit_event("upgrade_chosen", {"id": id, "level": level})
 
 func _on_player_died() -> void:
