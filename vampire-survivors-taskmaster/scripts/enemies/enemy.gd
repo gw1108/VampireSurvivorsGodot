@@ -18,8 +18,17 @@ const SEPARATION_STRENGTH := 0.65
 ## - BAT threads a small perpendicular sine weave over its homing drive, giving the
 ##   swarm a fluttering, erratic look. WEAVE_AMP is relative to the unit toward-drive
 ##   (kept well under 1.0 so bats still close in); a per-enemy phase de-syncs the flock.
+## - MANTIS lunges: on a repeating cycle it briefly rushes at extra speed toward the
+##   player, then coasts, so the insect reads as a darting striker rather than a steady
+##   fast beeliner. A per-enemy phase de-syncs the darts across the swarm.
 const BAT_WEAVE_AMP := 0.42
 const BAT_WEAVE_FREQ := 6.5
+## MANTIS dart cycle: every PERIOD seconds it spends DURATION seconds sprinting, its
+## speed swelling to SPEED_MULT× base on a smooth sine bell (accelerate → peak → ease)
+## so the lunge snaps without teleporting; outside the window it moves at base speed.
+const MANTIS_LUNGE_PERIOD := 1.5
+const MANTIS_LUNGE_DURATION := 0.4
+const MANTIS_LUNGE_SPEED_MULT := 2.3
 ## Enemies at or above this max health (mini-bosses like ELITE) get a health bar
 ## once damaged, so their long HP pool reads as visible progress.
 const HEALTH_BAR_MIN_MAX_HEALTH := 40.0
@@ -165,9 +174,19 @@ func _process(delta: float) -> void:
 		var t2: float = run.elapsed if run else 0.0
 		var perp := Vector2(-desired.y, desired.x)
 		move += perp * (sin(t2 * BAT_WEAVE_FREQ + _weave_phase) * BAT_WEAVE_AMP)
+	# MANTIS darts: periodically swell speed toward the player on a smooth sine bell so
+	# it lunges in bursts. The per-enemy phase (reusing _weave_phase, mapped from radians
+	# onto the cycle length) staggers the darts so the swarm doesn't lunge in unison.
+	var speed_mult := 1.0
+	if type == Type.MANTIS:
+		var t2: float = run.elapsed if run else 0.0
+		var phase := fmod(t2 + _weave_phase / TAU * MANTIS_LUNGE_PERIOD, MANTIS_LUNGE_PERIOD)
+		if phase < MANTIS_LUNGE_DURATION:
+			var u := phase / MANTIS_LUNGE_DURATION       # 0..1 across the dart window
+			speed_mult = 1.0 + (MANTIS_LUNGE_SPEED_MULT - 1.0) * sin(u * PI)
 	var step := Vector2.ZERO
 	if move.length() > 0.001:
-		step = move.normalized() * speed * delta
+		step = move.normalized() * speed * speed_mult * delta
 	# Layer any active knockback on top of the homing step and bleed it off, so a weapon
 	# hit visibly shoves the enemy back for a moment before it resumes its march.
 	if _knockback != Vector2.ZERO:
