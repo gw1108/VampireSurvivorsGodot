@@ -53,7 +53,7 @@ func refresh(run: VSRun) -> void:
 	if run.player:
 		hp = int(ceil(run.player.health))
 		max_hp = int(round(run.player.max_health))
-	_stat.text = "HP %d/%d    Time %ds    Kills %d    Lv %d (%d xp)" % [hp, max_hp, int(run.elapsed), run.kills, run.level, run.xp]
+	_stat.text = "HP %d/%d    Time %ds    Kills %d    Lv %d (%d xp)    Gold %d" % [hp, max_hp, int(run.elapsed), run.kills, run.level, run.xp, run.gold]
 	var fire_rate := 1.0 / run.weapon_fire_interval if run.weapon_fire_interval > 0.0 else 0.0
 	var move_speed := int(round(VSPlayer.SPEED * run.player_speed_mult))
 	_build.text = "DMG %.0f    Rate %.2f/s    Speed %d    Shots %d" % [run.weapon_damage, fire_rate, move_speed, run.weapon_count]

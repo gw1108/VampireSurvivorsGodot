@@ -27,6 +27,7 @@ var kills := 0
 var elapsed := 0.0
 var xp := 0
 var level := 1
+var gold := 0                   # run coins banked from coin pickups; seed of the VS meta-currency
 var frame_tick := 0
 var arena_half := Vector2(900, 700)   # world half-extent around origin
 
@@ -181,8 +182,14 @@ func add_kill(at: Vector2, xp_value: int = 1, gem_count: int = 1, is_elite: bool
 	AgentBridge.emit_event("despawn", {"type": "enemy", "pos": [at.x, at.y]})
 	_spawn_gems(at, xp_value, gem_count)
 	_maybe_drop_food(at)
+	_maybe_drop_coin(at, is_elite)
 	if is_elite:
 		_maybe_drop_magnet(at)
+
+## Bank gold from a collected coin. Kept as a method so pickups and any future
+## meta-progression hooks share one entry point onto the run's currency.
+func add_gold(amount: int) -> void:
+	gold += maxi(amount, 0)
 
 ## Rarely drop a roast-chicken heal on a kill so the run has a survival-recovery lever.
 ## The chance is biased by missing HP: near-full health it's a rare treat (~1.2%), but as
@@ -210,6 +217,25 @@ func _maybe_drop_magnet(at: Vector2) -> void:
 		m.run = self
 		add_child(m)
 		AgentBridge.emit_event("spawn", {"type": "magnet", "pos": [at.x, at.y]})
+
+## Occasionally drop a gold coin on a kill so the run banks a little meta-currency. Ordinary
+## kills pay out rarely (~2%) and a single coin; elites are a jackpot — a guaranteed coin
+## worth a small handful — so the "coins" economy grows a touch faster from mini-boss fights,
+## faithful to VS where tougher enemies feed the between-run purse.
+func _maybe_drop_coin(at: Vector2, is_elite: bool) -> void:
+	var amount := 0
+	if is_elite:
+		amount = randi_range(3, 6)
+	elif randf() < 0.02:
+		amount = 1
+	if amount <= 0:
+		return
+	var c := VSCoin.new()
+	c.position = at
+	c.run = self
+	c.value = amount
+	add_child(c)
+	AgentBridge.emit_event("spawn", {"type": "coin", "pos": [at.x, at.y], "gold": amount})
 
 ## Split a kill's XP across `count` gems scattered in a ring. Elites drop a burst
 ## so the big payout reads as a jackpot; ordinary kills drop a single gem.
