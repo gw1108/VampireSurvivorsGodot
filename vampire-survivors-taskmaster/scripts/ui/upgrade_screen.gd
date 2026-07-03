@@ -82,13 +82,14 @@ func present(options: Array) -> void:
 ## the click target and keyboard focus still highlights the selection.
 func _make_card(index: int, opt: Dictionary) -> Button:
 	var id := str(opt.get("id", ""))
+	var is_evo := bool(opt.get("evolution", false))
 	var card := Button.new()
 	card.custom_minimum_size = Vector2(460, 96)
 	card.text = ""
-	card.add_theme_stylebox_override("normal", _panel_style(false))
-	card.add_theme_stylebox_override("hover", _panel_style(true))
-	card.add_theme_stylebox_override("pressed", _panel_style(true))
-	card.add_theme_stylebox_override("focus", _panel_style(true))
+	card.add_theme_stylebox_override("normal", _panel_style(false, is_evo))
+	card.add_theme_stylebox_override("hover", _panel_style(true, is_evo))
+	card.add_theme_stylebox_override("pressed", _panel_style(true, is_evo))
+	card.add_theme_stylebox_override("focus", _panel_style(true, is_evo))
 	card.pressed.connect(_choose.bind(index))
 
 	var margin := MarginContainer.new()
@@ -124,6 +125,15 @@ func _make_card(index: int, opt: Dictionary) -> Button:
 	text_col.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_child(text_col)
 
+	# Evolution cards get a loud gold "EVOLVED!" banner above the title so the one-shot
+	# signature moment is unmistakable (the gold panel tint reinforces it at a glance).
+	if is_evo:
+		var evo_label := Label.new()
+		evo_label.text = "★ EVOLVED! ★"
+		evo_label.add_theme_font_size_override("font_size", 15)
+		evo_label.modulate = Color(1.0, 0.85, 0.25)
+		text_col.add_child(evo_label)
+
 	var title := Label.new()
 	title.text = str(opt.get("title", "?"))
 	title.add_theme_font_size_override("font_size", 22)
@@ -149,7 +159,9 @@ func _make_card(index: int, opt: Dictionary) -> Button:
 
 	return card
 
-func _panel_style(selected: bool) -> StyleBoxTexture:
+## `evo` gives evolution cards a gold tint so the signature moment stands apart from
+## the brown/blue normal panels even before you read the "EVOLVED!" label.
+func _panel_style(selected: bool, evo: bool = false) -> StyleBoxTexture:
 	var sb := StyleBoxTexture.new()
 	sb.texture = load(PANEL_TEX_SEL if selected else PANEL_TEX)
 	sb.texture_margin_left = 15
@@ -160,6 +172,8 @@ func _panel_style(selected: bool) -> StyleBoxTexture:
 	sb.content_margin_right = 8
 	sb.content_margin_top = 8
 	sb.content_margin_bottom = 8
+	if evo:
+		sb.modulate_color = Color(1.0, 0.82, 0.28) if selected else Color(1.0, 0.78, 0.2)
 	return sb
 
 func option_count() -> int:
