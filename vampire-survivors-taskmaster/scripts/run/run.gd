@@ -41,15 +41,24 @@ var whip_level := 0              # 0 = Whip melee arc not yet chosen; each pick 
 
 var _pending_levels := 0        # level-ups queued but not yet chosen (XP can span several)
 
-## Pool the level-up screen draws 3 distinct choices from each time.
+## Discrete level per upgrade id (0 = never picked). Incremented on each pick and used
+## to (a) cap upgrades at their `max` so the pool shrinks as things top out — no infinite
+## single-stat stacking — and (b) show "Lv N → N+1" on the cards. Kept in lock-step with
+## the per-weapon counters (garlic_level, whip_level, weapon_count, …) since every pick
+## flows through _apply_upgrade.
+var upgrade_levels := {}
+
+## Pool the level-up screen draws 3 distinct choices from each time. `max` is the highest
+## level each upgrade reaches — weapons cap at 8 (VS convention), passives lower — after
+## which it stops appearing in the roll.
 const UPGRADE_POOL := [
-	{"id": "damage", "title": "Power", "desc": "+1 weapon damage"},
-	{"id": "firerate", "title": "Haste", "desc": "+15% fire rate"},
-	{"id": "speed", "title": "Swift Boots", "desc": "+12% move speed"},
-	{"id": "health", "title": "Vitality", "desc": "+20 max HP, heal 20"},
-	{"id": "multishot", "title": "Multishot", "desc": "+1 projectile"},
-	{"id": "garlic", "title": "Garlic", "desc": "Damaging aura around you (grows each pick)"},
-	{"id": "whip", "title": "Whip", "desc": "Melee arc lashing your facing side; both sides at Lv 2+"},
+	{"id": "damage", "title": "Power", "desc": "+1 weapon damage", "max": 5},
+	{"id": "firerate", "title": "Haste", "desc": "+15% fire rate", "max": 5},
+	{"id": "speed", "title": "Swift Boots", "desc": "+12% move speed", "max": 5},
+	{"id": "health", "title": "Vitality", "desc": "+20 max HP, heal 20", "max": 5},
+	{"id": "multishot", "title": "Multishot", "desc": "+1 projectile", "max": 4},
+	{"id": "garlic", "title": "Garlic", "desc": "Damaging aura around you (grows each pick)", "max": 8},
+	{"id": "whip", "title": "Whip", "desc": "Melee arc lashing your facing side; both sides at Lv 2+", "max": 8},
 ]
 
 func _ready() -> void:
@@ -208,12 +217,32 @@ func collect_xp(amount: int) -> void:
 		_open_level_up()
 
 func _open_level_up() -> void:
+	var options := _roll_upgrades()
+	if options.is_empty():
+		# Every upgrade is maxed — still reward the level with a small heal, then resume
+		# without a screen so the run never soft-locks on an empty picker.
+		if player:
+			player.health = minf(player.max_health, player.health + 20.0)
+		_pending_levels -= 1
+		if _pending_levels > 0:
+			_open_level_up()
+		else:
+			phase = "playing"
+		return
 	phase = "level_up"
-	upgrade_screen.present(_roll_upgrades())
+	upgrade_screen.present(options)
 
-## Pick 3 distinct options from the pool (or the whole pool if it is smaller).
+## Pick up to 3 distinct not-yet-maxed options, each annotated with its current level so
+## the card can show "Lv N → N+1". Maxed upgrades are excluded so the pool shrinks over
+## the run and picks stay meaningful. Returns [] only when everything is maxed.
 func _roll_upgrades() -> Array:
-	var pool := UPGRADE_POOL.duplicate()
+	var pool := []
+	for opt in UPGRADE_POOL:
+		var lvl: int = upgrade_levels.get(opt["id"], 0)
+		if lvl < int(opt["max"]):
+			var display: Dictionary = opt.duplicate()
+			display["level"] = lvl        # current level; the pick raises it to lvl+1
+			pool.append(display)
 	pool.shuffle()
 	return pool.slice(0, mini(3, pool.size()))
 
@@ -226,6 +255,7 @@ func _on_upgrade_picked(id: String) -> void:
 		phase = "playing"
 
 func _apply_upgrade(id: String) -> void:
+	upgrade_levels[id] = int(upgrade_levels.get(id, 0)) + 1
 	match id:
 		"damage":
 			weapon_damage += 1.0

@@ -127,6 +127,18 @@ func _make_card(index: int, opt: Dictionary) -> Button:
 	title.add_theme_font_size_override("font_size", 22)
 	text_col.add_child(title)
 
+	# Show the level this pick advances to (e.g. "Lv 2 → 3", or "→ 3 MAX" at the cap) so
+	# the player reads the choice as progression toward maxing a weapon/passive.
+	if opt.has("level"):
+		var lvl := int(opt.get("level", 0))
+		var mx := int(opt.get("max", 0))
+		var next := lvl + 1
+		var lvl_label := Label.new()
+		lvl_label.text = "Lv %d → %d  (MAX)" % [lvl, next] if next >= mx else "Lv %d → %d" % [lvl, next]
+		lvl_label.add_theme_font_size_override("font_size", 13)
+		lvl_label.modulate = Color(0.9, 0.85, 0.55)
+		text_col.add_child(lvl_label)
+
 	var desc := Label.new()
 	desc.text = str(opt.get("desc", ""))
 	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
