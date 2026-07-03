@@ -1,7 +1,7 @@
 class_name VSPlayer
 extends Node2D
 ## The player avatar. Move-only (WASD/arrows); the weapon auto-fires. Manual movement +
-## distance math (no physics bodies) keeps the slice robust. Placeholder vector art.
+## distance math (no physics bodies) keeps the slice robust. Pixel-art sprite (Antonio).
 
 signal died
 
@@ -12,8 +12,13 @@ var max_health := 100.0
 var health := 100.0
 var alive := true
 
+var _sprite: Sprite2D
+
 func _ready() -> void:
 	add_to_group("player")
+	_sprite = Sprite2D.new()
+	_sprite.texture = load("res://art/player.png")
+	add_child(_sprite)
 
 func _process(delta: float) -> void:
 	if not alive:
@@ -27,7 +32,6 @@ func _process(delta: float) -> void:
 	if run:
 		position.x = clampf(position.x, -run.arena_half.x, run.arena_half.x)
 		position.y = clampf(position.y, -run.arena_half.y, run.arena_half.y)
-	queue_redraw()
 
 func take_damage(amount: float) -> void:
 	if not alive:
@@ -37,10 +41,6 @@ func take_damage(amount: float) -> void:
 	if health <= 0.0:
 		health = 0.0
 		alive = false
+		if _sprite:
+			_sprite.modulate = Color(0.45, 0.45, 0.45)   # greyed-out on death
 		died.emit()
-	queue_redraw()
-
-func _draw() -> void:
-	var col := Color(0.3, 0.9, 0.45) if alive else Color(0.45, 0.45, 0.45)
-	draw_circle(Vector2.ZERO, RADIUS, col)
-	draw_arc(Vector2.ZERO, RADIUS, 0.0, TAU, 24, Color(0, 0, 0, 0.5), 2.0)

@@ -12,6 +12,9 @@ var run: VSRun
 
 func _ready() -> void:
 	add_to_group("gems")
+	var sprite := Sprite2D.new()
+	sprite.texture = load("res://art/gem.png")
+	add_child(sprite)
 
 func _process(delta: float) -> void:
 	if run == null or run.phase != "playing" or run.player == null or not is_instance_valid(run.player):
@@ -26,7 +29,3 @@ func _process(delta: float) -> void:
 		AgentBridge.emit_event("pickup", {"type": "xp"})
 		queue_free()
 		return
-	queue_redraw()
-
-func _draw() -> void:
-	draw_circle(Vector2.ZERO, RADIUS, Color(0.35, 0.8, 1.0))

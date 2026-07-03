@@ -15,13 +15,18 @@ var _contact_cd := 0.0
 var _flash_time := 0.0
 var _dying := false
 
+var _sprite: Sprite2D
+
 func _ready() -> void:
 	add_to_group("enemies")
+	_sprite = Sprite2D.new()
+	_sprite.texture = load("res://art/enemy_bat.png")
+	add_child(_sprite)
 
 func _process(delta: float) -> void:
 	if _flash_time > 0.0:
 		_flash_time = maxf(0.0, _flash_time - delta)
-		queue_redraw()
+		_update_flash()
 	if _dying:
 		return
 	if run and run.phase != "playing":
@@ -36,17 +41,15 @@ func _process(delta: float) -> void:
 	if d < RADIUS + VSPlayer.RADIUS and _contact_cd <= 0.0 and target.alive:
 		target.take_damage(contact_damage)
 		_contact_cd = 0.5
-	queue_redraw()
 
 func hit(amount: float, _from: Vector2) -> void:
 	if _dying:
 		return
 	health -= amount
 	_flash_time = FLASH_DURATION
+	_update_flash()
 	if health <= 0.0:
 		_die()
-	else:
-		queue_redraw()
 
 func _die() -> void:
 	_dying = true
@@ -57,8 +60,9 @@ func _die() -> void:
 	tw.tween_property(self, "scale", Vector2.ZERO, 0.1)
 	tw.tween_callback(queue_free)
 
-func _draw() -> void:
+## Brighten the sprite toward white for the duration of a hit flash.
+func _update_flash() -> void:
+	if _sprite == null:
+		return
 	var flash := _flash_time / FLASH_DURATION
-	var body := Color(0.9, 0.32, 0.32).lerp(Color(1, 1, 1), flash)
-	draw_circle(Vector2.ZERO, RADIUS, body)
-	draw_arc(Vector2.ZERO, RADIUS, 0.0, TAU, 20, Color(0, 0, 0, 0.4), 1.5)
+	_sprite.modulate = Color(1, 1, 1).lerp(Color(4, 4, 4), flash)
