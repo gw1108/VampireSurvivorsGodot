@@ -32,6 +32,7 @@ const ICONS := {
 	"growth": "res://art/gem.png",                 # Growth reuses the XP gem sprite
 	"armor": "res://art/up_armor.png",             # Armor passive
 	"knife": "res://art/projectile_dagger.png",   # reuse the in-world dagger bolt as the Knife icon
+	"runetracer": "res://art/weapon_runetracer.png",  # the bouncing rune polyhedron sprite
 	"unholy_vespers": "res://art/up_bible.png",   # King Bible evolution reuses the tome icon
 }
 const PANEL_TEX := "res://art/ui_panel.png"       # Kenney RPG panel (brown)

@@ -69,6 +69,7 @@ var whip_level := 0              # 0 = Whip melee arc not yet chosen; each pick 
 var bible_level := 0             # 0 = King Bible orbit not yet chosen; each pick grows it
 var lightning_level := 0         # 0 = Lightning Ring not yet chosen; each pick grows it
 var knife_level := 0             # 0 = Knife directional throw not yet chosen; each pick grows it
+var runetracer_level := 0        # 0 = Runetracer bouncing rune not yet chosen; each pick grows it
 var bible_evolved := false       # true once King Bible -> Unholy Vespers (the weapon reads this)
 var whip_evolved := false        # true once Whip -> Bloody Tear (whip.gd reads this)
 var garlic_evolved := false      # true once Garlic -> Soul Eater (garlic.gd reads this)
@@ -118,6 +119,7 @@ const UPGRADE_POOL := [
 	{"id": "bible", "title": "King Bible", "desc": "Holy books orbit you, striking enemies they pass through", "max": 8},
 	{"id": "lightning", "title": "Lightning Ring", "desc": "Bolts smite random enemies across the field, splashing on impact", "max": 8},
 	{"id": "knife", "title": "Knife", "desc": "Fast blades hurled where you're facing; more per throw as it grows", "max": 8},
+	{"id": "runetracer", "title": "Runetracer", "desc": "A spinning rune that bounces around the arena, striking everything it passes through", "max": 8},
 ]
 
 ## The signature VS mechanic: a weapon maxed to its UPGRADE_POOL `max` PLUS its paired
@@ -235,6 +237,13 @@ func _build_world() -> void:
 	knife.run = self
 	knife.z_index = 1
 	player.add_child(knife)
+
+	# Seventh weapon: the Runetracer — a rune that bounces around the arena. Inert until
+	# runetracer_level > 0 (a level-up pick). Mounted on the player only to source its spawn
+	# point; each fired rune lives in world space as a child of the run so it caroms freely.
+	var runetracer := VSRunetracer.new()
+	runetracer.run = self
+	player.add_child(runetracer)
 
 	_spawner = VSSpawner.new()
 	_spawner.run = self
@@ -767,6 +776,8 @@ func _apply_upgrade(id: String) -> void:
 			lightning_level += 1
 		"knife":
 			knife_level += 1
+		"runetracer":
+			runetracer_level += 1
 		"unholy_vespers":
 			# King Bible -> Unholy Vespers: flag the evolution so VSKingBible swaps to its
 			# boosted profile, and remember it so the card stops re-rolling.

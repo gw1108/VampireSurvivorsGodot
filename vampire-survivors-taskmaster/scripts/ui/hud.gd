@@ -96,7 +96,7 @@ var _meta_built := false
 var _loadout: VBoxContainer
 var _loadout_sig := ""
 # Which UPGRADE_POOL ids are weapons; everything else in the pool is a passive stat item.
-const WEAPON_IDS := ["garlic", "whip", "bible", "lightning", "knife"]
+const WEAPON_IDS := ["garlic", "whip", "bible", "lightning", "knife", "runetracer"]
 
 func _ready() -> void:
 	# XP bar first so it hugs the very top edge. It's added before the freeze vignette (which is
