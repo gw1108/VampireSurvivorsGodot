@@ -93,8 +93,8 @@ func _refresh() -> void:
 ## One shop row: title, "Lv N/max", description, and a Buy button showing the cost. The
 ## button disables at the cap ("MAX") or when the coins won't cover the next level.
 func _make_row(index: int, opt: Dictionary, lvl: int, coins: int) -> Control:
-	var cost := int(opt["cost"])
 	var mx := int(opt["max"])
+	var cost := VSRun.powerup_cost(int(opt["cost"]), lvl)   # next-level price, scales with level
 	var maxed := lvl >= mx
 	var affordable := coins >= cost
 
@@ -180,7 +180,9 @@ func _buy(index: int) -> void:
 	if index < 0 or index >= VSRun.POWERUPS.size():
 		return
 	var opt: Dictionary = VSRun.POWERUPS[index]
-	MetaSave.buy_powerup(str(opt["id"]), int(opt["cost"]), int(opt["max"]))
+	var lvl := MetaSave.powerup_level(str(opt["id"]))
+	var cost := VSRun.powerup_cost(int(opt["cost"]), lvl)   # price for the level being bought
+	MetaSave.buy_powerup(str(opt["id"]), cost, int(opt["max"]))
 	_refresh()
 	# Keep a sensible focus target after the rows were rebuilt.
 	if index < _buy_buttons.size():

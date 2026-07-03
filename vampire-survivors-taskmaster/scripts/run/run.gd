@@ -74,6 +74,12 @@ const POWERUPS := [
 	{"id": "boots", "title": "Moonwalker", "desc": "+5% move speed per level", "cost": 70, "max": 5},
 ]
 
+## Coin price of buying the NEXT PowerUp level, given its catalog `base` cost and the count
+## `level` already owned. VS-style rising prices: cost = base * (level + 1), so Lv 0->1 is the
+## base and each further level costs one more base — late levels become a real coin sink.
+static func powerup_cost(base: int, level: int) -> int:
+	return base * (maxi(level, 0) + 1)
+
 func _ready() -> void:
 	_ensure_input()
 	seed(hash("vs-slice"))            # deterministic-ish; override via set_seed command
