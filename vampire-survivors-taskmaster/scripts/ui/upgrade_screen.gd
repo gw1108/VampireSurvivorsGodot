@@ -95,7 +95,7 @@ func _ready() -> void:
 	actions.add_child(_reroll_btn)
 
 	_skip_btn = Button.new()
-	_skip_btn.text = "Skip  [F]"
+	_skip_btn.text = "Skip (+XP)  [F]"
 	_skip_btn.custom_minimum_size = Vector2(160, 40)
 	_skip_btn.pressed.connect(_on_skip_pressed)
 	actions.add_child(_skip_btn)

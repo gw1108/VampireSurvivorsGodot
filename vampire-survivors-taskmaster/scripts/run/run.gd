@@ -89,6 +89,11 @@ var _pending_levels := 0        # level-ups queued but not yet chosen (XP can sp
 ## whole point. Reset only at run start (nothing to carry between runs).
 var _xp_remainder := 0.0
 
+## Fraction of the next level's XP requirement granted when a level-up is Skipped, matching
+## the GDD's "forgo for partial XP" verb. Small so skipping a genuinely bad hand helps a
+## little without ever undercutting the value of an actual pick.
+const SKIP_XP_FRACTION := 0.25
+
 ## Per-run reroll budget for the level-up picker (VS-style build agency). Each reroll
 ## re-rolls the current hand via _roll_upgrades(); Skip is always free. Kept small so it's
 ## a meaningful choice, not a slot machine. This is the BASE budget; the Reroll PowerUp
@@ -748,8 +753,14 @@ func _on_upgrade_rerolled() -> void:
 
 ## Wave off this level-up with no pick — resolves one pending level and resumes (or opens the
 ## next queued level-up). Skip is always free; the run never soft-locks on a declined hand.
+## GDD (Player Verbs) frames Skip as "forgo for partial XP", so declining a weak hand still
+## nudges the build forward: bank a quarter of the next level's requirement toward it, capped
+## just below the threshold so a skip never itself grants a free level-up. Carried in `xp`, so
+## the reward simply shortens the gem grind to the next real pick.
 func _on_upgrade_skipped() -> void:
 	AgentBridge.emit_event("upgrade_skip", {"level": level})
+	var need := _xp_to_next(level)
+	xp = mini(xp + int(ceil(need * SKIP_XP_FRACTION)), need - 1)
 	_pending_levels -= 1
 	if _pending_levels > 0:
 		_open_level_up()
