@@ -50,10 +50,18 @@ func _ready() -> void:
 	add_to_group("enemies")
 	var cfg: Dictionary = TYPES.get(type, TYPES[Type.BAT])
 	speed = cfg["speed"]
-	health = cfg["health"]
+	# Escalating-threat ramp: enemies spawned later in the run are tougher, so the
+	# player's growing level-up power doesn't trivialize every wave — the run keeps
+	# a real sense of mounting danger (see GOAL: escalating waves). HP ramps steeply,
+	# contact damage gently (a late bat should tank hits, not one-shot the player).
+	var t: float = run.elapsed if run else 0.0
+	var minutes := minf(t / 60.0, 6.0)                # cap scaling at ~6 minutes
+	var hp_mult := 1.0 + minutes * 0.35               # +35% HP per minute, up to ~+210%
+	var dmg_mult := 1.0 + minutes * 0.08              # +8% damage per minute, up to ~+48%
+	health = cfg["health"] * hp_mult
 	max_health = health
 	_show_health_bar = max_health >= HEALTH_BAR_MIN_MAX_HEALTH
-	contact_damage = cfg["damage"]
+	contact_damage = cfg["damage"] * dmg_mult
 	xp_value = cfg["xp"]
 	radius = cfg.get("radius", RADIUS)
 	base_scale = cfg.get("scale", 1.0)
