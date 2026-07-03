@@ -15,8 +15,10 @@ extends Node2D
 ## Lv1 = 20, Lv8 = 62 — the roster's heaviest single hit.
 static var BASE_DAMAGE := BalanceData.get_value("fire_wand_base_damage", 20.0)
 static var DAMAGE_PER_LEVEL := BalanceData.get_value("fire_wand_damage_per_level", 6.0)
-const BASE_INTERVAL := 3.0            # wiki cooldown; tightens a little per level so it keeps pace
-const INTERVAL_PER_LEVEL := 0.18
+## Base cooldown + per-level tighten live in res://data/balance.csv ("fire_wand_base_interval" /
+## "fire_wand_interval_per_level") so a designer can retune fire rate without touching this script.
+static var BASE_INTERVAL := BalanceData.get_value("fire_wand_base_interval", 3.0)
+static var INTERVAL_PER_LEVEL := BalanceData.get_value("fire_wand_interval_per_level", 0.18)
 const MIN_INTERVAL := 1.4
 const BASE_AMOUNT := 1                # fireballs per volley at Lv1…
 const MAX_AMOUNT := 3                 # …growing by one every three levels, capped at the wiki Amount 3

@@ -16,7 +16,9 @@ const BASE_ORBIT_RADIUS := 88.0
 const RADIUS_PER_LEVEL := 6.0
 const ANGULAR_SPEED := 3.6          # rad/s the books orbit the player (~0.57 rev/s)
 const BOOK_HIT_RADIUS := 27.0       # how close a book must pass to strike an enemy
-const TICK_INTERVAL := 0.35         # min seconds between a book's hits (avoids per-frame drain)
+## Min seconds between a book's hits (avoids per-frame drain) lives in res://data/balance.csv
+## ("king_bible_tick_interval") so a designer can retune fire rate without touching this script.
+static var TICK_INTERVAL := BalanceData.get_value("king_bible_tick_interval", 0.35)
 ## Base damage + per-level growth live in res://data/balance.csv ("king_bible_base_damage" /
 ## "king_bible_damage_per_level") so a designer can retune them without touching this script.
 static var BASE_DAMAGE := BalanceData.get_value("king_bible_base_damage", 6.0)

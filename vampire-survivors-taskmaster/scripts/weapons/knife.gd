@@ -14,8 +14,10 @@ extends Node2D
 ## "knife_damage_per_level") so a designer can retune them without touching this script.
 static var BASE_DAMAGE := BalanceData.get_value("knife_base_damage", 6.5)
 static var DAMAGE_PER_LEVEL := BalanceData.get_value("knife_damage_per_level", 2.0)
-const BASE_INTERVAL := 1.0            # seconds between throws — a fast, steady stream
-const INTERVAL_PER_LEVEL := 0.05      # tightens a little per level so it keeps pace late
+## Base cooldown + per-level tighten live in res://data/balance.csv ("knife_base_interval" /
+## "knife_interval_per_level") so a designer can retune fire rate without touching this script.
+static var BASE_INTERVAL := BalanceData.get_value("knife_base_interval", 1.0)
+static var INTERVAL_PER_LEVEL := BalanceData.get_value("knife_interval_per_level", 0.05)
 const MIN_INTERVAL := 0.55
 const BASE_AMOUNT := 1                # knives per throw at Lv1…
 const MAX_AMOUNT := 5                 # …growing by one every two levels, capped here (VS convention)

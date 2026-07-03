@@ -11,7 +11,9 @@ extends Node2D
 const BASE_RANGE := 140.0
 const RANGE_PER_LEVEL := 18.0
 const ARC_HALF_ANGLE := deg_to_rad(50.0)   # half-width of the damage wedge
-const ATTACK_INTERVAL := 1.2               # seconds between swings
+## Swing cooldown lives in res://data/balance.csv ("whip_base_interval") so a designer can
+## retune fire rate without touching this script.
+static var ATTACK_INTERVAL := BalanceData.get_value("whip_base_interval", 1.2)
 
 ## Lash VFX: SourceArt/pixel_art-animations-warrior "VFX 3", a claw-like slash swipe. Its
 ## smooth curl sits near the art's local origin and its impact burst flares out toward the

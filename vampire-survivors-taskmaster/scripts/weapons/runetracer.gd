@@ -15,8 +15,10 @@ extends Node2D
 ## Lv1 = 10, Lv8 = 31 — a steady bouncing chip.
 static var BASE_DAMAGE := BalanceData.get_value("runetracer_base_damage", 10.0)
 static var DAMAGE_PER_LEVEL := BalanceData.get_value("runetracer_damage_per_level", 3.0)
-const BASE_INTERVAL := 3.0            # wiki cooldown; tightens a little per level so it keeps pace
-const INTERVAL_PER_LEVEL := 0.15
+## Base cooldown + per-level tighten live in res://data/balance.csv ("runetracer_base_interval" /
+## "runetracer_interval_per_level") so a designer can retune fire rate without touching this script.
+static var BASE_INTERVAL := BalanceData.get_value("runetracer_base_interval", 3.0)
+static var INTERVAL_PER_LEVEL := BalanceData.get_value("runetracer_interval_per_level", 0.15)
 const MIN_INTERVAL := 1.4
 const BASE_AMOUNT := 1                # runes per volley (wiki Amount 1)…
 const MAX_AMOUNT := 3                 # …growing by one every three levels, capped here

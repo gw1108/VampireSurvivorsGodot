@@ -21,8 +21,10 @@ const EVO_BONUS_STRIKES := 3        # Thunder Loop rains extra bolts on top of t
 const EVO_MAX_STRIKES := 10         # …raising the per-volley cap so a maxed evolved ring saturates
 const EVO_SPLASH_MULT := 1.6        # Thunder Loop's blast is wider than the base ring's
 const STRIKE_RADIUS := 46.0          # AoE splash around each bolt's impact
-const BASE_INTERVAL := 4.5           # wiki cooldown; shrinks a little per level so it keeps pace
-const INTERVAL_PER_LEVEL := 0.3
+## Base cooldown + per-level shrink live in res://data/balance.csv ("lightning_base_interval" /
+## "lightning_interval_per_level") so a designer can retune fire rate without touching this script.
+static var BASE_INTERVAL := BalanceData.get_value("lightning_base_interval", 4.5)
+static var INTERVAL_PER_LEVEL := BalanceData.get_value("lightning_interval_per_level", 0.3)
 const MIN_INTERVAL := 1.8
 const FLASH_TIME := 0.18             # how long a drawn bolt lingers before fading out
 const BOLT_TOP := 460.0              # how far above the impact the bolt appears to fall from
