@@ -20,6 +20,12 @@ var _xp_bg: ColorRect
 var _xp_fill: ColorRect
 const XP_BAR_H := 8.0
 const XP_FILL_COLOR := Color(0.35, 0.8, 1.0)   # bright cyan = the XP/level identity
+# Level-up juice: on each level gained we punch the fill to white and decay back to the cyan
+# identity over XP_FLASH_TIME, so the bar itself flashes as a punchy beat of the level-up.
+const XP_FLASH_COLOR := Color(1.0, 1.0, 1.0)
+const XP_FLASH_TIME := 0.3
+var _xp_flash := 0.0     # seconds of flash remaining (0 = resting cyan)
+var _xp_level := -1      # last level seen, so a change (level-up) triggers the flash
 
 # Reaper boss health bar: a top-center crimson track that drains as the finale Reaper takes
 # damage, so the (celebrated) kill-win path reads as visible progress rather than a mystery.
@@ -255,6 +261,7 @@ func telegraph_surge(dir: Vector2) -> void:
 ## Drive the surge telegraph's fade. Holds full alpha for SURGE_TELEGRAPH_HOLD, then eases to
 ## zero over SURGE_TELEGRAPH_FADE and hides. A subtle pulse keeps the eye drawn while held.
 func _process(delta: float) -> void:
+	_process_xp_flash(delta)
 	if _surge_arrow == null or not _surge_arrow.visible:
 		return
 	_surge_time -= delta
@@ -342,11 +349,28 @@ func _refresh_boss(run: VSRun) -> void:
 func _refresh_xp(run: VSRun) -> void:
 	if _xp_fill == null:
 		return
+	# A level gain (level climbed since last refresh) punches the bar white; _process_xp_flash
+	# decays it back to cyan. Seed _xp_level on the first refresh so the run's starting level
+	# doesn't fire a spurious flash.
+	if _xp_level < 0:
+		_xp_level = run.level
+	elif run.level > _xp_level:
+		_xp_flash = XP_FLASH_TIME
+		_xp_level = run.level
 	var need := run._xp_to_next(run.level)
 	var frac := 0.0
 	if need > 0:
 		frac = clampf(float(run.xp) / float(need), 0.0, 1.0)
 	_xp_fill.anchor_right = frac
+
+## Decay the level-up flash: eases the fill from white back to its resting cyan over
+## XP_FLASH_TIME so a level-up reads as a bright punch on the bar itself.
+func _process_xp_flash(delta: float) -> void:
+	if _xp_fill == null or _xp_flash <= 0.0:
+		return
+	_xp_flash = maxf(0.0, _xp_flash - delta)
+	var t := _xp_flash / XP_FLASH_TIME   # 1 at the punch, 0 when rested
+	_xp_fill.color = XP_FILL_COLOR.lerp(XP_FLASH_COLOR, t)
 
 ## Drive the Orologion freeze feedback from the run's time-stop. While VSRun.is_frozen() the
 ## icy vignette and "FROZEN n" countdown show; the vignette's strength (and the label's fade)
