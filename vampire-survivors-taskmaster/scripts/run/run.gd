@@ -61,6 +61,7 @@ var weapon_fire_interval := 0.6
 var weapon_count := 1
 var area_mult := 1.0             # Candelabrador: scales AoE weapon reach/radius (garlic, whip, bible, lightning)
 var projectile_speed_mult := 1.0  # Bracer: scales how fast thrown/fired projectiles travel
+var pickup_range_mult := 1.0     # Attractorb: scales the magnet radius of gems/coins/food so pickups fly in from farther
 var armor := 0                   # Armor: flat damage subtracted from each hit the player takes (min 1 gets through)
 var garlic_level := 0            # 0 = Garlic aura not yet chosen; each pick grows it
 var whip_level := 0              # 0 = Whip melee arc not yet chosen; each pick grows it
@@ -103,6 +104,7 @@ const UPGRADE_POOL := [
 	{"id": "multishot", "title": "Multishot", "desc": "+1 projectile", "max": 4},
 	{"id": "area", "title": "Candelabrador", "desc": "+10% weapon area (aura/whip/bible/lightning reach)", "max": 5},
 	{"id": "projspeed", "title": "Bracer", "desc": "+15% projectile speed", "max": 5},
+	{"id": "attract", "title": "Attractorb", "desc": "+30% pickup range (gems, coins, food fly in from farther)", "max": 4},
 	{"id": "armor", "title": "Armor", "desc": "-1 damage taken per hit (min 1 always lands)", "max": 3},
 	{"id": "garlic", "title": "Garlic", "desc": "Damaging aura around you (grows each pick)", "max": 8},
 	{"id": "whip", "title": "Whip", "desc": "Melee arc lashing your facing side; both sides at Lv 2+", "max": 8},
@@ -737,6 +739,8 @@ func _apply_upgrade(id: String) -> void:
 			area_mult *= 1.10
 		"projspeed":
 			projectile_speed_mult *= 1.15
+		"attract":
+			pickup_range_mult *= 1.30
 		"armor":
 			armor += 1
 		"garlic":

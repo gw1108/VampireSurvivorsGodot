@@ -28,7 +28,8 @@ func _process(delta: float) -> void:
 	var pl := run.player
 	var to := pl.position - position
 	var d := to.length()
-	if d < MAGNET and d > 0.5:
+	# Attractorb passive widens the base magnet radius so food flies in from farther.
+	if d < MAGNET * run.pickup_range_mult and d > 0.5:
 		position += to / d * MAGNET_SPEED * delta
 	if d < PICKUP + VSPlayer.RADIUS:
 		var healed := 0.0
