@@ -290,7 +290,7 @@ func _die() -> void:
 	_dying = true
 	if run:
 		var big := type == Type.ELITE or type == Type.REAPER
-		run.add_kill(position, xp_value, gem_drops, big)
+		run.add_kill(position, xp_value, gem_drops, big, max_health)
 		if big:
 			run.add_camera_shake(0.8)   # elite/reaper pop lands harder than a player hit
 		if type == Type.REAPER:

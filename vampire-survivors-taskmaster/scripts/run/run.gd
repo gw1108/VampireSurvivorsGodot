@@ -439,10 +439,27 @@ func add_camera_shake(amount: float) -> void:
 func _on_player_damaged(_amount: float) -> void:
 	add_camera_shake(0.5)
 
-func add_kill(at: Vector2, xp_value: int = 1, gem_count: int = 1, is_elite: bool = false) -> void:
+## Weak fodder (a fresh bat's ~1-15 HP) shouldn't guarantee an XP gem on every kill — only
+## tankier threats should feel like a sure payout. Chance ramps linearly from a 25% floor
+## at/below GEM_DROP_FLOOR_HP up to a guaranteed drop at GEM_DROP_CEIL_HP (ELITE/REAPER
+## territory), so the horde's early chaff reads as a gamble rather than a loot pinata.
+const GEM_DROP_FLOOR_HP := 15.0
+const GEM_DROP_FLOOR_CHANCE := 0.25
+const GEM_DROP_CEIL_HP := 180.0
+
+func _gem_drop_chance(enemy_max_health: float) -> float:
+	if enemy_max_health <= GEM_DROP_FLOOR_HP:
+		return GEM_DROP_FLOOR_CHANCE
+	if enemy_max_health >= GEM_DROP_CEIL_HP:
+		return 1.0
+	var t := (enemy_max_health - GEM_DROP_FLOOR_HP) / (GEM_DROP_CEIL_HP - GEM_DROP_FLOOR_HP)
+	return lerpf(GEM_DROP_FLOOR_CHANCE, 1.0, t)
+
+func add_kill(at: Vector2, xp_value: int = 1, gem_count: int = 1, is_elite: bool = false, enemy_max_health: float = 3.0) -> void:
 	kills += 1
 	AgentBridge.emit_event("despawn", {"type": "enemy", "pos": [at.x, at.y]})
-	_spawn_gems(at, xp_value, gem_count)
+	if randf() < _gem_drop_chance(enemy_max_health):
+		_spawn_gems(at, xp_value, gem_count)
 	_maybe_drop_food(at)
 	_maybe_drop_coin(at, is_elite)
 	_maybe_drop_rosary(at, is_elite)
