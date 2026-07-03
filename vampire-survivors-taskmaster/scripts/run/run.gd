@@ -70,6 +70,8 @@ func _ensure_input() -> void:
 				InputMap.action_add_event(action, ev)
 
 func _build_world() -> void:
+	_build_ground()
+
 	player = VSPlayer.new()
 	player.died.connect(_on_player_died)
 	add_child(player)
@@ -112,6 +114,22 @@ func _build_world() -> void:
 
 	adapter = preload("res://scripts/agent/agent_adapter.gd").new()
 	add_child(adapter)
+
+## Repeating grass ground so the arena reads as a place — motion and position are
+## legible against a textured field instead of flat gray (see FEEL-REVIEW). A single
+## Sprite2D with region + texture-repeat tiles the 256px grass over the whole playfield
+## (arena_half plus camera margin). Static at origin, deep z_index so it sits under all.
+func _build_ground() -> void:
+	var ground := Sprite2D.new()
+	ground.texture = load("res://art/ground.png")
+	ground.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
+	ground.region_enabled = true
+	# Cover arena_half (±900,700) plus the visible camera margin so no gray shows at the edges.
+	var extent := Vector2(2400, 2000)
+	ground.region_rect = Rect2(-extent, extent * 2.0)
+	ground.z_index = -100
+	ground.z_as_relative = false
+	add_child(ground)
 
 func _process(delta: float) -> void:
 	frame_tick += 1
