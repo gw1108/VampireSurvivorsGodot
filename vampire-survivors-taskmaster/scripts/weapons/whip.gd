@@ -12,7 +12,18 @@ const BASE_RANGE := 140.0
 const RANGE_PER_LEVEL := 18.0
 const ARC_HALF_ANGLE := deg_to_rad(50.0)   # half-width of the damage wedge
 const ATTACK_INTERVAL := 1.2               # seconds between swings
-const SWEEP_TIME := 0.25                   # how long the arc stays visible per swing
+
+## Lash VFX: SourceArt/pixel_art-animations-warrior "VFX 3", a claw-like slash swipe. Its
+## smooth curl sits near the art's local origin and its impact burst flares out toward the
+## far tip once rotated -135°, which is why -135°/+135° (mirrored) reads as a whip cracking
+## outward to the right/left rather than a vertical chop — confirmed by rendering both sides
+## side-by-side (see whip VFX rotation check) before landing on this value.
+const VFX_TEX := "res://art/whip_slash.png"
+const VFX_COLS := 2
+const VFX_ROWS := 5
+const VFX_FPS := 40.0                      # 10 frames / 40fps = 0.25s, matching the old sweep time
+const VFX_ROTATION := deg_to_rad(-135.0)
+const VFX_OFFSET_FRAC := 0.55              # how far out along the lash the VFX sits, as a fraction of range
 ## Base damage + per-level growth live in res://data/balance.csv ("whip_base_damage" /
 ## "whip_damage_per_level") so a designer can retune them without touching this script.
 static var BASE_DAMAGE := BalanceData.get_value("whip_base_damage", 5.0)
@@ -27,10 +38,18 @@ const EVOLVED_ARC_BONUS := deg_to_rad(20.0)       # widens each wedge's half-ang
 
 var run: VSRun
 var _cd := 0.0
-var _sweep := 0.0          # remaining time on the current swing's visual
 var _facing := 1           # last horizontal facing: +1 right, -1 left
-var _swing_facing := 1     # facing captured at the moment of the swing (drives _draw)
+var _swing_facing := 1     # facing captured at the moment of the swing (drives the lash VFX)
 var _swing_both := false   # whether the current swing lashed both sides
+var _vfx_r: AnimatedSprite2D   # lash VFX for the right-facing side
+var _vfx_l: AnimatedSprite2D   # lash VFX for the left-facing side (mirrored)
+
+func _ready() -> void:
+	var frames := _build_vfx_frames()
+	_vfx_r = _make_vfx(frames, false)
+	_vfx_l = _make_vfx(frames, true)
+	add_child(_vfx_r)
+	add_child(_vfx_l)
 
 func _process(delta: float) -> void:
 	if run == null:
@@ -38,9 +57,6 @@ func _process(delta: float) -> void:
 	var lvl: int = run.whip_level
 	if lvl <= 0:
 		return
-	if _sweep > 0.0:
-		_sweep = maxf(0.0, _sweep - delta)
-		queue_redraw()
 	if run.phase != "playing":
 		return
 	# Track facing from horizontal input so the whip lashes the way the player moves.
@@ -57,10 +73,9 @@ func _process(delta: float) -> void:
 func _swing(lvl: int) -> void:
 	_swing_facing = _facing
 	_swing_both = lvl >= 2 or _is_evolved()
-	_sweep = SWEEP_TIME
-	queue_redraw()
 	var r := _range(lvl)
 	var arc := _arc_half()
+	_play_vfx(r)
 	var dmg := (BASE_DAMAGE + DAMAGE_PER_LEVEL * float(lvl)) * run.might_mult()
 	if _is_evolved():
 		dmg *= EVOLVED_DAMAGE_MULT
@@ -98,26 +113,45 @@ func _range(lvl: int) -> float:
 		r += EVOLVED_RANGE_BONUS
 	return r * run.area_mult   # Candelabrador passive extends the lash's reach
 
-func _draw() -> void:
-	if run == null or run.whip_level <= 0 or _sweep <= 0.0:
-		return
-	var r := _range(run.whip_level)
-	var arc := _arc_half()
-	var t := _sweep / SWEEP_TIME               # 1 at swing start -> 0 as it fades
-	# Bloody Tear tints the lash a deep crimson so the evolution reads at a glance.
-	var fill := Color(1.0, 0.35, 0.35, 0.28 * t) if _is_evolved() else Color(1.0, 0.95, 0.7, 0.22 * t)
-	var edge := Color(1.0, 0.55, 0.55, 0.8 * t) if _is_evolved() else Color(1.0, 1.0, 0.85, 0.7 * t)
+## Fire the lash VFX on every side this swing covers, positioned out along the lash at
+## VFX_OFFSET_FRAC * range. Bloody Tear tints it a deeper crimson so the evolution reads
+## at a glance (mirrors the old procedural fill's evolved tint).
+func _play_vfx(r: float) -> void:
+	_vfx_r.visible = false
+	_vfx_l.visible = false
+	var tint := Color(1.3, 0.55, 0.55) if _is_evolved() else Color(1, 1, 1)
 	for s in _sides():
-		var center := 0.0 if s > 0 else PI
-		_draw_wedge(center, r, arc, fill)
-		# Bright leading edge sweeps across the wedge as the swing plays out.
-		var edge_ang: float = center + lerp(arc, -arc, t)
-		draw_line(Vector2.ZERO, Vector2(cos(edge_ang), sin(edge_ang)) * r, edge, 3.0)
+		var vfx := _vfx_r if s > 0 else _vfx_l
+		vfx.position = Vector2(s, 0) * r * VFX_OFFSET_FRAC
+		vfx.modulate = tint
+		vfx.visible = true
+		vfx.play("default")
 
-func _draw_wedge(center: float, r: float, arc: float, col: Color) -> void:
-	var pts := PackedVector2Array([Vector2.ZERO])
-	var segs := 12
-	for i in segs + 1:
-		var a := center - arc + (2.0 * arc) * float(i) / float(segs)
-		pts.append(Vector2(cos(a), sin(a)) * r)
-	draw_colored_polygon(pts, col)
+## Builds the lash VFX's frames from the VFX3 sprite sheet (2 cols x 5 rows, read left->right
+## top->bottom), per the import_sprite_sheet_animation skill's in-code SpriteFrames pattern.
+func _build_vfx_frames() -> SpriteFrames:
+	var sf := SpriteFrames.new()
+	sf.set_animation_speed("default", VFX_FPS)
+	sf.set_animation_loop("default", false)
+	var tex := load(VFX_TEX) as Texture2D
+	var fw := tex.get_width() / VFX_COLS
+	var fh := tex.get_height() / VFX_ROWS
+	for row in VFX_ROWS:
+		for col in VFX_COLS:
+			var frame := AtlasTexture.new()
+			frame.atlas = tex
+			frame.region = Rect2(col * fw, row * fh, fw, fh)
+			sf.add_frame("default", frame)
+	return sf
+
+## One lash VFX node: hidden until the first swing, self-hiding when its one-shot finishes.
+## `flipped` mirrors it for the left side — flip_h + negated rotation keeps the impact burst
+## flaring outward away from the player on both sides (see VFX_ROTATION above).
+func _make_vfx(frames: SpriteFrames, flipped: bool) -> AnimatedSprite2D:
+	var s := AnimatedSprite2D.new()
+	s.sprite_frames = frames
+	s.flip_h = flipped
+	s.rotation = -VFX_ROTATION if flipped else VFX_ROTATION
+	s.visible = false
+	s.animation_finished.connect(func() -> void: s.visible = false)
+	return s
