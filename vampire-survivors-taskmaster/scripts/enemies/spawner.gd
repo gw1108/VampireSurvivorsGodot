@@ -26,8 +26,27 @@ func _spawn_one() -> void:
 	pos.x = clampf(pos.x, -run.arena_half.x, run.arena_half.x)
 	pos.y = clampf(pos.y, -run.arena_half.y, run.arena_half.y)
 	var e := VSEnemy.new()
+	e.type = _pick_type()
 	e.position = pos
 	e.run = run
 	e.target = run.player
 	run.add_child(e)
 	AgentBridge.emit_event("spawn", {"type": "enemy", "pos": [pos.x, pos.y]})
+
+## Weighted enemy-type roll that introduces tougher archetypes as the run ramps.
+func _pick_type() -> int:
+	var t := run.elapsed
+	var roll := randf()
+	if t < 30.0:
+		return VSEnemy.Type.BAT if roll < 0.8 else VSEnemy.Type.ZOMBIE
+	elif t < 90.0:
+		if roll < 0.45: return VSEnemy.Type.BAT
+		elif roll < 0.70: return VSEnemy.Type.ZOMBIE
+		elif roll < 0.90: return VSEnemy.Type.SKELETON
+		else: return VSEnemy.Type.GHOST
+	else:
+		if roll < 0.30: return VSEnemy.Type.BAT
+		elif roll < 0.50: return VSEnemy.Type.ZOMBIE
+		elif roll < 0.70: return VSEnemy.Type.SKELETON
+		elif roll < 0.85: return VSEnemy.Type.GHOST
+		else: return VSEnemy.Type.MUMMY
