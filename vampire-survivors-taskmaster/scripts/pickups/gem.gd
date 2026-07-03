@@ -10,6 +10,9 @@ const MAGNET_SPEED := 240.0
 
 var run: VSRun
 var value := 1   # XP granted on pickup; scaled by the enemy that dropped it
+## Set by a Magnet pickup: the gem homes on the player from anywhere on screen,
+## ignoring the normal short-range MAGNET radius, so the whole field vacuums in.
+var attracted := false
 
 ## Sprite tint per XP value so reward reads at a glance (blue=1, green=2, red=3+).
 const VALUE_COLORS := {
@@ -34,7 +37,7 @@ func _process(delta: float) -> void:
 	var pl := run.player
 	var to := pl.position - position
 	var d := to.length()
-	if d < MAGNET and d > 0.5:
+	if (attracted or d < MAGNET) and d > 0.5:
 		position += to / d * MAGNET_SPEED * delta
 	if d < PICKUP + VSPlayer.RADIUS:
 		run.collect_xp(value)

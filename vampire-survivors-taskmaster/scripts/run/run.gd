@@ -176,11 +176,13 @@ func add_camera_shake(amount: float) -> void:
 func _on_player_damaged(_amount: float) -> void:
 	add_camera_shake(0.5)
 
-func add_kill(at: Vector2, xp_value: int = 1, gem_count: int = 1) -> void:
+func add_kill(at: Vector2, xp_value: int = 1, gem_count: int = 1, is_elite: bool = false) -> void:
 	kills += 1
 	AgentBridge.emit_event("despawn", {"type": "enemy", "pos": [at.x, at.y]})
 	_spawn_gems(at, xp_value, gem_count)
 	_maybe_drop_food(at)
+	if is_elite:
+		_maybe_drop_magnet(at)
 
 ## Rarely drop a roast-chicken heal on a kill so the run has a survival-recovery lever.
 ## The chance is biased by missing HP: near-full health it's a rare treat (~1.2%), but as
@@ -197,6 +199,17 @@ func _maybe_drop_food(at: Vector2) -> void:
 		f.run = self
 		add_child(f)
 		AgentBridge.emit_event("spawn", {"type": "food", "pos": [at.x, at.y]})
+
+## Occasionally drop a Magnet from an elite kill — a VS-faithful treat that vacuums every
+## on-screen gem to the player. Elites are periodic mini-bosses, so a ~40% chance makes the
+## pickup a recurring-but-not-guaranteed reward that punctuates the wave rhythm.
+func _maybe_drop_magnet(at: Vector2) -> void:
+	if randf() < 0.40:
+		var m := VSMagnet.new()
+		m.position = at
+		m.run = self
+		add_child(m)
+		AgentBridge.emit_event("spawn", {"type": "magnet", "pos": [at.x, at.y]})
 
 ## Split a kill's XP across `count` gems scattered in a ring. Elites drop a burst
 ## so the big payout reads as a jackpot; ordinary kills drop a single gem.

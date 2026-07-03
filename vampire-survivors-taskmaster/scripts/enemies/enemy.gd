@@ -104,7 +104,7 @@ func hit(amount: float, _from: Vector2) -> void:
 func _die() -> void:
 	_dying = true
 	if run:
-		run.add_kill(position, xp_value, gem_drops)
+		run.add_kill(position, xp_value, gem_drops, type == Type.ELITE)
 		if type == Type.ELITE:
 			run.add_camera_shake(0.8)   # elite pop lands harder than a player hit
 	var tw := create_tween()

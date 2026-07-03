@@ -1,0 +1,48 @@
+class_name VSMagnet
+extends Node2D
+## Magnet pickup — the Vampire Survivors "vacuum" reward. Occasionally dropped by an
+## elite (see VSRun.add_kill), it magnetizes toward a nearby player like food/gems, and
+## on pickup marks EVERY on-screen XP gem `attracted` so the whole field homes in and is
+## swept up at once. Grants no XP or HP itself; its payout is the gem harvest it triggers.
+
+const PICKUP := 26.0
+const MAGNET := 110.0          # slightly wider grab than food/gems — a treat worth reaching for
+const MAGNET_SPEED := 240.0
+
+var run: VSRun
+var _t := 0.0                 # bob timer
+
+func _ready() -> void:
+	add_to_group("magnets")
+	var sprite := Sprite2D.new()
+	sprite.texture = load("res://art/magnet.png")
+	add_child(sprite)
+
+func _process(delta: float) -> void:
+	if run == null or run.phase != "playing" or run.player == null or not is_instance_valid(run.player):
+		return
+	# Gentle bob so it reads as a live, grabbable pickup rather than debris.
+	_t += delta
+	scale = Vector2.ONE * (1.0 + 0.06 * sin(_t * 4.0))
+	var pl := run.player
+	var to := pl.position - position
+	var d := to.length()
+	if d < MAGNET and d > 0.5:
+		position += to / d * MAGNET_SPEED * delta
+	if d < PICKUP + VSPlayer.RADIUS:
+		_collect()
+
+func _collect() -> void:
+	# Mark every gem on screen as attracted so they all vacuum to the player at once.
+	var pulled := 0
+	for g in get_tree().get_nodes_in_group("gems"):
+		if is_instance_valid(g) and g is VSGem:
+			g.attracted = true
+			pulled += 1
+	AgentBridge.emit_event("pickup", {"type": "magnet", "gems": pulled})
+	var parent := get_parent()
+	if parent != null:
+		# Cyan bloom + label so the vacuum reads as a distinct, exciting event.
+		VSPickupFlash.spawn(parent, position, Color(0.4, 0.85, 1.0))
+		VSFloatText.spawn(parent, position, "Vacuum!", Color(0.4, 0.85, 1.0))
+	queue_free()
