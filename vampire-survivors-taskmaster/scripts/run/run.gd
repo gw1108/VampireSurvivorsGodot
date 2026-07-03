@@ -206,15 +206,28 @@ func collect_xp(amount: int) -> void:
 	if phase != "playing":
 		return
 	xp += amount
-	var need := level * 5
+	var need := _xp_to_next(level)
 	while xp >= need:
 		xp -= need
 		level += 1
 		_pending_levels += 1
 		AgentBridge.emit_event("level_up", {"level": level})
-		need = level * 5
+		need = _xp_to_next(level)
 	if _pending_levels > 0:
 		_open_level_up()
+
+# XP required to advance FROM the given level. A tiered VS-like curve: the
+# per-level cost grows in steps (increments of 10/13/16) with the requirement
+# steepening at level 20 and 40, mirroring the game's formula changes so late
+# level-ups slow down and the weapon/passive max-level caps get approached over
+# a run rather than instantly. Level 1 still costs 5 to preserve the early pace.
+func _xp_to_next(lv: int) -> int:
+	if lv < 20:
+		return 5 + (lv - 1) * 10
+	elif lv < 40:
+		return 185 + (lv - 19) * 13
+	else:
+		return 445 + (lv - 39) * 16
 
 func _open_level_up() -> void:
 	var options := _roll_upgrades()
