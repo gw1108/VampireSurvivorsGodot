@@ -41,6 +41,20 @@ void fragment() {
 }
 """
 
+# Swarm-surge telegraph: when the spawner marches a directional wall in from a flank it calls
+# telegraph_surge(dir); we flash a crimson arrow near the screen edge pointing at the flank the
+# wall is coming from, so the player can juke perpendicular before it closes. Purely cosmetic —
+# a Polygon2D dart rotated to `dir`, held bright then faded over SURGE_TELEGRAPH_HOLD+FADE.
+var _surge_arrow: Polygon2D
+var _surge_time := 0.0     # seconds of telegraph remaining (hold + fade)
+const SURGE_TELEGRAPH_HOLD := 0.8    # seconds at full alpha before it starts fading
+const SURGE_TELEGRAPH_FADE := 1.0    # seconds to fade out after the hold
+const SURGE_ARROW_COLOR := Color(1.0, 0.42, 0.18)   # danger orange-crimson, reads as "incoming"
+# Local arrow geometry, pointing +X; telegraph_surge rotates it to the flank direction.
+const SURGE_ARROW_POLY: PackedVector2Array = [
+	Vector2(24, 0), Vector2(-8, -20), Vector2(0, 0), Vector2(-8, 20),
+]
+
 # Active permanent PowerUps are fixed for the whole run (applied once at start), so we read
 # MetaSave + build the line a single time and cache that it's been done.
 var _meta_built := false
@@ -167,6 +181,15 @@ func _ready() -> void:
 	_freeze_label.visible = false
 	add_child(_freeze_label)
 
+	# Surge telegraph arrow: a screen-space dart parented to the HUD layer, hidden until a
+	# wall marches in. telegraph_surge() positions/rotates it toward the flank and _process
+	# fades it out. Drawn above the world but under the stat text is fine — it's an edge marker.
+	_surge_arrow = Polygon2D.new()
+	_surge_arrow.polygon = SURGE_ARROW_POLY
+	_surge_arrow.color = SURGE_ARROW_COLOR
+	_surge_arrow.visible = false
+	add_child(_surge_arrow)
+
 	_over = Label.new()
 	_over.text = "YOU DIED\nPress Enter to retry"
 	_over.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -174,6 +197,37 @@ func _ready() -> void:
 	_over.add_theme_font_size_override("font_size", 28)
 	_over.visible = false
 	add_child(_over)
+
+## Flash the swarm-surge telegraph toward `dir` — the flank the wall is marching in from
+## (dir points from the player out to the wall's spawn point). Places the arrow near the
+## screen edge in that direction and rotates it to point outward at the threat, then _process
+## holds it bright and fades it. Called by the spawner when _spawn_surge fires.
+func telegraph_surge(dir: Vector2) -> void:
+	if _surge_arrow == null or dir == Vector2.ZERO:
+		return
+	var d := dir.normalized()
+	var screen := get_viewport().get_visible_rect().size if get_viewport() else Vector2(1280, 720)
+	var center := screen * 0.5
+	# Sit the arrow near the edge on the flank side (leave a margin so it stays fully on-screen).
+	var radius := minf(center.x, center.y) * 0.82
+	_surge_arrow.position = center + d * radius
+	_surge_arrow.rotation = d.angle()
+	_surge_arrow.visible = true
+	_surge_time = SURGE_TELEGRAPH_HOLD + SURGE_TELEGRAPH_FADE
+
+## Drive the surge telegraph's fade. Holds full alpha for SURGE_TELEGRAPH_HOLD, then eases to
+## zero over SURGE_TELEGRAPH_FADE and hides. A subtle pulse keeps the eye drawn while held.
+func _process(delta: float) -> void:
+	if _surge_arrow == null or not _surge_arrow.visible:
+		return
+	_surge_time -= delta
+	if _surge_time <= 0.0:
+		_surge_arrow.visible = false
+		return
+	var fade := clampf(_surge_time / SURGE_TELEGRAPH_FADE, 0.0, 1.0)
+	# Gentle pulse (0.75..1.0) so the marker throbs rather than sitting flat while it holds.
+	var pulse := 0.75 + 0.25 * absf(sin(_surge_time * 9.0))
+	_surge_arrow.color = Color(SURGE_ARROW_COLOR.r, SURGE_ARROW_COLOR.g, SURGE_ARROW_COLOR.b, fade * pulse)
 
 func refresh(run: VSRun) -> void:
 	if _stat == null:

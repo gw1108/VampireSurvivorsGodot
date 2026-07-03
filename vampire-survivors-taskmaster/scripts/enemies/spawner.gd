@@ -136,6 +136,10 @@ func _spawn_surge() -> void:
 		e.target = run.player
 		run.add_child(e)
 	AgentBridge.emit_event("surge", {"count": count, "dir": [dir.x, dir.y]})
+	# Telegraph the incoming wall on the HUD: flash an edge arrow pointing at the flank it
+	# marches in from, so the player gets a beat to juke perpendicular before it closes.
+	if run.hud:
+		run.hud.telegraph_surge(dir)
 
 ## Summon the finale Reaper on the spawn ring. Modeled on _spawn_elite (bypasses the
 ## enemy cap, tags its event) but injects the single, near-unkillable REAPER that VSRun
