@@ -11,6 +11,16 @@ var _reaper: Label
 var _slain: Label
 var _over: Label
 
+# XP progress bar: a thin full-width track across the very top of the screen that fills toward
+# the next level — VS's iconic level-loop feedback, so the player reads their progress to the
+# next upgrade at a glance rather than parsing the "(N xp)" text. Two anchored ColorRects (a
+# dark track + a cyan fill whose right anchor tracks xp / xp-to-next) so it stays full-width at
+# any resolution. Purely cosmetic; driven each frame from refresh().
+var _xp_bg: ColorRect
+var _xp_fill: ColorRect
+const XP_BAR_H := 8.0
+const XP_FILL_COLOR := Color(0.35, 0.8, 1.0)   # bright cyan = the XP/level identity
+
 # Reaper boss health bar: a top-center crimson track that drains as the finale Reaper takes
 # damage, so the (celebrated) kill-win path reads as visible progress rather than a mystery.
 # Three stacked ColorRects — border, empty track, draining fill — shown only during the finale.
@@ -70,6 +80,33 @@ var _loadout_sig := ""
 const WEAPON_IDS := ["garlic", "whip", "bible", "lightning", "knife"]
 
 func _ready() -> void:
+	# XP bar first so it hugs the very top edge. It's added before the freeze vignette (which is
+	# moved to the back below), so it draws on top of the icy overlay and stays readable.
+	_xp_bg = ColorRect.new()
+	_xp_bg.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	_xp_bg.offset_left = 0
+	_xp_bg.offset_right = 0
+	_xp_bg.offset_top = 0
+	_xp_bg.offset_bottom = XP_BAR_H
+	_xp_bg.color = Color(0.06, 0.08, 0.12, 0.85)
+	_xp_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_xp_bg)
+
+	# Fill: anchored to the top-left, its right anchor driven each frame to the xp fraction so its
+	# width is always that fraction of the viewport (offsets stay 0 except the fixed bar height).
+	_xp_fill = ColorRect.new()
+	_xp_fill.anchor_left = 0.0
+	_xp_fill.anchor_top = 0.0
+	_xp_fill.anchor_right = 0.0
+	_xp_fill.anchor_bottom = 0.0
+	_xp_fill.offset_left = 0
+	_xp_fill.offset_right = 0
+	_xp_fill.offset_top = 0
+	_xp_fill.offset_bottom = XP_BAR_H
+	_xp_fill.color = XP_FILL_COLOR
+	_xp_fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_xp_fill)
+
 	_stat = Label.new()
 	_stat.position = Vector2(12, 8)
 	_stat.add_theme_font_size_override("font_size", 16)
@@ -254,6 +291,7 @@ func refresh(run: VSRun) -> void:
 		_reroll.text = "Rerolls  %d" % run.rerolls_left
 		_reroll.modulate = Color(0.72, 0.6, 1.0) if run.rerolls_left > 0 else Color(0.5, 0.5, 0.55)
 	_refresh_loadout(run)
+	_refresh_xp(run)
 	_refresh_freeze(run)
 	# Reaper finale countdown, live only during the last stand (Reaper summoned, run not yet won).
 	var in_finale := run.reaper_active and run.phase == "playing"
@@ -296,6 +334,19 @@ func _refresh_boss(run: VSRun) -> void:
 		return
 	var frac := clampf(boss.health / maxf(boss.max_health, 1.0), 0.0, 1.0)
 	_boss_fill.size = Vector2(BOSS_BAR_W * frac, BOSS_BAR_H)
+
+## Drive the top XP progress bar from the run's xp toward the next level. The fill's right anchor
+## is set to xp / xp-to-next so its width is that fraction of the viewport; it empties and refills
+## each time a level is gained. Reads VSRun's per-level requirement so it stays in step with the
+## level curve (early levels fill fast, late ones slowly).
+func _refresh_xp(run: VSRun) -> void:
+	if _xp_fill == null:
+		return
+	var need := run._xp_to_next(run.level)
+	var frac := 0.0
+	if need > 0:
+		frac = clampf(float(run.xp) / float(need), 0.0, 1.0)
+	_xp_fill.anchor_right = frac
 
 ## Drive the Orologion freeze feedback from the run's time-stop. While VSRun.is_frozen() the
 ## icy vignette and "FROZEN n" countdown show; the vignette's strength (and the label's fade)
