@@ -10,6 +10,20 @@ extends CanvasLayer
 
 signal picked(id: String)
 
+## Per-upgrade icon, mapped by option id. Weapon/passive sprites from
+## SourceArt/extracted_clean (copied into res://art) so each choice reads at a glance:
+## strength=Power, dusty tome=cooldown/Haste, boots=Swift, heart=Vitality,
+## duplicator ring=Multishot. Ids without an entry just render text.
+const ICONS := {
+	"damage": "res://art/up_damage.png",
+	"firerate": "res://art/up_firerate.png",
+	"speed": "res://art/up_speed.png",
+	"health": "res://art/up_health.png",
+	"multishot": "res://art/up_multishot.png",
+}
+const PANEL_TEX := "res://art/ui_panel.png"       # Kenney RPG panel (brown)
+const PANEL_TEX_SEL := "res://art/ui_panel_sel.png"  # highlighted (blue) for hover/focus
+
 var _root: Control
 var _cards: VBoxContainer
 var _options: Array = []
@@ -54,16 +68,83 @@ func present(options: Array) -> void:
 	for c in _cards.get_children():
 		c.queue_free()
 	for i in options.size():
-		var opt: Dictionary = options[i]
-		var btn := Button.new()
-		btn.custom_minimum_size = Vector2(420, 56)
-		btn.text = "[%d]  %s\n%s" % [i + 1, opt.get("title", "?"), opt.get("desc", "")]
-		btn.add_theme_font_size_override("font_size", 18)
-		btn.pressed.connect(_choose.bind(i))
-		_cards.add_child(btn)
+		_cards.add_child(_make_card(i, options[i]))
 	visible = true
 	if _cards.get_child_count() > 0:
 		(_cards.get_child(0) as Button).grab_focus()
+
+## Build one upgrade card: a Kenney panel Button with a number badge, weapon/passive
+## icon, and title/description. Inner controls ignore the mouse so the whole card is
+## the click target and keyboard focus still highlights the selection.
+func _make_card(index: int, opt: Dictionary) -> Button:
+	var id := str(opt.get("id", ""))
+	var card := Button.new()
+	card.custom_minimum_size = Vector2(460, 96)
+	card.text = ""
+	card.add_theme_stylebox_override("normal", _panel_style(false))
+	card.add_theme_stylebox_override("hover", _panel_style(true))
+	card.add_theme_stylebox_override("pressed", _panel_style(true))
+	card.add_theme_stylebox_override("focus", _panel_style(true))
+	card.pressed.connect(_choose.bind(index))
+
+	var margin := MarginContainer.new()
+	margin.set_anchors_preset(Control.PRESET_FULL_RECT)
+	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	for side in ["left", "right", "top", "bottom"]:
+		margin.add_theme_constant_override("margin_%s" % side, 16)
+	card.add_child(margin)
+
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 14)
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	margin.add_child(row)
+
+	var badge := Label.new()
+	badge.text = str(index + 1)
+	badge.custom_minimum_size = Vector2(26, 0)
+	badge.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	badge.add_theme_font_size_override("font_size", 24)
+	row.add_child(badge)
+
+	if ICONS.has(id) and ResourceLoader.exists(ICONS[id]):
+		var icon := TextureRect.new()
+		icon.custom_minimum_size = Vector2(64, 64)
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon.texture = load(ICONS[id])
+		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		row.add_child(icon)
+
+	var text_col := VBoxContainer.new()
+	text_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	text_col.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(text_col)
+
+	var title := Label.new()
+	title.text = str(opt.get("title", "?"))
+	title.add_theme_font_size_override("font_size", 22)
+	text_col.add_child(title)
+
+	var desc := Label.new()
+	desc.text = str(opt.get("desc", ""))
+	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	desc.add_theme_font_size_override("font_size", 15)
+	text_col.add_child(desc)
+
+	return card
+
+func _panel_style(selected: bool) -> StyleBoxTexture:
+	var sb := StyleBoxTexture.new()
+	sb.texture = load(PANEL_TEX_SEL if selected else PANEL_TEX)
+	sb.texture_margin_left = 15
+	sb.texture_margin_right = 15
+	sb.texture_margin_top = 15
+	sb.texture_margin_bottom = 15
+	sb.content_margin_left = 8
+	sb.content_margin_right = 8
+	sb.content_margin_top = 8
+	sb.content_margin_bottom = 8
+	return sb
 
 func option_count() -> int:
 	return _options.size() if visible else 0
