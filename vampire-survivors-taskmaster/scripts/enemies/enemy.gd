@@ -240,8 +240,20 @@ func _process(delta: float) -> void:
 		step += _knockback * delta
 		_knockback = _knockback.move_toward(Vector2.ZERO, KNOCKBACK_DECAY * delta)
 	position += step
+	# Solid body vs the player: the same combined radius that gates contact damage also
+	# caps how close an enemy's sprite can get, so a wall of enemies packs into a ring right
+	# at the player's edge instead of visually marching inside the avatar sprite. Checked
+	# against the post-move (pre-clamp) distance so a horde pressed against this rim still
+	# chips the player on every contact tick, not just on the approach frame.
+	var min_dist := radius + VSPlayer.RADIUS
+	var from_player := position - target.position
+	var d_after := from_player.length()
+	var contact := d_after < min_dist
+	if contact:
+		var push_dir := from_player / d_after if d_after > 0.001 else Vector2.RIGHT.rotated(randf() * TAU)
+		position = target.position + push_dir * min_dist
 	_contact_cd -= delta
-	if d < radius + VSPlayer.RADIUS and _contact_cd <= 0.0 and target.alive:
+	if contact and _contact_cd <= 0.0 and target.alive:
 		target.take_damage(contact_damage)
 		_contact_cd = 0.5
 
