@@ -7,10 +7,15 @@ const MAX_ENEMIES := 90
 const SPAWN_RING := 520.0
 const ELITE_INTERVAL := 35.0   # seconds between mini-boss spawns
 const ELITE_FIRST := 35.0      # delay before the first elite appears
+const WAVE_INTERVAL := 60.0    # seconds between minute-milestone wave surges
+const WAVE_BASE := 8           # enemies in the first (1:00) surge
+const WAVE_GROWTH := 6         # extra enemies per subsequent minute mark
+const WAVE_OVERFLOW := 40      # headroom a surge may push past MAX_ENEMIES
 
 var run: VSRun
 var _accum := 0.0
 var _next_elite := ELITE_FIRST
+var _next_wave := WAVE_INTERVAL
 
 func _process(delta: float) -> void:
 	if run == null or run.phase != "playing" or run.player == null:
@@ -23,6 +28,13 @@ func _process(delta: float) -> void:
 	if run.elapsed >= _next_elite:
 		_next_elite += ELITE_INTERVAL
 		_spawn_elite()
+	# Each minute mark crescendos into a coordinated ring-burst so the run visibly
+	# escalates toward RUN_DURATION. The final minute is skipped — the Reaper finale
+	# owns that beat.
+	if run.elapsed >= _next_wave and _next_wave < VSRun.RUN_DURATION:
+		var minute := int(round(_next_wave / WAVE_INTERVAL))
+		_next_wave += WAVE_INTERVAL
+		_spawn_wave(minute)
 
 func _spawn_one() -> void:
 	if get_tree().get_nodes_in_group("enemies").size() >= MAX_ENEMIES:
@@ -53,6 +65,30 @@ func _spawn_elite() -> void:
 	e.target = run.player
 	run.add_child(e)
 	AgentBridge.emit_event("spawn", {"type": "elite", "pos": [pos.x, pos.y]})
+
+## Minute-milestone surge: drop a full ring of enemies around the player in one beat so the
+## survival clock reads as escalating waves (a VS "wave" event) rather than a smooth trickle.
+## Count grows with each minute mark; the burst may briefly exceed MAX_ENEMIES by WAVE_OVERFLOW
+## so the crescendo lands, but stays bounded for performance.
+func _spawn_wave(minute: int) -> void:
+	var count := WAVE_BASE + maxi(minute - 1, 0) * WAVE_GROWTH
+	var ceiling := MAX_ENEMIES + WAVE_OVERFLOW
+	var base_ang := randf() * TAU
+	for i in count:
+		if get_tree().get_nodes_in_group("enemies").size() >= ceiling:
+			break
+		# Evenly space the ring (with a little jitter) so it reads as a coordinated surge.
+		var ang := base_ang + TAU * float(i) / float(count) + randf_range(-0.12, 0.12)
+		var pos := run.player.position + Vector2(cos(ang), sin(ang)) * SPAWN_RING
+		pos.x = clampf(pos.x, -run.arena_half.x, run.arena_half.x)
+		pos.y = clampf(pos.y, -run.arena_half.y, run.arena_half.y)
+		var e := VSEnemy.new()
+		e.type = _pick_type()
+		e.position = pos
+		e.run = run
+		e.target = run.player
+		run.add_child(e)
+	AgentBridge.emit_event("wave", {"minute": minute, "count": count})
 
 ## Summon the finale Reaper on the spawn ring. Modeled on _spawn_elite (bypasses the
 ## enemy cap, tags its event) but injects the single, near-unkillable REAPER that VSRun
