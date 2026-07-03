@@ -11,11 +11,22 @@ const MAGNET_SPEED := 240.0
 var run: VSRun
 var value := 1   # XP granted on pickup; scaled by the enemy that dropped it
 
+## Sprite tint per XP value so reward reads at a glance (blue=1, green=2, red=3+).
+const VALUE_COLORS := {
+	1: Color(0.45, 0.7, 1.0),   # blue
+	2: Color(0.5, 1.0, 0.55),   # green
+	3: Color(1.0, 0.45, 0.45),  # red
+}
+
 func _ready() -> void:
 	add_to_group("gems")
 	var sprite := Sprite2D.new()
 	sprite.texture = load("res://art/gem.png")
+	sprite.modulate = VALUE_COLORS.get(value, VALUE_COLORS[3])
 	add_child(sprite)
+	# Higher-value gems read bigger (1.0 at value 1, +0.12 per extra point).
+	var s := 1.0 + 0.12 * float(maxi(value - 1, 0))
+	scale = Vector2(s, s)
 
 func _process(delta: float) -> void:
 	if run == null or run.phase != "playing" or run.player == null or not is_instance_valid(run.player):
