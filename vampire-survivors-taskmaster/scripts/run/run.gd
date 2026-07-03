@@ -431,16 +431,22 @@ func open_chest(at: Vector2) -> void:
 	chests_opened += 1
 	add_camera_shake(0.5)
 	var granted := 0
+	var titles: Array[String] = []
 	for i in count:
 		var id := _random_open_upgrade()
 		if id == "":
 			break   # everything maxed — remaining items convert to gold below
 		_apply_upgrade(id)
-		VSFloatText.spawn(self, at + Vector2(0.0, -18.0 - float(granted) * 16.0), _upgrade_title(id), Color(1.0, 0.85, 0.3))
+		var title := _upgrade_title(id)
+		titles.append(title)
+		VSFloatText.spawn(self, at + Vector2(0.0, -18.0 - float(granted) * 16.0), title, Color(1.0, 0.85, 0.3))
 		granted += 1
 	var gold_award := count * randi_range(4, 8) + (count - granted) * 12
 	add_gold(gold_award)
 	VSFloatText.spawn(self, at, "+%d Gold" % gold_award, Color(1.0, 0.85, 0.3))
+	# Centered HUD reveal so a multi-item jackpot reads as one build spike, not a scatter of floats.
+	if hud:
+		hud.show_chest_reveal(titles, gold_award)
 	AgentBridge.emit_event("chest_open", {"items": granted, "gold": gold_award})
 
 ## Pick a random upgrade id that hasn't hit its cap yet (weapons, passives — never evolutions,

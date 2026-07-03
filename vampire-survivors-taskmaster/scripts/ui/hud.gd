@@ -9,7 +9,16 @@ var _meta: Label
 var _reroll: Label
 var _reaper: Label
 var _slain: Label
+var _chest: Label
 var _over: Label
+
+# Treasure-chest reveal banner: a transient centered gold banner naming the items + gold a chest
+# just granted, so a multi-item jackpot reads as one build spike rather than a scatter of floating
+# world labels. Shown by show_chest_reveal(); _process holds it bright then fades it out.
+const CHEST_REVEAL_HOLD := 1.8
+const CHEST_REVEAL_FADE := 0.9
+const CHEST_REVEAL_COLOR := Color(1.0, 0.85, 0.3)   # treasure gold, matching the chest's floats
+var _chest_time := 0.0
 
 # XP progress bar: a thin full-width track across the very top of the screen that fills toward
 # the next level — VS's iconic level-loop feedback, so the player reads their progress to the
@@ -192,6 +201,20 @@ func _ready() -> void:
 	_slain.visible = false
 	add_child(_slain)
 
+	# Treasure-chest reveal banner: hidden until a chest is opened, then show_chest_reveal() names
+	# its items + gold as a centered gold banner (styled like the finale banners) so a multi-item
+	# jackpot reads as a build spike. Outlined so the list stays legible over the busy playfield.
+	_chest = Label.new()
+	_chest.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_chest.position = Vector2(240, 132)
+	_chest.size = Vector2(800, 0)
+	_chest.add_theme_font_size_override("font_size", 26)
+	_chest.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
+	_chest.add_theme_constant_override("outline_size", 4)
+	_chest.modulate = CHEST_REVEAL_COLOR
+	_chest.visible = false
+	add_child(_chest)
+
 	# Reaper boss health bar (top-center), hidden until the finale summons the Reaper. Added
 	# border -> track -> fill so the draining fill draws on top; driven each frame in _refresh_boss.
 	_boss_border = ColorRect.new()
@@ -277,6 +300,7 @@ func telegraph_surge(dir: Vector2) -> void:
 ## zero over SURGE_TELEGRAPH_FADE and hides. A subtle pulse keeps the eye drawn while held.
 func _process(delta: float) -> void:
 	_process_xp_flash(delta)
+	_process_chest_reveal(delta)
 	if _surge_arrow == null or not _surge_arrow.visible:
 		return
 	_surge_time -= delta
@@ -287,6 +311,34 @@ func _process(delta: float) -> void:
 	# Gentle pulse (0.75..1.0) so the marker throbs rather than sitting flat while it holds.
 	var pulse := 0.75 + 0.25 * absf(sin(_surge_time * 9.0))
 	_surge_arrow.color = Color(SURGE_ARROW_COLOR.r, SURGE_ARROW_COLOR.g, SURGE_ARROW_COLOR.b, fade * pulse)
+
+## Flash a transient centered "TREASURE" banner naming the items + gold a chest just granted,
+## so a multi-item jackpot reads as one build spike rather than a scatter of floating world
+## labels. `titles` is the list of granted upgrade names (may be empty if everything was maxed
+## and the chest paid out only gold). _process_chest_reveal holds it bright then fades it out.
+func show_chest_reveal(titles: Array, gold: int) -> void:
+	if _chest == null:
+		return
+	var lines := PackedStringArray(["TREASURE!"])
+	for t in titles:
+		lines.append(str(t))
+	if gold > 0:
+		lines.append("+%d Gold" % gold)
+	_chest.text = "\n".join(lines)
+	_chest.visible = true
+	_chest_time = CHEST_REVEAL_HOLD + CHEST_REVEAL_FADE
+
+## Drive the chest-reveal banner's fade: hold full alpha for CHEST_REVEAL_HOLD, then ease its
+## alpha to zero over CHEST_REVEAL_FADE and hide, so the reveal punches in and drifts away.
+func _process_chest_reveal(delta: float) -> void:
+	if _chest == null or not _chest.visible:
+		return
+	_chest_time -= delta
+	if _chest_time <= 0.0:
+		_chest.visible = false
+		return
+	var a := clampf(_chest_time / CHEST_REVEAL_FADE, 0.0, 1.0)
+	_chest.modulate = Color(CHEST_REVEAL_COLOR.r, CHEST_REVEAL_COLOR.g, CHEST_REVEAL_COLOR.b, a)
 
 func refresh(run: VSRun) -> void:
 	if _stat == null:
