@@ -49,6 +49,8 @@ const HEALTH_BAR_MIN_MAX_HEALTH := 40.0
 ## deep HP pool (enough to show its health bar) and a heavy contact bite, but it keeps
 ## the Mantis lunge so it reads as a fast-but-tanky striker rather than a slow wall. It
 ## surfaces in the late (t>=90s) band to deepen the insect threat without a full boss.
+## It scatters its 10 XP across a 5-gem ring (small green gems) so felling this tanky
+## mini-elite reads as a jackpot burst like the ELITE — but without the boss camera shake.
 enum Type { BAT, ZOMBIE, SKELETON, GHOST, MUMMY, MANTIS, MANTIS_WARRIOR, ELITE, REAPER }
 
 const TYPES := {
@@ -58,7 +60,7 @@ const TYPES := {
 	Type.GHOST:    {"tex": "res://art/enemy_ghost.png",    "speed": 78.0, "health": 2.0,   "damage": 7.0,  "xp": 1},
 	Type.MUMMY:    {"tex": "res://art/enemy_mummy.png",    "speed": 34.0, "health": 10.0,  "damage": 12.0, "xp": 3},
 	Type.MANTIS:   {"tex": "res://art/enemy_mantis.png",   "speed": 96.0, "health": 5.0,   "damage": 11.0, "xp": 3},
-	Type.MANTIS_WARRIOR: {"tex": "res://art/enemy_mantis_warrior.png", "speed": 84.0, "health": 45.0, "damage": 16.0, "xp": 10, "scale": 1.4, "radius": 16.0, "gems": 2, "knock": 0.4, "tint": Color(0.68, 0.74, 0.82)},
+	Type.MANTIS_WARRIOR: {"tex": "res://art/enemy_mantis_warrior.png", "speed": 84.0, "health": 45.0, "damage": 16.0, "xp": 10, "scale": 1.4, "radius": 16.0, "gems": 5, "knock": 0.4, "tint": Color(0.68, 0.74, 0.82)},
 	Type.ELITE:    {"tex": "res://art/enemy_elite.png",    "speed": 40.0, "health": 140.0, "damage": 20.0, "xp": 25, "scale": 2.0, "radius": 22.0, "gems": 5, "knock": 0.25},
 	Type.REAPER:   {"tex": "res://art/enemy_reaper.png",   "speed": 130.0, "health": 600.0, "damage": 34.0, "xp": 60, "scale": 2.6, "radius": 30.0, "gems": 10, "knock": 0.06},
 }
