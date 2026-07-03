@@ -124,6 +124,13 @@ func hit(amount: float, _from: Vector2) -> void:
 	health -= amount
 	_flash_time = FLASH_DURATION
 	_update_flash()
+	# Floating white damage number so rising power (Might, Power picks, weapon levels)
+	# reads frame-to-frame even when a hit doesn't cross an HP breakpoint. Cosmetic:
+	# spawned into the parent's space with a little x jitter so stacked hits stay legible.
+	var parent := get_parent()
+	if parent != null:
+		var at := position + Vector2(randf_range(-6.0, 6.0), -radius)
+		VSFloatText.spawn(parent, at, str(int(round(amount))), Color(1, 1, 1))
 	if _show_health_bar:
 		queue_redraw()
 	if health <= 0.0:
