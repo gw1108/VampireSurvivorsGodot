@@ -10,6 +10,25 @@ var _reaper: Label
 var _slain: Label
 var _over: Label
 
+# Orologion freeze feedback: a full-screen icy vignette + centered "FROZEN n" countdown that
+# reads the run's time-stop (VSRun.is_frozen) so the breather is unmistakable. Purely cosmetic.
+var _freeze_vig: ColorRect
+var _freeze_label: Label
+# Matches VSFrozenClock.ICE so the overlay reads as the same icy event as the pickup bloom.
+const FREEZE_TINT := Color(0.6, 0.85, 1.15)
+# Full-screen vignette shader: transparent-ish center, icy edges, alpha scaled by `strength`.
+const FREEZE_SHADER := """
+shader_type canvas_item;
+uniform vec4 tint : source_color = vec4(0.6, 0.85, 1.15, 1.0);
+uniform float strength = 0.0;
+void fragment() {
+	float d = length(UV - vec2(0.5)) * 1.41421356;
+	float vig = smoothstep(0.15, 0.95, d);
+	float a = strength * mix(0.10, 0.55, vig);
+	COLOR = vec4(tint.rgb, a);
+}
+"""
+
 # Active permanent PowerUps are fixed for the whole run (applied once at start), so we read
 # MetaSave + build the line a single time and cache that it's been done.
 var _meta_built := false
@@ -76,6 +95,30 @@ func _ready() -> void:
 	_slain.visible = false
 	add_child(_slain)
 
+	# Icy freeze vignette, stretched over the whole viewport and kept behind the HUD text.
+	# Starts invisible (strength 0) and is driven each frame from refresh() while frozen.
+	_freeze_vig = ColorRect.new()
+	_freeze_vig.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_freeze_vig.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var shader := Shader.new()
+	shader.code = FREEZE_SHADER
+	var mat := ShaderMaterial.new()
+	mat.shader = shader
+	_freeze_vig.material = mat
+	_freeze_vig.visible = false
+	add_child(_freeze_vig)
+	move_child(_freeze_vig, 0)   # behind all the stat/build labels
+
+	# Centered "FROZEN n" countdown so the time-stop reads as a deliberate breather.
+	_freeze_label = Label.new()
+	_freeze_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_freeze_label.position = Vector2(300, 96)
+	_freeze_label.size = Vector2(400, 0)
+	_freeze_label.add_theme_font_size_override("font_size", 24)
+	_freeze_label.modulate = FREEZE_TINT
+	_freeze_label.visible = false
+	add_child(_freeze_label)
+
 	_over = Label.new()
 	_over.text = "YOU DIED\nPress Enter to retry"
 	_over.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -104,6 +147,7 @@ func refresh(run: VSRun) -> void:
 		_build.text += "    Whip Lv %d" % run.whip_level
 	_refresh_meta()
 	_refresh_loadout(run)
+	_refresh_freeze(run)
 	# Reaper finale countdown, live only during the last stand (Reaper summoned, run not yet won).
 	var in_finale := run.reaper_active and run.phase == "playing"
 	_reaper.visible = in_finale
@@ -126,6 +170,25 @@ func refresh(run: VSRun) -> void:
 			heading = "YOU SLEW THE REAPER!" if run.reaper_slain else "YOU SURVIVED!"
 		_over.modulate = Color(1.0, 0.9, 0.4) if won else Color(1, 1, 1)
 		_over.text = "%s\n\nTime Survived  %s\nKills  %d\nLevel Reached  %d\nGold This Run  %d\nCoins Banked  %d\n\nPress B for the PowerUp shop\nPress Enter to retry" % [heading, _mmss(run.elapsed), run.kills, run.level, run.gold, banked]
+
+## Drive the Orologion freeze feedback from the run's time-stop. While VSRun.is_frozen() the
+## icy vignette and "FROZEN n" countdown show; the vignette's strength (and the label's fade)
+## ease out over the final second so the breather visibly winds down as freeze_until approaches.
+func _refresh_freeze(run: VSRun) -> void:
+	if _freeze_vig == null:
+		return
+	var frozen := run.is_frozen() and run.phase == "playing"
+	_freeze_vig.visible = frozen
+	_freeze_label.visible = frozen
+	if not frozen:
+		return
+	var remaining := maxf(0.0, run.freeze_until - run.elapsed)
+	# Hold full strength through the freeze, then ease to zero across the last second so the
+	# icy tint reads as thawing rather than snapping off.
+	var strength := clampf(remaining, 0.0, 1.0)
+	(_freeze_vig.material as ShaderMaterial).set_shader_parameter("strength", strength)
+	_freeze_label.text = "FROZEN  %d" % int(ceil(remaining))
+	_freeze_label.modulate = Color(FREEZE_TINT.r, FREEZE_TINT.g, FREEZE_TINT.b, strength)
 
 ## Format a seconds count as m:ss for the survival clock and run summaries.
 func _mmss(seconds: float) -> String:
