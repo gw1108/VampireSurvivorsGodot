@@ -47,6 +47,11 @@ var _options: Array = []
 var _reroll_btn: Button
 var _skip_btn: Button
 var _rerolls_left := 0
+## Left build rail: the GDD's "full live stat readout and inventory grid" beside the choices.
+## The picker's dim covers the top-right HUD loadout, so without this the player can't see their
+## current build while weighing a pick; the rail restores that readout. Populated in present().
+var _rail_panel: PanelContainer
+var _rail_body: VBoxContainer
 
 func _ready() -> void:
 	layer = 10                       # above the HUD
@@ -62,6 +67,21 @@ func _ready() -> void:
 	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
 	dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_root.add_child(dim)
+
+	# Left build rail — a compact dark panel pinned to the far-left edge (clear of the centered
+	# cards), populated each present() from the run's live stats + owned items. Mouse-ignored so
+	# it never eats a card click; sized to its content so it grows with the build.
+	_rail_panel = PanelContainer.new()
+	_rail_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_rail_panel.position = Vector2(16, 120)
+	_rail_panel.visible = false
+	_root.add_child(_rail_panel)
+
+	_rail_body = VBoxContainer.new()
+	_rail_body.custom_minimum_size = Vector2(196, 0)
+	_rail_body.add_theme_constant_override("separation", 2)
+	_rail_body.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_rail_panel.add_child(_rail_body)
 
 	var center := CenterContainer.new()
 	center.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -103,7 +123,9 @@ func _ready() -> void:
 
 ## options: Array of { "id": String, "title": String, "desc": String }.
 ## rerolls_left: remaining reroll budget; the Reroll button disables at 0.
-func present(options: Array, rerolls_left: int = 0) -> void:
+## run: the live VSRun, so the left rail can show the current stat readout + owned items
+##      (the picker's dim hides the HUD, so this is the only build readout while choosing).
+func present(options: Array, rerolls_left: int = 0, run: VSRun = null) -> void:
 	_options = options
 	_rerolls_left = rerolls_left
 	for c in _cards.get_children():
@@ -111,9 +133,85 @@ func present(options: Array, rerolls_left: int = 0) -> void:
 	for i in options.size():
 		_cards.add_child(_make_card(i, options[i]))
 	_refresh_action_buttons()
+	_refresh_stat_rail(run)
 	visible = true
 	if _cards.get_child_count() > 0:
 		(_cards.get_child(0) as Button).grab_focus()
+
+## Populate the left build rail from the run's live stats and owned upgrades — the GDD's
+## "full live stat readout and inventory grid" beside the choices. Hidden when no run is passed
+## (backward-compatible callers). Rebuilt each present() so it always reflects the latest picks.
+func _refresh_stat_rail(run: VSRun) -> void:
+	if _rail_panel == null:
+		return
+	if run == null:
+		_rail_panel.visible = false
+		return
+	_rail_panel.visible = true
+	for c in _rail_body.get_children():
+		c.queue_free()
+	_add_rail_header("YOUR BUILD")
+	var hp := 0
+	var mhp := 0
+	if run.player:
+		hp = int(ceil(run.player.health))
+		mhp = int(round(run.player.max_health))
+	_add_rail_line("HP", "%d/%d" % [hp, mhp])
+	_add_rail_line("Damage", "%.0f" % run.weapon_damage)
+	var rate := 1.0 / run.weapon_fire_interval if run.weapon_fire_interval > 0.0 else 0.0
+	_add_rail_line("Fire Rate", "%.2f/s" % rate)
+	_add_rail_line("Move Speed", "%d%%" % int(round(run.player_speed_mult * 100.0)))
+	_add_rail_line("Shots", "%d" % run.weapon_count)
+	_add_rail_line("Area", "%d%%" % int(round(run.area_mult * 100.0)))
+	_add_rail_line("Proj Speed", "%d%%" % int(round(run.projectile_speed_mult * 100.0)))
+	_add_rail_line("Pickup", "%d%%" % int(round(run.pickup_range_mult * 100.0)))
+	_add_rail_line("XP Gain", "%d%%" % int(round(run.xp_gain_mult * 100.0)))
+	_add_rail_line("Armor", "%d" % run.armor)
+	_add_rail_line("Might", "%d%%" % int(round(run.might_mult() * 100.0)))
+	# Owned inventory, in UPGRADE_POOL order so the list stays stable as picks come in.
+	var owned := 0
+	for opt in VSRun.UPGRADE_POOL:
+		var lvl: int = run.upgrade_levels.get(opt["id"], 0)
+		if lvl > 0:
+			if owned == 0:
+				_add_rail_header("ITEMS")
+			owned += 1
+			_add_rail_line(str(opt["title"]), "Lv %d" % lvl)
+
+## A dim section header row for the build rail (e.g. "YOUR BUILD", "ITEMS"), with a little
+## top padding on any header after the first so the sections read apart.
+func _add_rail_header(text: String) -> void:
+	if _rail_body.get_child_count() > 0:
+		var pad := Control.new()
+		pad.custom_minimum_size = Vector2(0, 6)
+		pad.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_rail_body.add_child(pad)
+	var head := Label.new()
+	head.text = text
+	head.add_theme_font_size_override("font_size", 12)
+	head.modulate = Color(0.7, 0.72, 0.8)
+	head.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_rail_body.add_child(head)
+
+## One name/value row on the build rail: the label left, the value right-aligned so the
+## column of numbers reads cleanly.
+func _add_rail_line(name: String, value: String) -> void:
+	var row := HBoxContainer.new()
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var name_lbl := Label.new()
+	name_lbl.text = name
+	name_lbl.add_theme_font_size_override("font_size", 13)
+	name_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	name_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(name_lbl)
+	var val_lbl := Label.new()
+	val_lbl.text = value
+	val_lbl.add_theme_font_size_override("font_size", 13)
+	val_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	val_lbl.modulate = Color(0.85, 0.92, 1.0)
+	val_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(val_lbl)
+	_rail_body.add_child(row)
 
 func _refresh_action_buttons() -> void:
 	_reroll_btn.text = "Reroll (%d)  [R]" % _rerolls_left

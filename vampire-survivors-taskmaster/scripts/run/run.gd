@@ -737,7 +737,7 @@ func _open_level_up() -> void:
 			phase = "playing"
 		return
 	phase = "level_up"
-	upgrade_screen.present(options, rerolls_left)
+	upgrade_screen.present(options, rerolls_left, self)
 
 ## Pick up to 3 distinct not-yet-maxed options, each annotated with its current level so
 ## the card can show "Lv N → N+1". Maxed upgrades are excluded so the pool shrinks over
