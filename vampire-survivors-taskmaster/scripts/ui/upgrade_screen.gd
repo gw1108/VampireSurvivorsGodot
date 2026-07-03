@@ -37,6 +37,8 @@ const ICONS := {
 	"unholy_vespers": "res://art/up_bible.png",   # King Bible evolution reuses the tome icon
 	"thunder_loop": "res://art/up_lightning.png", # Lightning Ring evolution reuses the ring icon
 	"no_future": "res://art/weapon_runetracer.png", # Runetracer evolution reuses the rune sprite
+	"bonus_gold": "res://art/gold_coin.png",       # consolation coin bag (pool exhausted)
+	"bonus_chicken": "res://art/food_chicken.png", # consolation Floor Chicken heal (pool exhausted)
 }
 const PANEL_TEX := "res://art/ui_panel.png"       # Kenney RPG panel (brown)
 const PANEL_TEX_SEL := "res://art/ui_panel_sel.png"  # highlighted (blue) for hover/focus

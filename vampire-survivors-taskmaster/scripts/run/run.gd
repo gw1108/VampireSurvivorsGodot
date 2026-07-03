@@ -101,6 +101,13 @@ var _xp_remainder := 0.0
 ## little without ever undercutting the value of an actual pick.
 const SKIP_XP_FRACTION := 0.25
 
+## Consolation-pick rewards. When a build nears (or reaches) fully maxed, the upgrade pool can
+## no longer fill a 3-card hand; per the GDD ("full & maxed → level-ups instead offer gold or
+## Floor Chicken") we pad the hand with these instead of shrinking it or silently resolving.
+## Floor Chicken heals 30 HP (GDD Pickups table); the coin bag banks a flat run-gold reward.
+const BONUS_GOLD_AMOUNT := 30
+const BONUS_CHICKEN_HEAL := 30.0
+
 ## Per-run reroll budget for the level-up picker (VS-style build agency). Each reroll
 ## re-rolls the current hand via _roll_upgrades(); Skip is always free. Kept small so it's
 ## a meaningful choice, not a slot machine. This is the BASE budget; the Reroll PowerUp
@@ -741,8 +748,9 @@ func _xp_to_next(lv: int) -> int:
 func _open_level_up() -> void:
 	var options := _roll_upgrades()
 	if options.is_empty():
-		# Every upgrade is maxed — still reward the level with a small heal, then resume
-		# without a screen so the run never soft-locks on an empty picker.
+		# Defensive fallback only: _roll_upgrades now pads a maxed build with Gold/Floor Chicken
+		# consolation cards, so a non-empty hand is expected. If it is ever empty anyway, reward
+		# the level with a small heal and resume without a screen so the run never soft-locks.
 		if player:
 			player.health = minf(player.max_health, player.health + 20.0)
 		_pending_levels -= 1
@@ -779,7 +787,20 @@ func _roll_upgrades() -> Array:
 		if options.size() >= 3:
 			break
 		options.append(opt)
-	return options.slice(0, mini(3, options.size()))
+	# Pad any short hand (a near- or fully-maxed build leaves fewer than 3 real upgrades) with
+	# GDD-faithful consolation picks — a coin bag or a Floor Chicken heal — so a level-up always
+	# presents a full, rewarding choice instead of shrinking or (when everything is maxed)
+	# silently resolving. Consolation ids are handled specially in _apply_upgrade and never enter
+	# the inventory. Only fires late-run: early on the pool always fills all three slots.
+	var pad := [
+		{"id": "bonus_gold", "title": "Gold", "desc": "+%d Gold" % BONUS_GOLD_AMOUNT},
+		{"id": "bonus_chicken", "title": "Roast Chicken", "desc": "Heals %d HP" % int(BONUS_CHICKEN_HEAL)},
+	]
+	var pi := 0
+	while options.size() < 3:
+		options.append(pad[pi % pad.size()].duplicate())
+		pi += 1
+	return options.slice(0, 3)
 
 ## An evolution is offerable when its weapon is at max level, its paired passive is owned
 ## (level >= 1, VS-style: the passive need only be present), and it hasn't been taken yet.
@@ -832,6 +853,19 @@ func _on_upgrade_skipped() -> void:
 		phase = "playing"
 
 func _apply_upgrade(id: String) -> void:
+	# Consolation picks offered when the upgrade pool is exhausted (see _roll_upgrades). A coin
+	# bag or a Floor Chicken heal — these aren't inventory items, so they bypass upgrade_levels
+	# bookkeeping entirely (no ITEMS row, never counted toward maxed) and resolve here.
+	match id:
+		"bonus_gold":
+			add_gold(BONUS_GOLD_AMOUNT)
+			AgentBridge.emit_event("upgrade_chosen", {"id": id, "level": level})
+			return
+		"bonus_chicken":
+			if player:
+				player.health = minf(player.max_health, player.health + BONUS_CHICKEN_HEAL)
+			AgentBridge.emit_event("upgrade_chosen", {"id": id, "level": level})
+			return
 	upgrade_levels[id] = int(upgrade_levels.get(id, 0)) + 1
 	match id:
 		"damage":
