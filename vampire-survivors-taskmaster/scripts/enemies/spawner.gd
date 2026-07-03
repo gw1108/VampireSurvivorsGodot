@@ -183,12 +183,16 @@ func spawn_reaper() -> VSEnemy:
 	return e
 
 ## Weighted enemy-type roll that introduces tougher archetypes as the run ramps.
+## Brackets are proportional to RUN_DURATION (Mad Forest's 30:00), preserving the
+## original 5-minute run's pacing shape — early/mid/late each cover the same fraction
+## of the run (10% / 30% / 60%) — so new archetypes keep appearing across the full
+## 30 minutes instead of the whole run settling into the late-band mix by minute 1.5.
 func _pick_type() -> int:
 	var t := run.elapsed
 	var roll := randf()
-	if t < 30.0:
+	if t < 0.1 * VSRun.RUN_DURATION:
 		return VSEnemy.Type.BAT if roll < 0.8 else VSEnemy.Type.ZOMBIE
-	elif t < 90.0:
+	elif t < 0.3 * VSRun.RUN_DURATION:
 		if roll < 0.45: return VSEnemy.Type.BAT
 		elif roll < 0.70: return VSEnemy.Type.ZOMBIE
 		elif roll < 0.90: return VSEnemy.Type.SKELETON

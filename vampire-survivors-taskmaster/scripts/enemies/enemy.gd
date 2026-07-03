@@ -52,7 +52,7 @@ const HEALTH_BAR_MIN_MAX_HEALTH := 40.0
 ## MANTIS_WARRIOR is the bug faction's mini-elite: an armored, upscaled Mantis with a
 ## deep HP pool (enough to show its health bar) and a heavy contact bite, but it keeps
 ## the Mantis lunge so it reads as a fast-but-tanky striker rather than a slow wall. It
-## surfaces in the late (t>=90s) band to deepen the insect threat without a full boss.
+## surfaces in the late (t>=9min) band to deepen the insect threat without a full boss.
 ## It scatters its 10 XP across a 5-gem ring (small green gems) so felling this tanky
 ## mini-elite reads as a jackpot burst like the ELITE — but without the boss camera shake.
 enum Type { BAT, ZOMBIE, SKELETON, GHOST, MUMMY, MANTIS, MANTIS_WARRIOR, ELITE, REAPER }
@@ -127,9 +127,13 @@ func _ready() -> void:
 	# a real sense of mounting danger (see GOAL: escalating waves). HP ramps steeply,
 	# contact damage gently (a late bat should tank hits, not one-shot the player).
 	var t: float = run.elapsed if run else 0.0
-	var minutes := minf(t / 60.0, 6.0)                # cap scaling at ~6 minutes
-	var hp_mult := 1.0 + minutes * 0.35               # +35% HP per minute, up to ~+210%
-	var dmg_mult := 1.0 + minutes * 0.08              # +8% damage per minute, up to ~+48%
+	# Ramp reaches its ceiling exactly at RUN_DURATION (Mad Forest's 30:00) rather than a
+	# hardcoded minute count, so the ~3.1x HP / ~1.48x damage terminal multipliers this was
+	# originally tuned to (reached at the old 5-minute run's ~6 min cap) now land smoothly
+	# right as the finale timer runs out instead of saturating a fifth of the way in.
+	var minutes := minf(t / 60.0, VSRun.RUN_DURATION / 60.0)
+	var hp_mult := 1.0 + minutes * 0.07                # +7% HP per minute, up to ~+210% by minute 30
+	var dmg_mult := 1.0 + minutes * 0.016              # +1.6% damage per minute, up to ~+48% by minute 30
 	health = cfg["health"] * hp_mult
 	max_health = health
 	_show_health_bar = max_health >= HEALTH_BAR_MIN_MAX_HEALTH

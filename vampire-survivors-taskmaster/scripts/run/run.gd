@@ -30,10 +30,11 @@ var kills := 0
 var elapsed := 0.0
 
 ## Survival goal for the slice: outlast the escalating waves to this many seconds and the
-## run is WON (VS's core loop is survive-to-the-clock, not endless). 5:00 sits just past the
-## enemy HP/damage ramp cap (~6 min) so the late run is at its most dangerous right as the
-## timer runs out. Named so it's the single knob to tune the run length.
-const RUN_DURATION := 300.0
+## run is WON (VS's core loop is survive-to-the-clock, not endless). Matches the real Mad
+## Forest stage's 30:00 run length (see .firecrawl/wiki-offline/Mad_Forest.htm's per-minute
+## wave table), with the enemy HP/damage ramp reaching its ceiling right as the timer runs
+## out. Named so it's the single knob to tune the run length.
+const RUN_DURATION := 1800.0
 
 ## The finale: rather than flipping straight to victory at RUN_DURATION, the run summons the
 ## Reaper (VS's death-at-the-clock enemy) and the player must outlast it for this many extra
