@@ -46,3 +46,8 @@ func refresh(run: VSRun) -> void:
 	if run.whip_level > 0:
 		_build.text += "    Whip Lv %d" % run.whip_level
 	_over.visible = run.phase == "game_over"
+	if _over.visible:
+		# Run summary: give the death some closure by showing what the run achieved.
+		var secs := int(run.elapsed)
+		var mmss := "%d:%02d" % [secs / 60, secs % 60]
+		_over.text = "YOU DIED\n\nTime Survived  %s\nKills  %d\nLevel Reached  %d\n\nPress Enter to retry" % [mmss, run.kills, run.level]
