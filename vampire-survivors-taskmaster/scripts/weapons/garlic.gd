@@ -12,6 +12,25 @@ const RADIUS_PER_LEVEL := 20.0
 const TICK_INTERVAL := 0.5        # seconds between damage pulses
 const FLASH_TIME := 0.18          # aura brightens briefly on each pulse
 
+## Aura VFX: SourceArt/sheets/Poof.png, a puff that blooms into a solid ring then cracks
+## apart into fragments — reads as a ground aura, unlike the warrior pack's claw-slash VFX
+## (used by the whip) which has no ring-shaped frame to offer. Copied in as garlic_aura.png
+## and resized 512x512 -> 510x510 (3x3 grid: 170.67px/cell -> 170px) per VISUAL_RULES.md's
+## non-integer-cell rule, which calls this exact sheet out by name. Row 1 col 0 is the
+## solid full ring (used as the idle frame); cols 0->2->0 of that row crack it apart and
+## back, which doubles as the pulse VFX played on every damage tick.
+const VFX_TEX := "res://art/garlic_aura.png"
+const VFX_COLS := 3
+const VFX_ROWS := 3
+const VFX_RING_ROW := 1
+## Diameter (px, in the sheet's own pixels) of the solid ring frame, measured directly from
+## its alpha bounding box — calibrates _vfx.scale so the sprite's rim lines up with the
+## aura's actual hit radius.
+const VFX_RING_DIAMETER_PX := 129.0
+const VFX_PULSE_FPS := 28.0       # 5 frames over ~FLASH_TIME
+const BASE_TINT := Color(0.65, 1.0, 0.55)     # base Garlic reads green
+const EVOLVED_TINT := Color(0.85, 0.55, 1.0)  # Soul Eater burns violet
+
 ## Base damage + per-level growth live in res://data/balance.csv ("garlic_base_damage" /
 ## "garlic_damage_per_level") so a designer can retune them without touching this script.
 static var BASE_DAMAGE := BalanceData.get_value("garlic_base_damage", 0.0)
@@ -26,16 +45,34 @@ const EVOLVED_RADIUS_BONUS := 40.0   # px added to the aura radius
 var run: VSRun
 var _cd := 0.0
 var _flash := 0.0
+var _vfx: AnimatedSprite2D
+
+func _ready() -> void:
+	_vfx = AnimatedSprite2D.new()
+	_vfx.sprite_frames = _build_vfx_frames()
+	_vfx.visible = false
+	_vfx.animation_finished.connect(func() -> void:
+		if _vfx.animation == &"pulse":
+			_vfx.play(&"idle"))
+	add_child(_vfx)
 
 func _process(delta: float) -> void:
 	if run == null:
 		return
 	var lvl: int = run.garlic_level
 	if lvl <= 0:
+		_vfx.visible = false
 		return
+	if not _vfx.visible:
+		_vfx.visible = true
+		_vfx.play(&"idle")
 	if _flash > 0.0:
 		_flash = maxf(0.0, _flash - delta)
-	queue_redraw()                # aura follows the player; one node, cheap
+	var r := _radius(lvl)
+	_vfx.scale = Vector2.ONE * (2.0 * r / VFX_RING_DIAMETER_PX)
+	var pulse := _flash / FLASH_TIME
+	var tint := EVOLVED_TINT if _is_evolved() else BASE_TINT
+	_vfx.modulate = Color(tint.r, tint.g, tint.b, 0.55 + 0.35 * pulse)
 	if run.phase != "playing":
 		return
 	_cd -= delta
@@ -43,6 +80,7 @@ func _process(delta: float) -> void:
 		_pulse(lvl)
 		_cd = TICK_INTERVAL * run.haste_mult()
 		_flash = FLASH_TIME
+		_vfx.play(&"pulse")
 
 ## True once the run has evolved Garlic into Soul Eater.
 func _is_evolved() -> bool:
@@ -69,19 +107,27 @@ func _radius(lvl: int) -> float:
 		r += EVOLVED_RADIUS_BONUS
 	return r * run.area_mult   # Candelabrador passive widens the aura
 
-func _draw() -> void:
-	if run == null or run.garlic_level <= 0:
-		return
-	var r := _radius(run.garlic_level)
-	var pulse := _flash / FLASH_TIME
-	# Soul Eater burns violet so the evolved aura reads distinct from base Garlic's green.
-	var fill: Color
-	var ring: Color
-	if _is_evolved():
-		fill = Color(0.7, 0.4, 0.9, 0.10 + 0.12 * pulse)
-		ring = Color(0.85, 0.55, 1.0, 0.5 + 0.35 * pulse)
-	else:
-		fill = Color(0.6, 0.9, 0.5, 0.08 + 0.10 * pulse)
-		ring = Color(0.7, 1.0, 0.6, 0.45 + 0.35 * pulse)
-	draw_circle(Vector2.ZERO, r, fill)
-	draw_arc(Vector2.ZERO, r, 0.0, TAU, 48, ring, 2.0 + 1.5 * pulse)
+## Builds the two aura animations from garlic_aura.png's 3x3 grid (read left->right
+## top->bottom): "idle" is the single solid-ring frame; "pulse" cracks that ring apart
+## across its row and back (col 0->1->2->1->0), played once per damage tick.
+func _build_vfx_frames() -> SpriteFrames:
+	var tex := load(VFX_TEX) as Texture2D
+	var fw := tex.get_width() / VFX_COLS
+	var fh := tex.get_height() / VFX_ROWS
+	var sf := SpriteFrames.new()
+	sf.add_animation(&"idle")
+	sf.set_animation_loop(&"idle", true)
+	sf.add_frame(&"idle", _vfx_cell(tex, fw, fh, VFX_RING_ROW, 0))
+	sf.add_animation(&"pulse")
+	sf.set_animation_loop(&"pulse", false)
+	sf.set_animation_speed(&"pulse", VFX_PULSE_FPS)
+	for col in [0, 1, 2, 1, 0]:
+		sf.add_frame(&"pulse", _vfx_cell(tex, fw, fh, VFX_RING_ROW, col))
+	sf.remove_animation(&"default")
+	return sf
+
+func _vfx_cell(tex: Texture2D, fw: int, fh: int, row: int, col: int) -> AtlasTexture:
+	var at := AtlasTexture.new()
+	at.atlas = tex
+	at.region = Rect2(col * fw, row * fh, fw, fh)
+	return at
