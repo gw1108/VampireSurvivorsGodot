@@ -884,6 +884,12 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		_set_paused(phase == "playing")
 		return
+	# While paused the overlay is a minimal menu: ESC (handled above) resumes, Enter restarts
+	# the run — mirroring the game-over retry so a stuck build can be abandoned without dying.
+	if phase == "paused" and event.is_action_pressed("ui_accept"):
+		get_viewport().set_input_as_handled()
+		get_tree().reload_current_scene()
+		return
 	if phase != "game_over" and phase != "victory":
 		return
 	# The shop swallows its own input while open; retry only fires from the bare

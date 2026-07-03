@@ -297,8 +297,8 @@ func _ready() -> void:
 	_pause_label.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_pause_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_pause_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	_pause_label.text = "PAUSED\n\nPress ESC to resume"
-	_pause_label.add_theme_font_size_override("font_size", 40)
+	_pause_label.text = "PAUSED"   # replaced each refresh with the live menu + build summary
+	_pause_label.add_theme_font_size_override("font_size", 30)
 	_pause_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_pause_label.visible = false
 	add_child(_pause_label)
@@ -407,6 +407,8 @@ func refresh(run: VSRun) -> void:
 		_pause_dim.visible = is_paused
 	if _pause_label:
 		_pause_label.visible = is_paused
+		if is_paused:
+			_pause_label.text = _pause_menu_text(run)
 	_over.visible = run.phase == "game_over" or won
 	if _over.visible:
 		# Run summary: give the run's end some closure by showing what it achieved. The gold
@@ -488,6 +490,19 @@ func _refresh_freeze(run: VSRun) -> void:
 	(_freeze_vig.material as ShaderMaterial).set_shader_parameter("strength", strength)
 	_freeze_label.text = "FROZEN  %d" % int(ceil(remaining))
 	_freeze_label.modulate = Color(FREEZE_TINT.r, FREEZE_TINT.g, FREEZE_TINT.b, strength)
+
+## Build the paused overlay's text: the PAUSED heading, a one-line live build summary so the
+## player can size up their run while stopped, and the two controls the pause menu offers
+## (ESC resume / Enter restart — both wired in VSRun._unhandled_input).
+func _pause_menu_text(run: VSRun) -> String:
+	var owned := PackedStringArray()
+	for opt in VSRun.UPGRADE_POOL:
+		var lvl: int = run.upgrade_levels.get(opt["id"], 0)
+		if lvl > 0:
+			owned.append("%s Lv %d" % [str(opt["title"]), lvl])
+	var build := "  |  ".join(owned) if owned.size() > 0 else "no upgrades yet"
+	return "PAUSED\n\nTime %s    Lv %d    Kills %d\n%s\n\nPress ESC to resume\nPress Enter to restart" % \
+		[_mmss(run.elapsed), run.level, run.kills, build]
 
 ## Format a seconds count as m:ss for the survival clock and run summaries.
 func _mmss(seconds: float) -> String:
