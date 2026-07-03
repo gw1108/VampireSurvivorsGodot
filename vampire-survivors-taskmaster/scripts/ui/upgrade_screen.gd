@@ -26,6 +26,9 @@ const ICONS := {
 	"whip": "res://art/up_whip.png",
 	"bible": "res://art/up_bible.png",
 	"lightning": "res://art/up_lightning.png",
+	"area": "res://art/candelabra.png",            # Candelabrador reuses the in-world Candelabrador pickup sprite
+	"projspeed": "res://art/up_projspeed.png",     # Bracer (bracelet sprite)
+	"armor": "res://art/up_armor.png",             # Armor passive
 	"knife": "res://art/projectile_dagger.png",   # reuse the in-world dagger bolt as the Knife icon
 	"unholy_vespers": "res://art/up_bible.png",   # King Bible evolution reuses the tome icon
 }
