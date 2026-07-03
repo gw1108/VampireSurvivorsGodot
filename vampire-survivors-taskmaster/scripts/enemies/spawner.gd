@@ -12,10 +12,23 @@ const WAVE_BASE := 8           # enemies in the first (1:00) surge
 const WAVE_GROWTH := 6         # extra enemies per subsequent minute mark
 const WAVE_OVERFLOW := 40      # headroom a surge may push past MAX_ENEMIES
 
+# Directional swarm surge: a dense marching LINE that pours in from one random flank
+# (spaced perpendicular to its approach) rather than a surrounding ring — VS's iconic
+# "wall of enemies" you juke around, giving the move-only loop a directional threat to
+# flee instead of only concentric pressure. Fires on its own cadence between the minute
+# waves; count grows slowly with time survived and it shares the cap so it stays bounded.
+const SURGE_INTERVAL := 22.0   # seconds between directional swarm walls
+const SURGE_FIRST := 45.0      # delay before the first wall (after the early trickle finds its feet)
+const SURGE_BASE := 6          # enemies in the line at SURGE_FIRST
+const SURGE_GROWTH := 0.06     # extra line-members per second survived
+const SURGE_MAX := 16          # cap the line length so a wall never becomes a full encirclement
+const SURGE_SPACING := 46.0    # px between adjacent enemies along the wall
+
 var run: VSRun
 var _accum := 0.0
 var _next_elite := ELITE_FIRST
 var _next_wave := WAVE_INTERVAL
+var _next_surge := SURGE_FIRST
 
 func _process(delta: float) -> void:
 	if run == null or run.phase != "playing" or run.player == null:
@@ -35,6 +48,11 @@ func _process(delta: float) -> void:
 		var minute := int(round(_next_wave / WAVE_INTERVAL))
 		_next_wave += WAVE_INTERVAL
 		_spawn_wave(minute)
+	# Directional swarm walls fire between the minute rings for a different threat shape.
+	# Skipped once the Reaper finale is imminent so the last beat belongs to the boss.
+	if run.elapsed >= _next_surge and _next_surge < VSRun.RUN_DURATION - WAVE_INTERVAL:
+		_next_surge += SURGE_INTERVAL
+		_spawn_surge()
 
 func _spawn_one() -> void:
 	if get_tree().get_nodes_in_group("enemies").size() >= MAX_ENEMIES:
@@ -89,6 +107,35 @@ func _spawn_wave(minute: int) -> void:
 		e.target = run.player
 		run.add_child(e)
 	AgentBridge.emit_event("wave", {"minute": minute, "count": count})
+
+## Directional swarm wall: spawn a line of enemies off a single random flank, spaced
+## perpendicular to their approach, so the horde sometimes arrives as a wall marching in
+## from one side (the player flees perpendicular to it) instead of a surrounding ring.
+## Length grows with time survived but is capped so it never becomes a full encirclement;
+## shares MAX_ENEMIES so a wall never blows the performance budget.
+func _spawn_surge() -> void:
+	if get_tree().get_nodes_in_group("enemies").size() >= MAX_ENEMIES:
+		return
+	var count := clampi(SURGE_BASE + int(run.elapsed * SURGE_GROWTH), SURGE_BASE, SURGE_MAX)
+	# The flank the wall comes from, and the perpendicular axis it spreads along.
+	var dir := Vector2.from_angle(randf() * TAU)
+	var perp := dir.orthogonal()
+	var center := run.player.position + dir * SPAWN_RING
+	for i in count:
+		if get_tree().get_nodes_in_group("enemies").size() >= MAX_ENEMIES:
+			break
+		# Space members evenly along the wall, centered on the flank point.
+		var lane := (float(i) - float(count - 1) * 0.5) * SURGE_SPACING
+		var pos := center + perp * lane
+		pos.x = clampf(pos.x, -run.arena_half.x, run.arena_half.x)
+		pos.y = clampf(pos.y, -run.arena_half.y, run.arena_half.y)
+		var e := VSEnemy.new()
+		e.type = _pick_type()
+		e.position = pos
+		e.run = run
+		e.target = run.player
+		run.add_child(e)
+	AgentBridge.emit_event("surge", {"count": count, "dir": [dir.x, dir.y]})
 
 ## Summon the finale Reaper on the spawn ring. Modeled on _spawn_elite (bypasses the
 ## enemy cap, tags its event) but injects the single, near-unkillable REAPER that VSRun
