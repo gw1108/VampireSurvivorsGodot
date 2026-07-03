@@ -117,6 +117,10 @@ func _refresh_loadout(run: VSRun) -> void:
 		var lvl: int = run.upgrade_levels.get(opt["id"], 0)
 		if lvl > 0:
 			sig += "%s%d," % [opt["id"], lvl]
+	# Fold evolution state into the signature: evolving flips a flag without changing the
+	# upgrade level, so the level-only signature above would otherwise never rebuild and the
+	# panel would keep the pre-evolution name.
+	sig += "e%s%s%s" % [run.whip_evolved, run.garlic_evolved, run.bible_evolved]
 	if sig == _loadout_sig:
 		return
 	_loadout_sig = sig
@@ -127,11 +131,13 @@ func _refresh_loadout(run: VSRun) -> void:
 		var lvl: int = run.upgrade_levels.get(id, 0)
 		if lvl <= 0:
 			continue
-		_loadout.add_child(_make_loadout_row(id, lvl, int(opt["max"])))
+		_loadout.add_child(_make_loadout_row(id, str(opt["title"]), lvl, int(opt["max"]), run))
 
-## One build-panel row: the upgrade's icon (falls back to a bullet if missing) plus a
-## "Lv N/max" label that turns gold at the cap so a maxed weapon reads at a glance.
-func _make_loadout_row(id: String, lvl: int, mx: int) -> HBoxContainer:
+## One build-panel row: the upgrade's icon (skipped if missing) plus a two-line name +
+## "Lv N/max" column. A weapon whose evolution flag is set on the run shows its evolved name
+## in crimson, so the player sees the evolution persist beyond the in-world aura/lash tint;
+## the level line turns gold at the cap so a maxed upgrade reads at a glance.
+func _make_loadout_row(id: String, title: String, lvl: int, mx: int, run: VSRun) -> HBoxContainer:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 6)
 
@@ -144,11 +150,41 @@ func _make_loadout_row(id: String, lvl: int, mx: int) -> HBoxContainer:
 		icon.texture = load(icon_path)
 		row.add_child(icon)
 
+	# Relabel evolved weapons to their evolved form. Evolution lives as a flag on the run
+	# (the weapon reads it for its boosted profile), not as a distinct upgrade level, so the
+	# name has to be resolved here from those flags.
+	var disp_name := title
+	var evolved := false
+	match id:
+		"whip":
+			evolved = run.whip_evolved
+			if evolved:
+				disp_name = "Bloody Tear"
+		"garlic":
+			evolved = run.garlic_evolved
+			if evolved:
+				disp_name = "Soul Eater"
+		"bible":
+			evolved = run.bible_evolved
+			if evolved:
+				disp_name = "Unholy Vespers"
+
+	var col := VBoxContainer.new()
+	col.add_theme_constant_override("separation", 0)
+
+	var name_lbl := Label.new()
+	name_lbl.text = disp_name
+	name_lbl.add_theme_font_size_override("font_size", 13)
+	if evolved:
+		name_lbl.modulate = Color(1.0, 0.5, 0.55)   # crimson = evolved weapon
+	col.add_child(name_lbl)
+
 	var label := Label.new()
 	label.text = "Lv %d/%d" % [lvl, mx]
-	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	label.add_theme_font_size_override("font_size", 14)
+	label.add_theme_font_size_override("font_size", 12)
 	if lvl >= mx:
 		label.modulate = Color(0.95, 0.82, 0.35)   # gold = maxed
-	row.add_child(label)
+	col.add_child(label)
+
+	row.add_child(col)
 	return row
