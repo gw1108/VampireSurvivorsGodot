@@ -64,7 +64,7 @@ var arena_half := Vector2(900, 700)   # world half-extent around origin
 var player_speed_mult := 1.0
 var weapon_damage := 2.0
 var weapon_fire_interval := 0.6
-var weapon_count := 1
+var weapon_count := 0            # 0 = Magic Wand not yet chosen; each Multishot pick grows it
 var area_mult := 1.0             # Candelabrador: scales AoE weapon reach/radius (garlic, whip, bible, lightning)
 var projectile_speed_mult := 1.0  # Bracer: scales how fast thrown/fired projectiles travel
 var pickup_range_mult := 1.0     # Attractorb: scales the magnet radius of gems/coins/food so pickups fly in from farther

@@ -1,8 +1,10 @@
 class_name VSWeapon
 extends Node2D
-## Auto-attacking weapon mounted on the player. On a timer it fires at the nearest enemy
-## in range. The core "you move, the weapon fights" Vampire Survivors loop. Fire rate,
-## damage, and projectile count come from VSRun stats mutated by level-up upgrades.
+## Auto-attacking weapon mounted on the player: the Magic Wand. On a timer it fires at the
+## nearest enemy in range. The core "you move, the weapon fights" Vampire Survivors loop. Fire
+## rate, damage, and projectile count come from VSRun stats mutated by level-up upgrades.
+## Inert until run.weapon_count > 0 (the "Multishot" pick grants the wand and its first shot;
+## Antonio does not start with it — his starting weapon is the Whip, see VSRun._init_character).
 
 const RANGE := 620.0
 const SPREAD := 0.14            # radians between extra multishot projectiles
@@ -19,7 +21,9 @@ var run: VSRun
 var _cd := 0.0
 
 func _process(delta: float) -> void:
-	if run == null or run.phase != "playing":
+	if run == null or run.weapon_count <= 0:
+		return
+	if run.phase != "playing":
 		return
 	_cd -= delta
 	if _cd <= 0.0:
