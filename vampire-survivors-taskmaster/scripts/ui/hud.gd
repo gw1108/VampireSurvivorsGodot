@@ -6,6 +6,7 @@ extends CanvasLayer
 var _stat: Label
 var _build: Label
 var _meta: Label
+var _reroll: Label
 var _reaper: Label
 var _slain: Label
 var _over: Label
@@ -72,6 +73,15 @@ func _ready() -> void:
 	_meta.modulate = Color(1.0, 0.82, 0.35)
 	_meta.visible = false
 	add_child(_meta)
+
+	# Fourth line: remaining level-up rerolls, so the player can plan when to spend one
+	# without opening the picker. Violet to read as the reroll token, distinct from run/meta
+	# stats. Positioned below the (optionally hidden) PowerUps line.
+	_reroll = Label.new()
+	_reroll.position = Vector2(12, 66)
+	_reroll.add_theme_font_size_override("font_size", 14)
+	_reroll.modulate = Color(0.72, 0.6, 1.0)
+	add_child(_reroll)
 
 	# Build panel, anchored to the top-right corner and growing downward.
 	_loadout = VBoxContainer.new()
@@ -180,6 +190,11 @@ func refresh(run: VSRun) -> void:
 	if run.whip_level > 0:
 		_build.text += "    Whip Lv %d" % run.whip_level
 	_refresh_meta()
+	# Persistent reroll budget readout. Greys out at zero so a spent-out budget reads at a
+	# glance and the player knows Skip is their only free-out.
+	if _reroll:
+		_reroll.text = "Rerolls  %d" % run.rerolls_left
+		_reroll.modulate = Color(0.72, 0.6, 1.0) if run.rerolls_left > 0 else Color(0.5, 0.5, 0.55)
 	_refresh_loadout(run)
 	_refresh_freeze(run)
 	# Reaper finale countdown, live only during the last stand (Reaper summoned, run not yet won).
