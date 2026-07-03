@@ -23,7 +23,7 @@ const TYPES := {
 	Type.SKELETON: {"tex": "res://art/enemy_skeleton.png", "speed": 58.0, "health": 4.0,   "damage": 9.0,  "xp": 2},
 	Type.GHOST:    {"tex": "res://art/enemy_ghost.png",    "speed": 78.0, "health": 2.0,   "damage": 7.0,  "xp": 1},
 	Type.MUMMY:    {"tex": "res://art/enemy_mummy.png",    "speed": 34.0, "health": 10.0,  "damage": 12.0, "xp": 3},
-	Type.ELITE:    {"tex": "res://art/enemy_elite.png",    "speed": 40.0, "health": 140.0, "damage": 20.0, "xp": 25, "scale": 2.0, "radius": 22.0},
+	Type.ELITE:    {"tex": "res://art/enemy_elite.png",    "speed": 40.0, "health": 140.0, "damage": 20.0, "xp": 25, "scale": 2.0, "radius": 22.0, "gems": 5},
 }
 
 var type: int = Type.BAT
@@ -35,6 +35,9 @@ var contact_damage := 8.0
 var xp_value := 1
 var radius := RADIUS
 var base_scale := 1.0
+## How many gems this enemy scatters on death. Elites drop a burst so the big
+## payout reads as a jackpot instead of one lone gem.
+var gem_drops := 1
 var run: VSRun
 var target: VSPlayer
 var _contact_cd := 0.0
@@ -54,6 +57,7 @@ func _ready() -> void:
 	xp_value = cfg["xp"]
 	radius = cfg.get("radius", RADIUS)
 	base_scale = cfg.get("scale", 1.0)
+	gem_drops = cfg.get("gems", 1)
 	scale = Vector2(base_scale, base_scale)
 	_sprite = Sprite2D.new()
 	_sprite.texture = load(cfg["tex"])
@@ -92,7 +96,7 @@ func hit(amount: float, _from: Vector2) -> void:
 func _die() -> void:
 	_dying = true
 	if run:
-		run.add_kill(position, xp_value)
+		run.add_kill(position, xp_value, gem_drops)
 	var tw := create_tween()
 	tw.tween_property(self, "scale", Vector2(base_scale * 1.4, base_scale * 1.4), 0.08)
 	tw.tween_property(self, "scale", Vector2.ZERO, 0.1)

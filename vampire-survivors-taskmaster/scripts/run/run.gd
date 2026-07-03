@@ -100,10 +100,24 @@ func _process(delta: float) -> void:
 	if hud:
 		hud.refresh(self)
 
-func add_kill(at: Vector2, xp_value: int = 1) -> void:
+func add_kill(at: Vector2, xp_value: int = 1, gem_count: int = 1) -> void:
 	kills += 1
 	AgentBridge.emit_event("despawn", {"type": "enemy", "pos": [at.x, at.y]})
-	_spawn_gem(at, xp_value)
+	_spawn_gems(at, xp_value, gem_count)
+
+## Split a kill's XP across `count` gems scattered in a ring. Elites drop a burst
+## so the big payout reads as a jackpot; ordinary kills drop a single gem.
+func _spawn_gems(at: Vector2, total_xp: int, count: int) -> void:
+	count = maxi(count, 1)
+	var base := total_xp / count
+	var rem := total_xp % count
+	for i in count:
+		var v := base + (1 if i < rem else 0)
+		var offset := Vector2.ZERO
+		if count > 1:
+			var ang := TAU * float(i) / float(count)
+			offset = Vector2(cos(ang), sin(ang)) * 18.0
+		_spawn_gem(at + offset, maxi(v, 1))
 
 func _spawn_gem(at: Vector2, xp_value: int = 1) -> void:
 	var g := VSGem.new()
