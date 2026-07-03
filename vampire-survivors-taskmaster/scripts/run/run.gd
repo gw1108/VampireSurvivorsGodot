@@ -292,13 +292,14 @@ func _build_world() -> void:
 	add_child(adapter)
 
 ## Antonio Belpaese — the default (and currently only) playable character. Faithful to the
-## offline wiki: he begins wielding the Whip (his starting weapon) and with +20 Max Health
-## (120 total), and gains +10% Might (a global weapon-damage multiplier, see might_mult) every
-## 10 levels. Applied once at run start; upgrade_levels["whip"] is kept in lock-step with
-## whip_level so the HUD build panel and the level-up cap logic see the whip as owned at Lv 1.
+## GDD/offline wiki: he begins wielding the Whip (his starting weapon), with +20 Max Health
+## (120 total) and +1 Armor, and gains +10% Might (a global weapon-damage multiplier, see
+## might_mult) every 10 levels. Applied once at run start; upgrade_levels["whip"] is kept in
+## lock-step with whip_level so the HUD build panel and level-up cap logic see the whip owned at Lv 1.
 func _init_character() -> void:
 	whip_level = 1
 	upgrade_levels["whip"] = 1
+	armor += 1
 	if player:
 		player.max_health += 20.0
 		player.health = player.max_health
