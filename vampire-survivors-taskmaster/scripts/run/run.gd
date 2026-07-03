@@ -180,6 +180,23 @@ func add_kill(at: Vector2, xp_value: int = 1, gem_count: int = 1) -> void:
 	kills += 1
 	AgentBridge.emit_event("despawn", {"type": "enemy", "pos": [at.x, at.y]})
 	_spawn_gems(at, xp_value, gem_count)
+	_maybe_drop_food(at)
+
+## Rarely drop a roast-chicken heal on a kill so the run has a survival-recovery lever.
+## The chance is biased by missing HP: near-full health it's a rare treat (~1.2%), but as
+## the player drops low it climbs (up to ~6%) so relief tends to arrive when it's needed —
+## faithful to VS's "food shows up when you're in trouble" feel, without a guaranteed crutch.
+func _maybe_drop_food(at: Vector2) -> void:
+	if player == null or not player.alive:
+		return
+	var missing := 1.0 - clampf(player.health / maxf(player.max_health, 1.0), 0.0, 1.0)
+	var chance := 0.012 + missing * 0.048
+	if randf() < chance:
+		var f := VSFood.new()
+		f.position = at
+		f.run = self
+		add_child(f)
+		AgentBridge.emit_event("spawn", {"type": "food", "pos": [at.x, at.y]})
 
 ## Split a kill's XP across `count` gems scattered in a ring. Elites drop a burst
 ## so the big payout reads as a jackpot; ordinary kills drop a single gem.
