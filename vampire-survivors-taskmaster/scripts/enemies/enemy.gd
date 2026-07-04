@@ -140,6 +140,42 @@ var _was_frozen := false
 
 var _sprite: Sprite2D
 
+## Uniform spatial grid shared across every enemy, rebuilt at most once per process frame,
+## so _separation() only scans the handful of neighbours in nearby cells instead of the whole
+## 'enemies' group. This turns the horde's per-frame separation cost from O(n²) (every enemy
+## walking every other enemy) into ~O(n), which is what lets the concurrent-enemy cap climb to
+## the GDD's 300-alive late-game crush without the quadratic scan eating the frame.
+## Cell size = SEPARATION_RADIUS: a neighbour within that radius can be at most one cell away on
+## each axis, so scanning the 3×3 block of cells around an enemy covers every possible repeller.
+## Static, so it persists across frames; each rebuild clears and repopulates from the live group,
+## so a torn-down scene's stale entries are never queried (the next query rebuilds — see below).
+static var _grid: Dictionary = {}
+static var _grid_frame: int = -1
+
+## Grid cell a world position falls into (integer cell coords at SEPARATION_RADIUS spacing).
+static func _cell_key(pos: Vector2) -> Vector2i:
+	return Vector2i(floori(pos.x / SEPARATION_RADIUS), floori(pos.y / SEPARATION_RADIUS))
+
+## Ensure the shared grid is current for this frame. The first enemy to separate each frame
+## rebuilds it (frame counter advanced); the rest reuse it. Also rebuilds if THIS enemy isn't
+## in the cached grid — a bulletproof staleness guard so a grid left over from a prior scene or
+## a direct test call (where the process frame may not advance between cases) can never linger.
+func _ensure_grid() -> void:
+	var frame := Engine.get_process_frames()
+	if frame == _grid_frame:
+		var bucket: Variant = _grid.get(_cell_key(position))
+		if bucket != null and bucket.has(self):
+			return
+	_grid_frame = frame
+	_grid.clear()
+	for other in get_tree().get_nodes_in_group("enemies"):
+		var key := _cell_key(other.position)
+		var b: Variant = _grid.get(key)
+		if b == null:
+			b = []
+			_grid[key] = b
+		b.append(other)
+
 func _ready() -> void:
 	add_to_group("enemies")
 	var cfg: Dictionary = TYPES.get(type, TYPES[Type.BAT])
@@ -293,19 +329,26 @@ func _process(delta: float) -> void:
 
 ## Sum of unit repulsions from every enemy inside SEPARATION_RADIUS, each weighted
 ## by how close it is (nearer neighbours push harder). Returned un-normalized so the
-## push grows with crowding; the caller normalizes the blended move. O(n) per enemy
-## (O(n²) per frame) which is fine within the spawner's MAX_ENEMIES cap. Raising that cap
-## past VSSpawner.SEPARATION_SAFE_CAP is gated on rewriting this global scan into a spatial
-## hash / uniform grid so only nearby neighbours are checked (see the assert in VSSpawner._ready).
+## push grows with crowding; the caller normalizes the blended move. Backed by the shared
+## uniform grid (see _ensure_grid): only the 3×3 block of cells around this enemy is scanned,
+## so the per-frame cost across the whole horde is ~O(n) instead of O(n²) — the change that
+## lets the spawner's concurrent-enemy cap climb to the GDD's 300-alive late-game crush.
 func _separation() -> Vector2:
+	_ensure_grid()
 	var push := Vector2.ZERO
-	for other in get_tree().get_nodes_in_group("enemies"):
-		if other == self:
-			continue
-		var away: Vector2 = position - other.position
-		var dist := away.length()
-		if dist > 0.001 and dist < SEPARATION_RADIUS:
-			push += away / dist * (1.0 - dist / SEPARATION_RADIUS)
+	var base := _cell_key(position)
+	for cx in range(base.x - 1, base.x + 2):
+		for cy in range(base.y - 1, base.y + 2):
+			var bucket: Variant = _grid.get(Vector2i(cx, cy))
+			if bucket == null:
+				continue
+			for other in bucket:
+				if other == self:
+					continue
+				var away: Vector2 = position - other.position
+				var dist := away.length()
+				if dist > 0.001 and dist < SEPARATION_RADIUS:
+					push += away / dist * (1.0 - dist / SEPARATION_RADIUS)
 	return push
 
 ## Teleport an outrun straggler back onto the spawn ring around the player (VS enemy recycling),

@@ -6,17 +6,18 @@ extends Node2D
 
 const MAX_ENEMIES := 90         # baseline concurrent-enemy render budget for most of the run
 # Late-run escalation lever. The wiki's DENSITY_SCHEDULE climbs to 300 in the endgame, but every
-# count past 90 clamps to MAX_ENEMIES, so 20:00-29:00 all read as the identical flat 90-enemy crush.
-# Rather than the (already-saturated) schedule counts, the honest lever is the render budget itself:
-# ramp the cap up over the final third so the late escalation the wiki intends actually shows on
-# screen. Kept modest (90 -> 130) so the extra sprite/VFX load stays inside the perf budget.
-const MAX_ENEMIES_LATE := 130   # cap the final-third ramp climbs toward
-# Perf gate. VSEnemy._separation walks the whole 'enemies' group per enemy per frame, so the
-# enemy sim cost is a clean O(n²) curve (2.05ms@90 -> 4.14ms@130 — ~25% of a 60fps budget at 130).
-# Past ~130 that quadratic cost eats the frame, so raising MAX_ENEMIES_LATE further is GATED on
-# first replacing _separation's global scan with a spatial hash / uniform grid (nearby-only checks).
-# The _ready() assert below enforces this in debug builds.
-const SEPARATION_SAFE_CAP := 130  # max late cap the O(n²) _separation sustains at 60fps
+# count past MAX_ENEMIES clamps to the baseline, so the endgame would otherwise read as one flat
+# 90-enemy crush. Ramp the cap up over the final third so the late escalation the wiki intends
+# actually shows on screen, up to the GDD's "periodic spawns stop at 300 alive" — the real
+# Mad Forest late-game population. Now affordable because VSEnemy._separation is O(n) (see below).
+const MAX_ENEMIES_LATE := 300   # cap the final-third ramp climbs toward (GDD: 300-alive periodic cap)
+# Perf gate (historical). VSEnemy._separation USED to walk the whole 'enemies' group per enemy per
+# frame — a clean O(n²) curve that ate the frame past ~130 enemies. It is now backed by a shared
+# uniform spatial grid (VSEnemy._ensure_grid / _grid): each enemy scans only the 3×3 block of cells
+# around it, so the horde's per-frame separation cost is ~O(n). That is what unlocks the 300-alive
+# cap above. Any FURTHER raise past SEPARATION_SAFE_CAP should first re-profile the general per-node
+# cost (Sprite2D + _process + weapon/VFX hit-testing), which is now the dominant term, not separation.
+const SEPARATION_SAFE_CAP := 300  # max late cap validated with the O(n) grid-backed _separation
 const LATE_RAMP_START := 0.667  # fraction of RUN_DURATION where the cap begins to climb (~20:00)
 const SPAWN_RING := 520.0
 const ELITE_INTERVAL := 35.0   # seconds between mini-boss spawns
@@ -52,11 +53,12 @@ var _next_wave := WAVE_INTERVAL
 var _next_surge := SURGE_FIRST
 
 func _ready() -> void:
-	# Enforce the perf gate at load: any late-cap raise past what the O(n²) _separation scan
-	# sustains must first replace that global 'enemies' scan with a spatial hash / uniform grid
-	# (see SEPARATION_SAFE_CAP). Debug-build only, so it never costs a shipped frame.
+	# Enforce the perf gate at load: separation is now O(n) via VSEnemy's uniform grid, so the late
+	# cap can sit at the GDD's 300-alive population. Any raise past SEPARATION_SAFE_CAP should first
+	# re-profile the now-dominant per-node cost (Sprite2D + _process + weapon hit-testing), not
+	# separation. Debug-build only, so it never costs a shipped frame.
 	assert(MAX_ENEMIES_LATE <= SEPARATION_SAFE_CAP,
-		"MAX_ENEMIES_LATE > SEPARATION_SAFE_CAP: rewrite VSEnemy._separation to a spatial hash / uniform grid before raising the enemy cap — its per-enemy global 'enemies' scan is O(n²)/frame and grows quadratically.")
+		"MAX_ENEMIES_LATE > SEPARATION_SAFE_CAP: re-profile the per-node enemy cost (Sprite2D + _process + weapon hit-testing — now the dominant term, separation is O(n) via VSEnemy._grid) before raising the enemy cap further.")
 
 func _process(delta: float) -> void:
 	if run == null or run.phase != "playing" or run.player == null:
