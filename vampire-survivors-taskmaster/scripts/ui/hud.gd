@@ -576,6 +576,12 @@ func refresh(run: VSRun) -> void:
 		_build.text += "    Garlic Lv %d" % run.garlic_level
 	if run.whip_level > 0:
 		_build.text += "    Whip Lv %d" % run.whip_level
+	# Crit chance readout — Luck's raw-damage payoff (roll_crit). Shown only once the player has
+	# any +Luck bonus so a Clover build sees its stacking crit chance climb, while base builds
+	# (0% chance, no crits) aren't cluttered with a dead "CRIT 0%".
+	if run.luck_bonus > 0.0:
+		var crit_pct := minf(run.luck_bonus * VSRun.CRIT_CHANCE_PER_LUCK, VSRun.CRIT_CHANCE_MAX) * 100.0
+		_build.text += "    CRIT %.0f%%" % crit_pct
 	_refresh_meta()
 	# Persistent reroll budget readout. Greys out at zero so a spent-out budget reads at a
 	# glance and the player knows Skip is their only free-out.
