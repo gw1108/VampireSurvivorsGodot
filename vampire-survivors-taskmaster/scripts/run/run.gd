@@ -516,6 +516,14 @@ func is_gold_fever_active() -> bool:
 func start_gold_fever() -> void:
 	gold_fever_until = elapsed + GOLD_FEVER_DURATION
 
+## Extend an active Gold Fever by `seconds` when a coin is collected (Gilded_Clover.md: Gold
+## Coin/Coin Bag/Rich Coin Bag add 0.5/5/10s). No-op when no fever is running, and clamped so
+## the timer can only ever be topped back up to — never past — the full GOLD_FEVER_DURATION.
+func extend_gold_fever(seconds: float) -> void:
+	if not is_gold_fever_active():
+		return
+	gold_fever_until = minf(gold_fever_until + seconds, elapsed + GOLD_FEVER_DURATION)
+
 ## Wiki's "TotalLuck" — the internal value the drop-weight/spawn-rate formulas key off, equal
 ## to 100 plus the displayed +N% Luck bonus (Luck.md "Mechanics" section).
 func total_luck() -> float:
@@ -691,6 +699,9 @@ func _maybe_drop_coin(at: Vector2, is_elite: bool) -> void:
 	c.position = at
 	c.run = self
 	c.value = amount
+	# A kill-generated coin extends an active fever only negligibly (Gilded_Clover.md's 0.01s),
+	# unlike the light-source coin tiers, so heavy killing can't pin the fever timer to full.
+	c.tier = VSCoin.Tier.KILL_DROP
 	add_child(c)
 	AgentBridge.emit_event("spawn", {"type": "coin", "pos": [at.x, at.y], "gold": amount})
 
@@ -706,6 +717,9 @@ func _maybe_drop_gold_fever_coin(at: Vector2) -> void:
 	c.position = at
 	c.run = self
 	c.value = 1
+	# Fever kill-coins only trickle the timer up (Gilded_Clover.md's 0.01s); the fever still
+	# has to be renewed by grabbing light-source coin bags, keeping the HUD countdown honest.
+	c.tier = VSCoin.Tier.KILL_DROP
 	add_child(c)
 	AgentBridge.emit_event("spawn", {"type": "coin", "pos": [at.x, at.y], "gold": 1})
 
@@ -840,6 +854,15 @@ func drop_candelabra_bonus(at: Vector2) -> void:
 			c.position = at
 			c.run = self
 			c.value = amount
+			# Tag the tier so a pickup during Gold Fever extends it by the right amount
+			# (Gilded_Clover.md: 0.5/5/10s for Gold Coin/Coin Bag/Rich Coin Bag).
+			match String(picked["id"]):
+				"coin_bag":
+					c.tier = VSCoin.Tier.COIN_BAG
+				"rich_coin_bag":
+					c.tier = VSCoin.Tier.RICH_COIN_BAG
+				_:
+					c.tier = VSCoin.Tier.GOLD_COIN
 			add_child(c)
 			AgentBridge.emit_event("spawn", {"type": "coin", "pos": [at.x, at.y], "gold": amount})
 
