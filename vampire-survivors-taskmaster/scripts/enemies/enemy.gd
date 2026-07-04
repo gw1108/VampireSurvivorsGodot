@@ -135,6 +135,11 @@ var _dying := false
 var _was_frozen := false
 
 var _sprite: Sprite2D
+## World-space half-extent of this enemy's sprite (texture size * 0.5 * node scale). Cached in
+## _ready and read by the occlusion cull (_covers / _overlap_correction): a body whose sprite rect
+## sits entirely inside a larger, on-top enemy's rect contributes nothing but overdraw, so its
+## Sprite2D is skipped that frame.
+var _half_extent := Vector2.ZERO
 
 ## Uniform spatial grid shared across every enemy, rebuilt at most once per process frame,
 ## so _overlap_correction() only scans the handful of neighbours in nearby cells instead of the
@@ -216,6 +221,8 @@ func _ready() -> void:
 	_sprite.texture = load(cfg["tex"])
 	_sprite.modulate = _base_tint
 	add_child(_sprite)
+	# Sprite is centered (default) and unrotated, so its world rect is position +/- this half-extent.
+	_half_extent = _sprite.texture.get_size() * 0.5 * base_scale
 	# Tinted mini-elites (MANTIS_WARRIOR) flare with a brief bright spawn glint —
 	# reusing the hit-flash channel — so their arrival pops before settling to the
 	# resting armour tint, clocking the elite instantly if they spawn on-screen.
@@ -229,6 +236,12 @@ func _process(delta: float) -> void:
 	# enemy). Bail out the moment we're outside the tree — there is nothing to move anyway.
 	if not is_inside_tree():
 		return
+	# Occlusion cull is refreshed every frame: default to VISIBLE here, then _overlap_correction hides
+	# this sprite if a larger enemy drawn on top fully covers it. Resetting up front (before the
+	# freeze / hit-stop / dying early-returns below) guarantees a body is never left stale-hidden after
+	# its occluder moves away — worst case a frozen/hit-stopped body just isn't culled for a few frames.
+	if _sprite and not _sprite.visible:
+		_sprite.visible = true
 	if _flash_time > 0.0:
 		_flash_time = maxf(0.0, _flash_time - delta)
 		_update_flash()
@@ -337,6 +350,14 @@ func _overlap_correction() -> Vector2:
 	# horde packed into this enemy's 3x3 block) can't drive the scan back to O(n²). Own cell is
 	# scanned first (see _CELL_OFFSETS) so the budget lands on the nearest, deepest overlaps.
 	var checked := 0
+	# Occlusion cull, piggybacked on this same neighbour scan (no extra grid pass): if a larger enemy
+	# drawn ON TOP of this one (higher sibling index → drawn later) fully covers this sprite's rect,
+	# this body is pure overdraw and its Sprite2D is skipped. Only small bodies can be fully covered
+	# (the solid collider keeps equal-size sprites' centres apart, so they never fully occlude each
+	# other) — so mini-bosses that show a health bar skip the test entirely.
+	var occluded := false
+	var scan_occlusion := not _show_health_bar
+	var my_index := get_index()
 	for offset in _CELL_OFFSETS:
 		var bucket: Variant = _grid.get(base + offset)
 		if bucket == null:
@@ -346,15 +367,30 @@ func _overlap_correction() -> Vector2:
 			# lack a collider radius; only solid VSEnemy bodies collide.
 			if other == self or not (other is VSEnemy):
 				continue
+			if scan_occlusion and not occluded and other.get_index() > my_index and other._covers(self):
+				occluded = true
 			checked += 1
 			if checked > MAX_OVERLAP_CHECKS:
+				if occluded and _sprite:
+					_sprite.visible = false
 				return correction
 			var min_d: float = radius + other.radius
 			var away: Vector2 = position - other.position
 			var dist := away.length()
 			if dist > 0.001 and dist < min_d:
 				correction += away / dist * (min_d - dist) * 0.5
+	if occluded and _sprite:
+		_sprite.visible = false
 	return correction
+
+## True iff this enemy's sprite rect fully contains `victim`'s — i.e. `victim` is entirely hidden
+## behind this sprite when this one is drawn on top, so drawing `victim` is pure overdraw. Sprites are
+## centered and unrotated, so each world rect is centre +/- _half_extent and containment is the exact
+## axis-aligned test below. Equal-size sprites never satisfy it (the collider keeps their centres
+## apart), so only a strictly larger sprite (ELITE / REAPER) ever covers a smaller body.
+func _covers(victim: VSEnemy) -> bool:
+	var d := (position - victim.position).abs()
+	return d.x + victim._half_extent.x <= _half_extent.x and d.y + victim._half_extent.y <= _half_extent.y
 
 ## Teleport an outrun straggler back onto the spawn ring around the player (VS enemy recycling),
 ## so the concurrent-enemy budget stays spent on units that can actually threaten the player rather
