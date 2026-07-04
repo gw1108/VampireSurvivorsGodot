@@ -44,6 +44,10 @@ const HEALTH_BAR_FILL_COLOR := Color(0.85, 0.15, 0.15)
 # HUD's low-health vignette. Mirrors hud.gd's LOWHP_THRESHOLD so both danger cues arm together.
 const LOWHP_THRESHOLD := 0.30
 const HEALTH_BAR_ALARM_COLOR := Color(1.0, 0.3, 0.12)   # hot red the fill throbs toward while critical
+# Recovery (Pummarola): while HP regenerates and isn't yet full, the fill breathes faintly toward this
+# green so the top-up reads at a glance. Kept quiet (shallow blend, slow beat) and gated above the alarm
+# threshold so it never fights the low-HP danger throb for attention.
+const HEALTH_BAR_HEAL_COLOR := Color(0.3, 0.9, 0.35)
 
 ## Living-avatar motion: a brisk two-step bounce while walking and a slow breathe when standing.
 ## Both are a couple of pixels of vertical offset on the sprite alone (position untouched), driven
@@ -171,6 +175,13 @@ func _draw_health_bar() -> void:
 		var depth := clampf((LOWHP_THRESHOLD - frac) / LOWHP_THRESHOLD, 0.0, 1.0)
 		var beat := 0.55 + 0.45 * (0.5 + 0.5 * sin(_lowhp_pulse * (3.5 + 4.0 * depth)))
 		fill = HEALTH_BAR_FILL_COLOR.lerp(HEALTH_BAR_ALARM_COLOR, clampf(depth * beat, 0.0, 1.0))
+	else:
+		# Recovery cue: only above the alarm threshold so it never competes with the low-HP throb.
+		# A slow, shallow green breathe (blend capped low) that quietly signals HP is ticking back up.
+		var run := get_parent() as VSRun
+		if run and run.recovery > 0.0 and health < max_health:
+			var heal_beat := 0.5 + 0.5 * sin(_lowhp_pulse * 2.2)
+			fill = HEALTH_BAR_FILL_COLOR.lerp(HEALTH_BAR_HEAL_COLOR, 0.28 * heal_beat)
 	draw_rect(Rect2(bg.position, Vector2(w * frac, HEALTH_BAR_HEIGHT)), fill)
 
 ## Nudge the sprite up and down to sell life: a footfall bounce when a move key is held, a slow
