@@ -87,6 +87,13 @@ func _entities() -> Array:
 # bridge, so an adapter MUST defer unrecognized types or the JS command channel goes dead.
 func _on_command(cmd: Dictionary) -> void:
 	match str(cmd.get("type", "")):
+		"restart":
+			# The bridge forwards restart to the registered handler; without this branch it
+			# falls through to default_command (an input synthesizer with no restart path) and
+			# is silently swallowed. reload_current_scene is the game's own restart path — the
+			# same one game-over/paused ui_accept uses (see run.gd) — so the harness can reset a
+			# run without steering the player into death first.
+			get_tree().reload_current_scene()
 		"set_seed":
 			game.reseed(int(cmd.get("value", 0)))
 		"force_gold_fever":
