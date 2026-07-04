@@ -124,9 +124,17 @@ class Fireball:
 	## Diameter (px, in the baked sheet's own pixels) of frame 1's (the flight disc) alpha bounding
 	## box — calibrates the flight sprite's scale so it matches the ball's own contact RADIUS.
 	const VFX_FLIGHT_RADIUS_PX := 38.0
-	## Half-width (px) of the widest detonation frame's (frame 7, the final smoke puff) alpha
-	## bounding box — calibrates the detonation sprite's scale to each fireball's actual `blast`.
-	const VFX_BLAST_REFERENCE_RADIUS_PX := 55.0
+	## Half-width (px) of the burst's DENSE/bright core — measured on the yellow detonation frame
+	## (the punchy body, halfW ~44px), NOT the full faint-wisp bbox (frame 7, ~55px). Calibrating
+	## against the dense core makes the visible burst FILL the fireball's actual `blast` footprint
+	## (the faint outer wisps then spill a little past it, which reads naturally) instead of the old
+	## under-fill that made the AoE feel weaker than it hits.
+	const VFX_BLAST_REFERENCE_RADIUS_PX := 44.0
+	## A brief hot over-bright pop on the first ~0.1s of the detonation, so a cluster of bursts
+	## flashes and pops against Mad Forest's muted grass and dark bat sprites before settling to
+	## normal smoke. Overbright modulate (>1) drives the already-yellow core toward hot white-yellow.
+	const DETONATE_FLASH_TIME := 0.1
+	const DETONATE_FLASH_TINT := Color(1.9, 1.75, 1.25)
 	const HELLFIRE_TINT := Color(1.3, 1.2, 1.0)  # Hellfire's comet burns hotter/whiter than the flame
 
 	var vel := Vector2.RIGHT
@@ -137,6 +145,7 @@ class Fireball:
 	var run: VSRun
 	var _flicker := 0.0
 	var _exploding := false
+	var _flash := 0.0                # remaining time on the detonation's hot over-bright flash
 	var _seared := {}                # ids of enemies a piercing ball has already burned (hit each once)
 	var _vfx: AnimatedSprite2D
 
@@ -157,7 +166,12 @@ class Fireball:
 		if run.phase != "playing":
 			return
 		if _exploding:
-			return   # the "detonate" animation is playing; queue_free() on its animation_finished
+			# The detonation burst is playing (queue_free() fires on its animation_finished). Decay the
+			# hot over-bright flash back to normal white over the first couple of frames so the burst pops.
+			if _flash > 0.0:
+				_flash = maxf(0.0, _flash - delta)
+				_vfx.modulate = Color.WHITE.lerp(DETONATE_FLASH_TINT, _flash / DETONATE_FLASH_TIME)
+			return
 		life -= delta
 		if life <= 0.0:
 			# Hellfire never detonates — it simply burns out at the end of its long flight.
@@ -217,7 +231,8 @@ class Fireball:
 				e.hit(damage, position)
 		if run:
 			run.add_camera_shake(0.16)   # a small jolt so the blast lands with weight
-		_vfx.modulate = Color.WHITE
+		_flash = DETONATE_FLASH_TIME
+		_vfx.modulate = DETONATE_FLASH_TINT
 		_vfx.scale = Vector2.ONE * (blast / VFX_BLAST_REFERENCE_RADIUS_PX)
 		_vfx.play(&"detonate")
 
