@@ -53,6 +53,10 @@ func _provide() -> Dictionary:
 func _actions(phase: String) -> Array:
 	if phase == "game_over":
 		return ["ui_accept"]
+	if phase == "chest":
+		# The chest reveal animation only takes ui_accept — first press fast-forwards it, a second
+		# dismisses it and resumes the run (see VSChestScreen). So the harness never soft-locks here.
+		return ["ui_accept"]
 	if phase == "level_up":
 		# Only expose the choices actually on screen.
 		var n := 0
