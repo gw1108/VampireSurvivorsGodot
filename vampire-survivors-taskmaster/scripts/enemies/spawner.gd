@@ -1,7 +1,8 @@
 class_name VSSpawner
 extends Node2D
 ## Time-based wave spawner. Spawns enemies on a ring just outside view around the
-## player; the rate ramps up over the run. Capped for performance.
+## player; the base trickle's rate and concurrent-count follow Mad Forest's real
+## per-minute spawn table (see DENSITY_SCHEDULE). Capped for performance.
 
 const MAX_ENEMIES := 90
 const SPAWN_RING := 520.0
@@ -40,11 +41,18 @@ var _next_surge := SURGE_FIRST
 func _process(delta: float) -> void:
 	if run == null or run.phase != "playing" or run.player == null:
 		return
-	var rate := 1.0 + run.elapsed / 20.0   # enemies/sec, ramps with time survived
+	# Base trickle paced by Mad Forest's real per-minute spawn table: the "spawn interval
+	# (seconds)" column sets how fast enemies enter (rate = 1/interval) and the "Enemy
+	# minimum" column sets the concurrent population this stretch maintains. Both come from
+	# DENSITY_SCHEDULE so the field ebbs and flows (the 5:00/10:00 lulls that frame the real
+	# stage's minibosses read through) instead of pinning at the flat cap for the whole run.
+	var density := _density()
+	var rate: float = 1.0 / density.interval   # enemies/sec entering this minute
+	var soft_cap: int = mini(int(density.count), MAX_ENEMIES)
 	_accum += rate * delta
 	while _accum >= 1.0:
 		_accum -= 1.0
-		_spawn_one()
+		_spawn_one(soft_cap)
 	if run.elapsed >= _next_elite:
 		_next_elite += ELITE_INTERVAL
 		_spawn_elite()
@@ -61,8 +69,11 @@ func _process(delta: float) -> void:
 		_next_surge += SURGE_INTERVAL
 		_spawn_surge()
 
-func _spawn_one() -> void:
-	if get_tree().get_nodes_in_group("enemies").size() >= MAX_ENEMIES:
+## Spawn a single base-trickle enemy on the ring, honoring the per-minute soft cap (the
+## clamped "Enemy minimum" population target) so low-density minutes stay a genuine lull
+## rather than refilling to the hard MAX_ENEMIES ceiling.
+func _spawn_one(cap: int) -> void:
+	if get_tree().get_nodes_in_group("enemies").size() >= cap:
 		return
 	var ang := randf() * TAU
 	var pos := run.player.position + Vector2(cos(ang), sin(ang)) * SPAWN_RING
@@ -216,6 +227,62 @@ const ROSTER_SCHEDULE := [
 	{"min": 25.0, "weights": {VSEnemy.Type.MANTIS_WARRIOR: 0.5, VSEnemy.Type.MUMMY: 0.5}},
 	{"min": 27.0, "weights": {VSEnemy.Type.MUMMY: 0.5, VSEnemy.Type.MUDMAN: 0.3, VSEnemy.Type.MANTIS_WARRIOR: 0.2}},
 ]
+
+## Per-minute base-spawn pacing transcribed verbatim from Mad Forest's real wave table
+## (.firecrawl/wiki-offline/Mad_Forest.htm, the "Spawn interval (seconds)" and "Enemy
+## minimum" columns, 0:00 through 29:00). `interval` is the seconds between base spawns
+## (rate = 1/interval, tightening from 1.0s early to 0.1s in the endgame); `count` is the
+## concurrent enemy population the stage maintains. RUN_DURATION is already 1800s (30:00),
+## matching Mad Forest exactly, so these minute marks map 1:1 — no stretching. The wiki's
+## counts climb to 300, far past what this slice renders smoothly, so they're clamped to
+## MAX_ENEMIES where used; the LOW values (the 5:00/10:00/etc. lulls the real stage uses to
+## frame its minibosses) read through and thin the field. Each row holds from its minute mark
+## until the next. Waves/surges/elites keep their own cadence and the hard cap — this governs
+## only the ambient trickle.
+const DENSITY_SCHEDULE := [
+	{"min": 0.0,  "interval": 1.0,  "count": 15},
+	{"min": 1.0,  "interval": 1.0,  "count": 30},
+	{"min": 2.0,  "interval": 0.5,  "count": 50},
+	{"min": 3.0,  "interval": 0.25, "count": 40},
+	{"min": 4.0,  "interval": 1.0,  "count": 30},
+	{"min": 5.0,  "interval": 1.0,  "count": 10},
+	{"min": 6.0,  "interval": 0.5,  "count": 20},
+	{"min": 7.0,  "interval": 0.5,  "count": 80},
+	{"min": 8.0,  "interval": 1.5,  "count": 100},
+	{"min": 9.0,  "interval": 0.5,  "count": 30},
+	{"min": 10.0, "interval": 0.5,  "count": 10},
+	{"min": 11.0, "interval": 0.1,  "count": 300},
+	{"min": 12.0, "interval": 0.25, "count": 20},
+	{"min": 13.0, "interval": 0.5,  "count": 150},
+	{"min": 14.0, "interval": 0.1,  "count": 20},
+	{"min": 15.0, "interval": 0.1,  "count": 100},
+	{"min": 16.0, "interval": 0.1,  "count": 100},
+	{"min": 17.0, "interval": 1.0,  "count": 20},
+	{"min": 18.0, "interval": 0.5,  "count": 60},
+	{"min": 19.0, "interval": 0.5,  "count": 100},
+	{"min": 20.0, "interval": 0.1,  "count": 100},
+	{"min": 21.0, "interval": 0.1,  "count": 300},
+	{"min": 22.0, "interval": 0.1,  "count": 200},
+	{"min": 23.0, "interval": 0.1,  "count": 300},
+	{"min": 24.0, "interval": 0.1,  "count": 300},
+	{"min": 25.0, "interval": 0.1,  "count": 100},
+	{"min": 26.0, "interval": 0.1,  "count": 150},
+	{"min": 27.0, "interval": 0.1,  "count": 300},
+	{"min": 28.0, "interval": 0.1,  "count": 300},
+	{"min": 29.0, "interval": 0.1,  "count": 300},
+]
+
+## The DENSITY_SCHEDULE row in effect for the current run time (same band lookup as
+## _pick_type): the last row whose minute mark has passed.
+func _density() -> Dictionary:
+	var minute := run.elapsed / 60.0
+	var row: Dictionary = DENSITY_SCHEDULE[0]
+	for band in DENSITY_SCHEDULE:
+		if minute >= band.min:
+			row = band
+		else:
+			break
+	return row
 
 func _pick_type() -> int:
 	var minute := run.elapsed / 60.0
