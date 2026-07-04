@@ -170,6 +170,12 @@ func _ready() -> void:
 		_flash_time = FLASH_DURATION
 
 func _process(delta: float) -> void:
+	# On a run restart the scene is torn down while enemies are mid-flight; a _process tick
+	# landing on an already-detached enemy makes _separation()'s get_tree() call fault with
+	# "Parameter data.tree is null" (harmless but ~12 lines of console noise, one per live
+	# enemy). Bail out the moment we're outside the tree — there is nothing to move anyway.
+	if not is_inside_tree():
+		return
 	if _flash_time > 0.0:
 		_flash_time = maxf(0.0, _flash_time - delta)
 		_update_flash()
