@@ -32,7 +32,7 @@ func test_non_overlapping_neighbour_no_push() -> void:
 func _brute_correction(e: VSEnemy, all: Array) -> Vector2:
 	var correction := Vector2.ZERO
 	for other in all:
-		if other == e or other.type == VSEnemy.Type.GHOST:
+		if other == e:
 			continue
 		var min_d: float = e.radius + other.radius
 		var away: Vector2 = e.position - other.position

@@ -14,30 +14,13 @@ const IMMUNE_SHIMMER_AMOUNT := 0.7   # how far the pulse lerps toward the hot re
 ## player; after moving, a positional overlap-resolution pass (see _overlap_correction) shoves
 ## any interpenetrating pair apart until their circles just touch. The horde therefore packs into
 ## the VS-style crush wall as a mass of solid bodies pressing on the player — no steering force
-## bends the beeline the way the old boid-separation blend did. GHOSTs are intangible and phase
-## straight through; heavy units barely budge (the shove is scaled by knock_resist), so the finale
-## REAPER ploughs through the pack instead of getting mired in it.
+## bends the beeline the way the old boid-separation blend did. Heavy units barely budge (the shove
+## is scaled by knock_resist), so the finale REAPER ploughs through the pack instead of getting
+## mired in it.
 ## COLLIDE_CELL sizes the shared spatial grid: it is >= twice the largest enemy radius (REAPER's
 ## 30), so any neighbour whose body could overlap this one is always inside the 3x3 block of cells
 ## scanned per enemy (see _ensure_grid) — keeping the whole-horde cost ~O(n), not O(n²).
 const COLLIDE_CELL := 60.0
-## Per-archetype movement flavour, so the horde doesn't read as one uniform blob:
-## - GHOST ignores collision entirely, drifting straight through the pack and even
-##   overlapping other units (faithful to VS's phasing ghosts).
-## - BAT threads a small perpendicular sine weave over its homing drive, giving the
-##   swarm a fluttering, erratic look. WEAVE_AMP is relative to the unit toward-drive
-##   (kept well under 1.0 so bats still close in); a per-enemy phase de-syncs the flock.
-## - MANTIS lunges: on a repeating cycle it briefly rushes at extra speed toward the
-##   player, then coasts, so the insect reads as a darting striker rather than a steady
-##   fast beeliner. A per-enemy phase de-syncs the darts across the swarm.
-const BAT_WEAVE_AMP := 0.42
-const BAT_WEAVE_FREQ := 6.5
-## MANTIS dart cycle: every PERIOD seconds it spends DURATION seconds sprinting, its
-## speed swelling to SPEED_MULT× base on a smooth sine bell (accelerate → peak → ease)
-## so the lunge snaps without teleporting; outside the window it moves at base speed.
-const MANTIS_LUNGE_PERIOD := 1.5
-const MANTIS_LUNGE_DURATION := 0.4
-const MANTIS_LUNGE_SPEED_MULT := 2.3
 ## Enemies at or above this max health (mini-bosses like ELITE) get a health bar
 ## once damaged, so their long HP pool reads as visible progress.
 const HEALTH_BAR_MIN_MAX_HEALTH := 40.0
@@ -60,12 +43,12 @@ const DESPAWN_RADIUS := 1000.0
 ## REAPER is the run's finale: at the survival time limit VSRun summons a single
 ## fast, enormous-HP, huge-contact Reaper (VS's death-at-the-clock enemy) that the
 ## player must outlast for the final ~15s dash to the win — not killed, survived.
-## MANTIS is a fast insect skirmisher: the quickest non-boss archetype, darting in
+## MANTIS is a fast insect skirmisher: the quickest non-boss archetype, homing in
 ## from later waves with modest HP but a sharp contact bite, so the horde gains an
 ## agile "outrun you" threat distinct from the slow tanky MUMMY.
 ## MANTIS_WARRIOR is the bug faction's mini-elite: an armored, upscaled Mantis with a
-## deep HP pool (enough to show its health bar) and a heavy contact bite, but it keeps
-## the Mantis lunge so it reads as a fast-but-tanky striker rather than a slow wall. It
+## deep HP pool (enough to show its health bar) and a heavy contact bite, so it reads
+## as a fast-but-tanky striker rather than a slow wall. It
 ## surfaces in the late (t>=9min) band to deepen the insect threat without a full boss.
 ## It scatters its 10 XP across a 5-gem ring (small green gems) so felling this tanky
 ## mini-elite reads as a jackpot burst like the ELITE — but without the boss camera shake.
@@ -131,9 +114,6 @@ var _base_tint := Color(1, 1, 1)
 var _knockback := Vector2.ZERO
 ## Remaining hit-stop freeze time (s), counting down in _process; set by hit().
 var _hitstop := 0.0
-## Random phase offset (radians) for BAT's perpendicular weave, so bats flutter
-## out of sync rather than snaking in a single wave. Set once in _ready.
-var _weave_phase := 0.0
 var run: VSRun
 var target: VSPlayer
 var _contact_cd := 0.0
@@ -209,7 +189,6 @@ func _ready() -> void:
 	knock_resist = cfg.get("knock", 1.0)
 	_base_tint = cfg.get("tint", Color(1, 1, 1))
 	scale = Vector2(base_scale, base_scale)
-	_weave_phase = randf() * TAU
 	_sprite = Sprite2D.new()
 	_sprite.texture = load(cfg["tex"])
 	_sprite.modulate = _base_tint
@@ -287,26 +266,9 @@ func _process(delta: float) -> void:
 	# packs into a surrounding crush wall rather than one overlapping column, but every unit's
 	# intent is the direct line at the player.
 	var move := desired
-	# BAT flutters: add a small oscillating shove perpendicular to its homing drive
-	# so bats weave in and out rather than beelining, and the per-enemy phase keeps
-	# the flock from snaking as one. No perpendicular exists when desired is zero.
-	if type == Type.BAT and desired != Vector2.ZERO:
-		var t2: float = run.elapsed if run else 0.0
-		var perp := Vector2(-desired.y, desired.x)
-		move += perp * (sin(t2 * BAT_WEAVE_FREQ + _weave_phase) * BAT_WEAVE_AMP)
-	# MANTIS darts: periodically swell speed toward the player on a smooth sine bell so
-	# it lunges in bursts. The per-enemy phase (reusing _weave_phase, mapped from radians
-	# onto the cycle length) staggers the darts so the swarm doesn't lunge in unison.
-	var speed_mult := 1.0
-	if type == Type.MANTIS or type == Type.MANTIS_WARRIOR:
-		var t2: float = run.elapsed if run else 0.0
-		var phase := fmod(t2 + _weave_phase / TAU * MANTIS_LUNGE_PERIOD, MANTIS_LUNGE_PERIOD)
-		if phase < MANTIS_LUNGE_DURATION:
-			var u := phase / MANTIS_LUNGE_DURATION       # 0..1 across the dart window
-			speed_mult = 1.0 + (MANTIS_LUNGE_SPEED_MULT - 1.0) * sin(u * PI)
 	var step := Vector2.ZERO
 	if move.length() > 0.001:
-		step = move.normalized() * speed * speed_mult * delta
+		step = move.normalized() * speed * delta
 	# Layer any active knockback on top of the homing step and bleed it off, so a weapon
 	# hit visibly shoves the enemy back for a moment before it resumes its march.
 	if _knockback != Vector2.ZERO:
@@ -316,9 +278,8 @@ func _process(delta: float) -> void:
 	# Solid enemy colliders: after homing straight in, shove this body out of any neighbour it
 	# now overlaps so no two enemies occupy the same space — the crush wall forms from bodies
 	# pressing on bodies, not a steering force. Scaled by knock_resist so heavy units barely give
-	# ground (the finale REAPER ploughs through the pack); GHOST phases through, so it skips this.
-	if type != Type.GHOST:
-		position += _overlap_correction() * knock_resist
+	# ground (the finale REAPER ploughs through the pack).
+	position += _overlap_correction() * knock_resist
 	# Solid body vs the player: the same combined radius that gates contact damage also
 	# caps how close an enemy's sprite can get, so a wall of enemies packs into a ring right
 	# at the player's edge instead of visually marching inside the avatar sprite. Checked
@@ -341,7 +302,7 @@ func _process(delta: float) -> void:
 ## along the line between them equal to HALF the overlap (the other enemy corrects its own half in
 ## its _process pass, so a pair meeting head-on splits the gap symmetrically). Summed across all
 ## overlapping neighbours and applied to `position`, this is the solid-body collider — bodies can't
-## interpenetrate. GHOST neighbours are intangible and skipped. Backed by the shared uniform grid
+## interpenetrate. Backed by the shared uniform grid
 ## (see _ensure_grid): only the 3×3 block of cells around this enemy is scanned, so the per-frame
 ## cost across the whole horde is ~O(n) instead of O(n²) — what lets the spawner's concurrent-enemy
 ## cap sit at the GDD's 300-alive late-game crush.
@@ -356,8 +317,8 @@ func _overlap_correction() -> Vector2:
 				continue
 			for other in bucket:
 				# The 'enemies' group also holds non-enemy bodies (e.g. breakable candelabras) that
-				# lack a collider radius; only solid VSEnemy bodies collide, and GHOSTs phase through.
-				if other == self or not (other is VSEnemy) or other.type == Type.GHOST:
+				# lack a collider radius; only solid VSEnemy bodies collide.
+				if other == self or not (other is VSEnemy):
 					continue
 				var min_d: float = radius + other.radius
 				var away: Vector2 = position - other.position

@@ -7,6 +7,17 @@ The role of this file is to describe common mistakes and confusion points that a
 ## Operating Principles (Non-Negotiable)
 
 - If something is described or asked for do not ask for confirmation.
+- **Do NOT invent player-facing features, mechanics, or "flavor" that are not described in
+  the GDD (`thoughts/shared/game-design/`) or the offline wiki (`.firecrawl/`).** Faithful
+  recreation is the goal. This explicitly includes bespoke enemy behaviors: enemies home
+  STRAIGHT at the player (beeline) unless the GDD/wiki gives that archetype a different,
+  documented movement. No sine-wave weaves, dash-lunges, pack-phasing, or other per-enemy
+  movement variety unless it is written down. If you think a feature or flavor pass would
+  improve the game, do NOT build it — write it up as a suggestion in the suggested-features
+  file and move on.
+- **Dev/debug tooling is the exception:** it is fine to add tooling that makes debugging,
+  testing, or authoring easier (agent-play harnesses, debug overlays, cheat toggles, etc.),
+  but such tooling must NOT be reachable or expected during normal player gameplay.
 
 ---
 
