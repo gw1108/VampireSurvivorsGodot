@@ -89,6 +89,21 @@ const NDUJA_BAR_X := 530.0    # centered in the 1280-wide viewport (530 + 220/2 
 const NDUJA_BAR_Y := 664.0    # low on the screen so it clears the top HUD clutter
 const NDUJA_COLOR := Color(1.5, 0.55, 0.2)   # matches VSNduja.FIRE — reads as the same berserk event
 
+# Gold Fever countdown: while run.is_gold_fever_active() (started by the Gilded Clover pickup,
+# see gilded_clover.gd) a bar stacks directly above the Nduja one — same bottom-center "timed
+# buff" slot — so the rare gold-rush window reads as an ongoing event rather than just the
+# initial pickup flash + camera shake. Fill shrinks as the 10s window burns down; a shimmering
+# "GOLD FEVER n" label sits above it. Driven each frame from _refresh_gold_fever.
+var _fever_border: ColorRect
+var _fever_bg: ColorRect
+var _fever_fill: ColorRect
+var _fever_label: Label
+const GOLD_FEVER_BAR_W := 220.0
+const GOLD_FEVER_BAR_H := 12.0
+const GOLD_FEVER_BAR_X := 530.0
+const GOLD_FEVER_BAR_Y := 620.0    # stacks just above the Nduja bar (664) so both can show at once
+const GOLD_FEVER_COLOR := Color(1.0, 0.85, 0.2)   # matches VSGildedClover.GOLD_FEVER_COLOR
+
 # Swarm-surge telegraph: when the spawner marches a directional wall in from a flank it calls
 # telegraph_surge(dir); we flash a crimson arrow near the screen edge pointing at the flank the
 # wall is coming from, so the player can juke perpendicular before it closes. Purely cosmetic —
@@ -321,6 +336,47 @@ func _ready() -> void:
 	_nduja_label.visible = false
 	add_child(_nduja_label)
 
+	# Gold Fever countdown bar (bottom-center, stacked above the Nduja bar), hidden until a
+	# fever is active. Same border -> track -> fill layering, driven each frame in
+	# _refresh_gold_fever.
+	_fever_border = ColorRect.new()
+	_fever_border.color = Color(0, 0, 0, 0.75)
+	_fever_border.position = Vector2(GOLD_FEVER_BAR_X - 3.0, GOLD_FEVER_BAR_Y - 3.0)
+	_fever_border.size = Vector2(GOLD_FEVER_BAR_W + 6.0, GOLD_FEVER_BAR_H + 6.0)
+	_fever_border.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_fever_border.visible = false
+	add_child(_fever_border)
+
+	_fever_bg = ColorRect.new()
+	_fever_bg.color = Color(0.16, 0.13, 0.03, 0.9)
+	_fever_bg.position = Vector2(GOLD_FEVER_BAR_X, GOLD_FEVER_BAR_Y)
+	_fever_bg.size = Vector2(GOLD_FEVER_BAR_W, GOLD_FEVER_BAR_H)
+	_fever_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_fever_bg.visible = false
+	add_child(_fever_bg)
+
+	_fever_fill = ColorRect.new()
+	_fever_fill.color = GOLD_FEVER_COLOR
+	_fever_fill.position = Vector2(GOLD_FEVER_BAR_X, GOLD_FEVER_BAR_Y)
+	_fever_fill.size = Vector2(GOLD_FEVER_BAR_W, GOLD_FEVER_BAR_H)
+	_fever_fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_fever_fill.visible = false
+	add_child(_fever_fill)
+
+	# "GOLD FEVER n" label centered just above the bar, tinted to match the Gilded Clover's own
+	# pickup flash so the countdown reads as the same gold-rush event.
+	_fever_label = Label.new()
+	_fever_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_fever_label.position = Vector2(GOLD_FEVER_BAR_X, GOLD_FEVER_BAR_Y - 22.0)
+	_fever_label.size = Vector2(GOLD_FEVER_BAR_W, 0)
+	_fever_label.add_theme_font_size_override("font_size", 15)
+	_fever_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
+	_fever_label.add_theme_constant_override("outline_size", 3)
+	_fever_label.modulate = GOLD_FEVER_COLOR
+	_fever_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_fever_label.visible = false
+	add_child(_fever_label)
+
 	# Surge telegraph arrow: a screen-space dart parented to the HUD layer, hidden until a
 	# wall marches in. telegraph_surge() positions/rotates it toward the flank and _process
 	# fades it out. Drawn above the world but under the stat text is fine — it's an edge marker.
@@ -443,6 +499,7 @@ func refresh(run: VSRun) -> void:
 	_refresh_xp(run)
 	_refresh_freeze(run)
 	_refresh_nduja(run)
+	_refresh_gold_fever(run)
 	# Reaper finale countdown, live only during the last stand (Reaper summoned, run not yet won).
 	var in_finale := run.reaper_active and run.phase == "playing"
 	_reaper.visible = in_finale
@@ -565,6 +622,27 @@ func _refresh_nduja(run: VSRun) -> void:
 	var flick := 0.85 + 0.15 * absf(sin(remaining * 18.0))
 	_nduja_fill.color = Color(NDUJA_COLOR.r * flick, NDUJA_COLOR.g * flick, NDUJA_COLOR.b * flick)
 	_nduja_label.text = "NDUJA  %d" % int(ceil(remaining))
+
+## Drive the Gold Fever countdown from the run's bonus-coin window (see VSRun.start_gold_fever,
+## started by the Gilded Clover pickup). While run.is_gold_fever_active() the bar shows and its
+## fill shrinks from full to empty as gold_fever_until approaches; a gentle shimmer on the fill
+## reads as glinting coin rather than a flat bar. Hidden the instant the fever lapses.
+func _refresh_gold_fever(run: VSRun) -> void:
+	if _fever_fill == null:
+		return
+	var active := run.is_gold_fever_active() and run.phase == "playing"
+	_fever_border.visible = active
+	_fever_bg.visible = active
+	_fever_fill.visible = active
+	_fever_label.visible = active
+	if not active:
+		return
+	var remaining := maxf(0.0, run.gold_fever_until - run.elapsed)
+	var frac := clampf(remaining / VSRun.GOLD_FEVER_DURATION, 0.0, 1.0)
+	_fever_fill.size = Vector2(GOLD_FEVER_BAR_W * frac, GOLD_FEVER_BAR_H)
+	var shimmer := 0.85 + 0.15 * absf(sin(remaining * 12.0))
+	_fever_fill.color = Color(GOLD_FEVER_COLOR.r * shimmer, GOLD_FEVER_COLOR.g * shimmer, GOLD_FEVER_COLOR.b * shimmer)
+	_fever_label.text = "GOLD FEVER  %d" % int(ceil(remaining))
 
 ## Build the paused overlay's text: the PAUSED heading, a one-line live build summary so the
 ## player can size up their run while stopped, and the two controls the pause menu offers

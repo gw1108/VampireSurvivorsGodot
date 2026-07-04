@@ -86,5 +86,11 @@ func _on_command(cmd: Dictionary) -> void:
 	match str(cmd.get("type", "")):
 		"set_seed":
 			game.reseed(int(cmd.get("value", 0)))
+		"force_gold_fever":
+			# Gold Fever only starts from a Gilded Clover pickup — a level-30+, weight-1
+			# candelabra drop too rare to reach reliably in an automated playtest. Debug-only
+			# escape hatch so the harness can exercise/verify it directly; inert in real builds
+			# (this whole channel only exists behind the agent gate — see agent_bridge.gd).
+			game.start_gold_fever()
 		_:
 			pass
