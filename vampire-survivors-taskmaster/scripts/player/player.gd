@@ -40,6 +40,10 @@ const HEALTH_BAR_HEIGHT := 3.0
 const HEALTH_BAR_OFFSET_Y := 28.0   # clears the sprite's visible feet (art is 44px tall)
 const HEALTH_BAR_BG_COLOR := Color(0, 0, 0, 0.7)
 const HEALTH_BAR_FILL_COLOR := Color(0.85, 0.15, 0.15)
+# Once HP drops below this fraction the fill throbs toward the hot alarm red, in lockstep with the
+# HUD's low-health vignette. Mirrors hud.gd's LOWHP_THRESHOLD so both danger cues arm together.
+const LOWHP_THRESHOLD := 0.30
+const HEALTH_BAR_ALARM_COLOR := Color(1.0, 0.3, 0.12)   # hot red the fill throbs toward while critical
 
 ## Living-avatar motion: a brisk two-step bounce while walking and a slow breathe when standing.
 ## Both are a couple of pixels of vertical offset on the sprite alone (position untouched), driven
@@ -67,6 +71,10 @@ var _iframe_time := 0.0
 ## cleared exactly once when it lapses. Paired with _nduja_tick_accum, the burn-cadence timer.
 var _nduja_glow := false
 var _nduja_tick_accum := 0.0
+## Free-running heartbeat clock (seconds) driving the HP bar's low-health throb. Advanced every
+## alive frame — including the level-up freeze — exactly as hud.gd advances its own _lowhp_pulse,
+## so the bar's beat stays in phase with the vignette's without the two nodes having to share state.
+var _lowhp_pulse := 0.0
 
 func _ready() -> void:
 	add_to_group("player")
@@ -81,6 +89,7 @@ func _process(delta: float) -> void:
 	# Vitality upgrades), so just redraw the bar every live frame rather than threading a
 	# queue_redraw() call through each of them.
 	queue_redraw()
+	_lowhp_pulse += delta   # heartbeat clock for the HP-bar throb; free-runs like hud's, even on freeze
 	_update_hit_flash(delta)
 	var run := get_parent() as VSRun
 	if run and run.phase != "playing":
@@ -151,7 +160,14 @@ func _draw_health_bar() -> void:
 	var w := RADIUS * 2.0
 	var bg := Rect2(-w * 0.5, HEALTH_BAR_OFFSET_Y, w, HEALTH_BAR_HEIGHT)
 	draw_rect(bg, HEALTH_BAR_BG_COLOR)
-	draw_rect(Rect2(bg.position, Vector2(w * frac, HEALTH_BAR_HEIGHT)), HEALTH_BAR_FILL_COLOR)
+	# Below LOWHP_THRESHOLD the fill throbs toward the hot alarm red on the same quickening heartbeat
+	# as the HUD vignette (identical beat formula + a synced clock), so bar and vignette pulse as one.
+	var fill := HEALTH_BAR_FILL_COLOR
+	if frac < LOWHP_THRESHOLD:
+		var depth := clampf((LOWHP_THRESHOLD - frac) / LOWHP_THRESHOLD, 0.0, 1.0)
+		var beat := 0.55 + 0.45 * (0.5 + 0.5 * sin(_lowhp_pulse * (3.5 + 4.0 * depth)))
+		fill = HEALTH_BAR_FILL_COLOR.lerp(HEALTH_BAR_ALARM_COLOR, clampf(depth * beat, 0.0, 1.0))
+	draw_rect(Rect2(bg.position, Vector2(w * frac, HEALTH_BAR_HEIGHT)), fill)
 
 ## Nudge the sprite up and down to sell life: a footfall bounce when a move key is held, a slow
 ## breathe when idle. `-absf(sin)` keeps the walk cycle lifting off the ground (up is -y) rather
