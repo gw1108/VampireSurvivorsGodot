@@ -103,15 +103,31 @@ func _fire(lvl: int) -> void:
 
 ## The flying fireball. Lives in world space as a child of the run (not the player) so it travels
 ## independently, detonating on the first enemy it overlaps — or self-detonating when its life runs
-## out — and dealing its full damage to every enemy within `blast` of the impact. Drawn as a glowing
-## fiery orb with a bright core so it reads at a glance without a dedicated sprite.
+## out — and dealing its full damage to every enemy within `blast` of the impact.
+##
+## VFX: SourceArt/sheets/ExplosionSheet.png, a yellow-to-grey smoke/ember burst sheet (5 variants
+## x 8 frames, cells already an integer 854x480 — no non-integer-cell resize forced, but each frame
+## was still cropped from column 0 (one variant; the other 4 are unused) and downscaled 854x480 ->
+## 160x90 offline (premultiplied-alpha resize, so no dark fringing at the soft smoke edges) to keep
+## the sheet a sane in-project size, then repacked as fire_explosion.png, 2 cols x 4 rows, reading
+## left->right top->bottom in the sheet's own time order. Frame 1 (row0 col1) is a plain glowing
+## disc — used AS-IS for the ball's in-flight sprite, so no separate ember asset was needed; all 8
+## frames play in order as the "detonate" burst on impact.
 class Fireball:
 	extends Node2D
 
-	const RADIUS := 10.0             # the ball's own contact radius
-	const CORE_COLOR := Color(1.0, 0.95, 0.6)   # white-hot centre
-	const FLAME_COLOR := Color(1.0, 0.5, 0.12)  # orange body
-	const BLAST_FLASH := 0.22        # seconds the detonation flash lingers before the node frees
+	const RADIUS := 10.0             # the ball's own contact radius (gameplay hitbox, not visual)
+	const VFX_TEX := "res://art/fire_explosion.png"
+	const VFX_COLS := 2
+	const VFX_ROWS := 4
+	const VFX_DETONATE_FPS := 20.0   # 8 frames / 20fps = 0.4s blast
+	## Diameter (px, in the baked sheet's own pixels) of frame 1's (the flight disc) alpha bounding
+	## box — calibrates the flight sprite's scale so it matches the ball's own contact RADIUS.
+	const VFX_FLIGHT_RADIUS_PX := 38.0
+	## Half-width (px) of the widest detonation frame's (frame 7, the final smoke puff) alpha
+	## bounding box — calibrates the detonation sprite's scale to each fireball's actual `blast`.
+	const VFX_BLAST_REFERENCE_RADIUS_PX := 55.0
+	const HELLFIRE_TINT := Color(1.3, 1.2, 1.0)  # Hellfire's comet burns hotter/whiter than the flame
 
 	var vel := Vector2.RIGHT
 	var damage := 20.0
@@ -121,12 +137,18 @@ class Fireball:
 	var run: VSRun
 	var _flicker := 0.0
 	var _exploding := false
-	var _flash := 0.0                # seconds of detonation flash remaining while _exploding
 	var _seared := {}                # ids of enemies a piercing ball has already burned (hit each once)
+	var _vfx: AnimatedSprite2D
 
 	func _ready() -> void:
 		add_to_group("projectiles")
 		z_index = 1
+		_vfx = AnimatedSprite2D.new()
+		_vfx.sprite_frames = _build_vfx_frames()
+		_vfx.animation_finished.connect(func() -> void: queue_free())
+		add_child(_vfx)
+		_vfx.play(&"flight")
+		_update_flight_vfx()
 
 	func _process(delta: float) -> void:
 		if run == null:
@@ -135,12 +157,7 @@ class Fireball:
 		if run.phase != "playing":
 			return
 		if _exploding:
-			# Hold the blast flash briefly, then clean up.
-			_flash -= delta
-			queue_redraw()
-			if _flash <= 0.0:
-				queue_free()
-			return
+			return   # the "detonate" animation is playing; queue_free() on its animation_finished
 		life -= delta
 		if life <= 0.0:
 			# Hellfire never detonates — it simply burns out at the end of its long flight.
@@ -164,7 +181,15 @@ class Fireball:
 					_detonate()
 					return
 		_flicker += delta * 18.0
-		queue_redraw()
+		_update_flight_vfx()
+
+	## Scales/tints the flight disc to the ball's live contact radius, with the same flicker pulse
+	## and Hellfire swell/heat the old procedural draw used.
+	func _update_flight_vfx() -> void:
+		var pulse := 1.0 + 0.15 * sin(_flicker)
+		var r := RADIUS * (1.5 if pierce else 1.0) * pulse
+		_vfx.scale = Vector2.ONE * (r / VFX_FLIGHT_RADIUS_PX)
+		_vfx.modulate = HELLFIRE_TINT if pierce else Color.WHITE
 
 	## Hellfire's pass: burn every not-yet-seared enemy within `blast` of the ball and remember them
 	## so a piercing ball damages each enemy exactly once as it tears through the horde.
@@ -178,12 +203,12 @@ class Fireball:
 				e.hit(damage, position)
 
 	## Explode: deal full damage to every enemy within `blast`, kick a little camera trauma, and
-	## switch to the brief flash state before freeing. Guarded so a fireball detonates exactly once.
+	## switch to the "detonate" burst VFX (queue_free() fires on its animation_finished). Guarded
+	## so a fireball detonates exactly once.
 	func _detonate() -> void:
 		if _exploding:
 			return
 		_exploding = true
-		_flash = BLAST_FLASH
 		for e in get_tree().get_nodes_in_group("enemies"):
 			if not e is VSEnemy:
 				continue
@@ -192,20 +217,30 @@ class Fireball:
 				e.hit(damage, position)
 		if run:
 			run.add_camera_shake(0.16)   # a small jolt so the blast lands with weight
-		queue_redraw()
+		_vfx.modulate = Color.WHITE
+		_vfx.scale = Vector2.ONE * (blast / VFX_BLAST_REFERENCE_RADIUS_PX)
+		_vfx.play(&"detonate")
 
-	## Render the fireball in flight as a flickering fiery orb, or the detonation as an expanding
-	## fading blast disc. Drawn in local space (the node's origin is the ball / blast centre).
-	func _draw() -> void:
-		if _exploding:
-			var frac: float = clampf(_flash / BLAST_FLASH, 0.0, 1.0)
-			var r := blast * (0.6 + 0.4 * (1.0 - frac))   # disc grows as it fades
-			draw_circle(Vector2.ZERO, r, Color(FLAME_COLOR.r, FLAME_COLOR.g, FLAME_COLOR.b, 0.45 * frac))
-			draw_circle(Vector2.ZERO, r * 0.55, Color(CORE_COLOR.r, CORE_COLOR.g, CORE_COLOR.b, 0.6 * frac))
-			return
-		# Flickering orb: an orange body with a jittering white-hot core so it reads as live fire.
-		# Hellfire burns bigger and hotter — a swollen, whiter comet so its piercing pass reads at a glance.
-		var pulse := 1.0 + 0.15 * sin(_flicker)
-		var r := RADIUS * (1.5 if pierce else 1.0) * pulse
-		draw_circle(Vector2.ZERO, r, Color(FLAME_COLOR.r, FLAME_COLOR.g, FLAME_COLOR.b, 0.9))
-		draw_circle(Vector2.ZERO, r * (0.62 if pierce else 0.5), CORE_COLOR)
+	## Builds the "flight" (frame 1: a plain glowing disc, looping) and "detonate" (all 8 frames in
+	## order, once) animations from fire_explosion.png's 2x4 grid (read left->right top->bottom).
+	func _build_vfx_frames() -> SpriteFrames:
+		var sf := SpriteFrames.new()
+		var tex := load(VFX_TEX) as Texture2D
+		var fw := tex.get_width() / VFX_COLS
+		var fh := tex.get_height() / VFX_ROWS
+		sf.add_animation(&"flight")
+		sf.set_animation_loop(&"flight", true)
+		sf.add_frame(&"flight", _vfx_cell(tex, fw, fh, 0, 1))
+		sf.add_animation(&"detonate")
+		sf.set_animation_loop(&"detonate", false)
+		sf.set_animation_speed(&"detonate", VFX_DETONATE_FPS)
+		for frame_i in 8:
+			sf.add_frame(&"detonate", _vfx_cell(tex, fw, fh, frame_i / VFX_COLS, frame_i % VFX_COLS))
+		sf.remove_animation(&"default")
+		return sf
+
+	func _vfx_cell(tex: Texture2D, fw: int, fh: int, row: int, col: int) -> AtlasTexture:
+		var at := AtlasTexture.new()
+		at.atlas = tex
+		at.region = Rect2(col * fw, row * fh, fw, fh)
+		return at
