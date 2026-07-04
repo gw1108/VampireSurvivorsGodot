@@ -129,8 +129,9 @@ var _meta_built := false
 # them, mirroring VS's two-row build readout.
 var _loadout: VBoxContainer
 var _loadout_sig := ""
-# Which UPGRADE_POOL ids are weapons; everything else in the pool is a passive stat item.
-const WEAPON_IDS := ["garlic", "whip", "bible", "lightning", "knife", "runetracer", "fire_wand"]
+# Which UPGRADE_POOL ids are weapons vs passive stat items is owned by VSRun.WEAPON_IDS — reused
+# here (not re-listed) so the panel's weapon/passive split and its "N/6" counts stay in lock-step
+# with the run's inventory-cap logic (VSRun.MAX_WEAPONS / MAX_PASSIVES) that governs the roll.
 
 func _ready() -> void:
 	# XP bar first so it hugs the very top edge. It's added before the freeze vignette (which is
@@ -713,7 +714,7 @@ func _add_loadout_section(run: VSRun, header: String, weapons: bool) -> void:
 	var rows: Array = []
 	for opt in VSRun.UPGRADE_POOL:
 		var id := str(opt["id"])
-		if WEAPON_IDS.has(id) != weapons:
+		if VSRun.WEAPON_IDS.has(id) != weapons:
 			continue
 		var lvl: int = run.upgrade_levels.get(id, 0)
 		if lvl <= 0:
@@ -721,10 +722,15 @@ func _add_loadout_section(run: VSRun, header: String, weapons: bool) -> void:
 		rows.append(_make_loadout_row(id, str(opt["title"]), lvl, int(opt["max"]), run))
 	if rows.is_empty():
 		return
+	# "N/6" inventory count: rows.size() is exactly the owned pool items of this category (level
+	# >= 1), the same tally VSRun._roll_upgrades uses to withhold a seventh, so the readout tracks
+	# the cap that governs the roll. Turns amber at the cap so a full category (a withheld new
+	# weapon/passive) reads as a full inventory rather than bad luck.
+	var cap := VSRun.MAX_WEAPONS if weapons else VSRun.MAX_PASSIVES
 	var head := Label.new()
-	head.text = header
+	head.text = "%s  %d/%d" % [header, rows.size(), cap]
 	head.add_theme_font_size_override("font_size", 11)
-	head.modulate = Color(0.7, 0.72, 0.8)
+	head.modulate = Color(1.0, 0.82, 0.35) if rows.size() >= cap else Color(0.7, 0.72, 0.8)
 	_loadout.add_child(head)
 	for r in rows:
 		_loadout.add_child(r)
