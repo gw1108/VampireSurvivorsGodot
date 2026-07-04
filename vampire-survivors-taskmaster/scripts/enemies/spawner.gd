@@ -4,32 +4,28 @@ extends Node2D
 ## player; the base trickle's rate and concurrent-count follow Mad Forest's real
 ## per-minute spawn table (see DENSITY_SCHEDULE). Capped for performance.
 
-const MAX_ENEMIES := 90         # baseline concurrent-enemy render budget for most of the run
-# This baseline (and the pre-20:00 LATE_RAMP_START below) intentionally clamps the mid-run
-# DENSITY_SCHEDULE spikes (11:00 -> 300, 13:00 -> 150, 15:00/16:00 -> 100) down to 90. Raising the
-# baseline, or starting the ramp earlier so those authored surges crest sooner, is BLOCKED on the
-# density-collision blowup: a real Web-export profiling run (see completions / the open "density-
-# dependent collision blowup" backlog task) showed FPS drops below 60 at only ~65 PACKED enemies —
-# so even 90 is over budget for the worst-case crush, let alone a mid-game 150/300. DO NOT raise
-# MAX_ENEMIES / MAX_ENEMIES_LATE or pull LATE_RAMP_START earlier until that packed-crush frame holds
-# ~60fps.
-# Late-run escalation lever. The wiki's DENSITY_SCHEDULE climbs to 300 in the endgame, but every
-# count past MAX_ENEMIES clamps to the baseline, so the endgame would otherwise read as one flat
-# 90-enemy crush. Ramp the cap up over the final third so the late escalation the wiki intends
-# shows on screen, up to the GDD's "periodic spawns stop at 300 alive" — the real Mad Forest late
-# population. (Same profiling caveat: the ramp is aspirational until the packed crush holds 60fps.)
+const MAX_ENEMIES := 150        # baseline concurrent-enemy render budget for most of the run
+# The mid-run DENSITY_SCHEDULE spikes (11:00 -> 300, 13:00 -> 150, 15:00/16:00/19:00/20:00 -> 100)
+# now read on screen: at 150 the authored 150-count surges crest fully, and even the 300-count
+# spikes read as a dense 150+ crush that keeps climbing (the cap ramps toward 300 from 11:00 on, see
+# LATE_RAMP_START). This raise was UNBLOCKED by the density-collision fix: bounding each enemy's
+# overlap scan to VSEnemy.MAX_OVERLAP_CHECKS neighbours stopped the collapsed-crush O(n²) reversion,
+# and a real Web-export profiling run (see completions) then verified the packed worst-case crush
+# holds 144fps up to 185 enemies and a steady ~78fps at the full ~274-body crush near the 300 cap —
+# every matched size >= 60fps (vs the old 110->47 / 150->32 / 185->21fps). Real player builds (no
+# agent-bridge serialization) run higher still, so these numbers are conservative.
+# Late-run escalation lever. The wiki's DENSITY_SCHEDULE climbs to 300 in the endgame; the cap ramps
+# up over the back half of the run so that late escalation shows on screen, up to the GDD's "periodic
+# spawns stop at 300 alive" — the real Mad Forest late population.
 const MAX_ENEMIES_LATE := 300   # cap the final-third ramp climbs toward (GDD: 300-alive periodic cap)
 # Perf gate. Enemies carry solid circular colliders (VSEnemy._overlap_correction), backed by a shared
 # uniform spatial grid (VSEnemy._ensure_grid / _grid): each enemy scans only the 3×3 block of cells
-# around it. That scan is ~O(n) ONLY while per-cell density is bounded. Live profiling refuted the
-# earlier "collision is solved, 300 is safe" premise: when the horde collapses into a few 60px
-# COLLIDE_CELL cells, each enemy's 3×3 block holds most of the horde and the pass reverts toward
-# O(n²) — the crush craters (see the "density-dependent collision blowup" backlog task). So the
-# collapsed-density collision cost (and Sprite2D overdraw of stacked bodies) is the next lever, NOT
-# the general per-node Sprite2D/_process/weapon cost. COLLIDER_SAFE_CAP is therefore an aspiration,
-# not a validated ceiling.
-const COLLIDER_SAFE_CAP := 300  # late-cap aspiration; NOT yet validated at packed density (see above)
-const LATE_RAMP_START := 0.667  # fraction of RUN_DURATION where the cap begins to climb (~20:00)
+# around it, and that scan is now bounded to VSEnemy.MAX_OVERLAP_CHECKS bodies per frame — so even
+# when the horde collapses into a few 60px COLLIDE_CELL cells the pass stays linear in enemy count
+# instead of reverting toward O(n²). A real Web run verified the packed 300-crush holds ~78fps at
+# ~274 bodies, so COLLIDER_SAFE_CAP=300 is a VALIDATED ceiling, not an aspiration.
+const COLLIDER_SAFE_CAP := 300  # validated packed-density ceiling (~78fps at the ~274-body crush)
+const LATE_RAMP_START := 0.367  # fraction of RUN_DURATION where the cap begins to climb (~11:00)
 const SPAWN_RING := 520.0
 const ELITE_INTERVAL := 35.0   # seconds between mini-boss spawns
 const ELITE_FIRST := 35.0      # delay before the first elite appears
@@ -64,13 +60,13 @@ var _next_wave := WAVE_INTERVAL
 var _next_surge := SURGE_FIRST
 
 func _ready() -> void:
-	# Enforce the perf gate at load. COLLIDER_SAFE_CAP is an aspiration, not a validated ceiling: live
-	# profiling showed the packed crush drops below 60fps at ~65 enemies because the grid collision
-	# pass reverts toward O(n²) at collapsed density. Any raise past it should first make that packed
-	# crush hold ~60fps (see the "density-dependent collision blowup" backlog task). Debug-build only,
-	# so it never costs a shipped frame.
+	# Enforce the perf gate at load. COLLIDER_SAFE_CAP is the validated packed-density ceiling: a real
+	# Web run confirmed the crush holds ~78fps at the ~274-body crush now that VSEnemy.MAX_OVERLAP_CHECKS
+	# bounds the per-frame overlap scan (no O(n²) reversion at collapsed density). Raising the enemy cap
+	# past it would push the crush into unmeasured territory. Debug-build only, so it never costs a
+	# shipped frame.
 	assert(MAX_ENEMIES_LATE <= COLLIDER_SAFE_CAP,
-		"MAX_ENEMIES_LATE > COLLIDER_SAFE_CAP: the packed-density crush already drops below 60fps at ~65 enemies (grid collision reverts toward O(n²) when the horde collapses into a few cells) — fix that before raising the enemy cap further.")
+		"MAX_ENEMIES_LATE > COLLIDER_SAFE_CAP: the packed-density crush is only validated to ~60fps up to COLLIDER_SAFE_CAP bodies (VSEnemy.MAX_OVERLAP_CHECKS keeps the overlap scan linear that far) — re-profile a real Web crush before raising the enemy cap further.")
 
 ## Re-baseline the wave/elite/surge cadence timers to just after the current run clock. Used only
 ## by the debug `force_time_set` command: jumping run.elapsed forward by many minutes would otherwise
@@ -282,8 +278,8 @@ const ROSTER_SCHEDULE := [
 ## (rate = 1/interval, tightening from 1.0s early to 0.1s in the endgame); `count` is the
 ## concurrent enemy population the stage maintains. RUN_DURATION is already 1800s (30:00),
 ## matching Mad Forest exactly, so these minute marks map 1:1 — no stretching. The wiki's
-## counts climb to 300, far past what this slice renders smoothly, so they're clamped to the render
-## budget (_max_cap(), which itself ramps up over the final third so the endgame still escalates);
+## counts climb to 300; they're clamped to the render budget (_max_cap(), which holds at the 150
+## baseline early then ramps up from ~11:00 toward 300 so the endgame still escalates);
 ## the LOW values (the 5:00/10:00/etc. lulls the real stage uses to
 ## frame its minibosses) read through and thin the field. Each row holds from its minute mark
 ## until the next. Waves/surges/elites keep their own cadence and the hard cap — this governs
@@ -321,9 +317,9 @@ const DENSITY_SCHEDULE := [
 	{"min": 29.0, "interval": 0.1,  "count": 300},
 ]
 
-## The concurrent-enemy render budget for the current run time. Holds at MAX_ENEMIES for the first
-## two-thirds, then ramps linearly to MAX_ENEMIES_LATE across the final third so the endgame's
-## saturated DENSITY_SCHEDULE counts (100->300, all previously clamped flat to 90) actually read as
+## The concurrent-enemy render budget for the current run time. Holds at MAX_ENEMIES up to
+## LATE_RAMP_START (~11:00), then ramps linearly to MAX_ENEMIES_LATE across the rest of the run so the
+## saturated DENSITY_SCHEDULE counts (150->300, all previously clamped flat to 90) actually read as
 ## escalating population on screen instead of one unchanging crush. Every population cap in the
 ## spawner routes through this so the late-game field grows as one coherent budget.
 func _max_cap() -> int:
