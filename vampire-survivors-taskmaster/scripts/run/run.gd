@@ -1130,6 +1130,25 @@ func _evolution_title(id: String) -> String:
 			return evo["title"]
 	return ""
 
+## Debug-only (agent gate): fast-forward the given weapon to its max level and its paired
+## evolution passive to level 1, then grant a level-up so the very next picker surfaces that
+## weapon's evolution card (evolutions always lead the hand — see _roll_upgrades). Lets the
+## harness reach the normally-many-levels-deep evolution moment to verify the WEAPON EVOLVED!
+## fanfare. Called from agent_adapter's force_evolution command; inert in real builds.
+func force_evolution_ready(weapon_id: String) -> void:
+	var evo: Dictionary = {}
+	for e in EVOLUTIONS:
+		if e["weapon"] == weapon_id:
+			evo = e
+			break
+	if evo.is_empty():
+		return
+	upgrade_levels[weapon_id] = _upgrade_max(weapon_id)
+	var passive: String = evo["passive"]
+	upgrade_levels[passive] = maxi(1, int(upgrade_levels.get(passive, 0)))
+	_pending_levels += 1
+	_open_level_up()
+
 func _on_player_died() -> void:
 	if phase == "game_over" or phase == "victory":
 		return

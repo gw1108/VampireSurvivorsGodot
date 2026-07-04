@@ -109,5 +109,13 @@ func _on_command(cmd: Dictionary) -> void:
 			# set the level directly and verify the multi-fireball VFX; inert in real builds (this
 			# whole channel only exists behind the agent gate — see agent_bridge.gd).
 			game.fire_wand_level = int(cmd.get("value", 6))
+		"force_evolution":
+			# A weapon evolution (a maxed weapon fused with its paired passive) is the run's
+			# rarest, biggest power spike — normally many level-ups deep. Debug-only escape hatch
+			# so the harness can fast-forward one weapon to max + its passive; the very next
+			# level-up then offers the evolution card (always slot 1), letting a picked upgrade_1
+			# verify the "WEAPON EVOLVED!" banner. Defaults to Whip -> Bloody Tear. Inert in real
+			# builds (this whole channel only exists behind the agent gate — see agent_bridge.gd).
+			game.force_evolution_ready(str(cmd.get("value", "whip")))
 		_:
 			AgentBridge.default_command(cmd)
