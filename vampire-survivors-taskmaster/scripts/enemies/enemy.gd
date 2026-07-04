@@ -36,6 +36,15 @@ const MANTIS_LUNGE_SPEED_MULT := 2.3
 ## Enemies at or above this max health (mini-bosses like ELITE) get a health bar
 ## once damaged, so their long HP pool reads as visible progress.
 const HEALTH_BAR_MIN_MAX_HEALTH := 40.0
+## Enemy recycling: a base-trickle enemy the player has outrun by more than this distance is
+## teleported back onto the spawn ring around the player rather than left stranded far offscreen.
+## Without it a fleeing player (the game's core kiting verb) strands units at the far edge of the
+## bounded arena forever; since those stragglers still count against the spawner's concurrent-enemy
+## cap, the field *around* the player thins out — the swarm stops surrounding you. This is VS's own
+## enemy recycling. Sized past the farthest visible corner (~918px at the 0.8 zoom, 1280x720 view)
+## so a recycled straggler is always offscreen when it triggers; mini-bosses/Reaper are exempt (GDD:
+## bosses don't despawn).
+const DESPAWN_RADIUS := 1000.0
 
 ## Enemy archetypes. Each maps to a distinct pixel-art sprite plus stat tuning so
 ## waves have visual and mechanical variety. The spawner sets `type` before the
@@ -224,6 +233,12 @@ func _process(delta: float) -> void:
 		_hitstop = 0.0
 	var to := target.position - position
 	var d := to.length()
+	# Recycle a straggler the player has outrun: teleport it back onto the spawn ring around the
+	# player instead of leaving it stranded far offscreen eating the spawner's concurrent-enemy
+	# budget (which would thin the horde near a fleeing player). Mini-bosses/Reaper never recycle.
+	if d > DESPAWN_RADIUS and type != Type.ELITE and type != Type.REAPER:
+		_recycle()
+		return
 	var desired := to / d if d > 0.5 else Vector2.ZERO
 	# Blend the toward-player drive with a repulsion from crowded neighbours so the
 	# swarm spreads around the player rather than stacking on one point. In dense
@@ -292,6 +307,22 @@ func _separation() -> Vector2:
 		if dist > 0.001 and dist < SEPARATION_RADIUS:
 			push += away / dist * (1.0 - dist / SEPARATION_RADIUS)
 	return push
+
+## Teleport an outrun straggler back onto the spawn ring around the player (VS enemy recycling),
+## so the concurrent-enemy budget stays spent on units that can actually threaten the player rather
+## than on bodies abandoned at the far edge of the arena. Reuses the spawner's ring radius + arena
+## clamp so a recycled enemy re-enters exactly like a fresh spawn; clears its knockback and contact
+## cooldown so it arrives as a clean pursuer.
+func _recycle() -> void:
+	if target == null:
+		return
+	var ang := randf() * TAU
+	position = target.position + Vector2(cos(ang), sin(ang)) * VSSpawner.SPAWN_RING
+	if run:
+		position.x = clampf(position.x, -run.arena_half.x, run.arena_half.x)
+		position.y = clampf(position.y, -run.arena_half.y, run.arena_half.y)
+	_knockback = Vector2.ZERO
+	_contact_cd = 0.0
 
 func hit(amount: float, from: Vector2) -> void:
 	if _dying:
