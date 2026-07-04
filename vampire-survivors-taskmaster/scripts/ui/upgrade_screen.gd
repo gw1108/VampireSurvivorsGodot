@@ -39,6 +39,7 @@ const ICONS := {
 	"thunder_loop": "res://art/up_lightning.png", # Lightning Ring evolution reuses the ring icon
 	"no_future": "res://art/weapon_runetracer.png", # Runetracer evolution reuses the rune sprite
 	"bonus_gold": "res://art/gold_coin.png",       # consolation coin bag (pool exhausted)
+	"bonus_gold_big": "res://art/gold_coin.png",   # consolation Gold Sack (larger gold, pool exhausted)
 	"bonus_chicken": "res://art/food_chicken.png", # consolation Floor Chicken heal (pool exhausted)
 }
 const PANEL_TEX := "res://art/ui_panel.png"       # Kenney RPG panel (brown)

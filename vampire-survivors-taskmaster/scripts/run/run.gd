@@ -130,7 +130,10 @@ const SKIP_XP_FRACTION := 0.25
 ## no longer fill a 3-card hand; per the GDD ("full & maxed → level-ups instead offer gold or
 ## Floor Chicken") we pad the hand with these instead of shrinking it or silently resolving.
 ## Floor Chicken heals 30 HP (GDD Pickups table); the coin bag banks a flat run-gold reward.
+## A third, larger "Gold Sack" reward keeps the three padded slots distinct — a fully-maxed hand
+## needs to fill all three, and cycling only Gold/Chicken would repeat Gold twice (see _roll_upgrades).
 const BONUS_GOLD_AMOUNT := 30
+const BONUS_GOLD_BIG_AMOUNT := 75
 const BONUS_CHICKEN_HEAL := 30.0
 
 ## Per-run reroll budget for the level-up picker (VS-style build agency). Each reroll
@@ -926,9 +929,13 @@ func _roll_upgrades() -> Array:
 	# presents a full, rewarding choice instead of shrinking or (when everything is maxed)
 	# silently resolving. Consolation ids are handled specially in _apply_upgrade and never enter
 	# the inventory. Only fires late-run: early on the pool always fills all three slots.
+	# Three distinct entries so a fully-maxed hand (which needs all three slots padded) never
+	# repeats a card; cycling only two would show Gold twice. Ordered so shorter hands still lead
+	# with the smaller consolations before the larger Gold Sack.
 	var pad := [
 		{"id": "bonus_gold", "title": "Gold", "desc": "+%d Gold" % BONUS_GOLD_AMOUNT},
 		{"id": "bonus_chicken", "title": "Roast Chicken", "desc": "Heals %d HP" % int(BONUS_CHICKEN_HEAL)},
+		{"id": "bonus_gold_big", "title": "Gold Sack", "desc": "+%d Gold" % BONUS_GOLD_BIG_AMOUNT},
 	]
 	var pi := 0
 	while options.size() < 3:
@@ -993,6 +1000,10 @@ func _apply_upgrade(id: String) -> void:
 	match id:
 		"bonus_gold":
 			add_gold(BONUS_GOLD_AMOUNT)
+			AgentBridge.emit_event("upgrade_chosen", {"id": id, "level": level})
+			return
+		"bonus_gold_big":
+			add_gold(BONUS_GOLD_BIG_AMOUNT)
 			AgentBridge.emit_event("upgrade_chosen", {"id": id, "level": level})
 			return
 		"bonus_chicken":
