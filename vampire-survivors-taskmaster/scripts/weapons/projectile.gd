@@ -26,6 +26,12 @@ func _ready() -> void:
 	add_child(_sprite)
 
 func _process(delta: float) -> void:
+	if run == null:
+		return
+	# Freeze with the game during level-up / pause / after the run ends (mirrors every other
+	# weapon; the sibling world-space bolts VSRunetracer.Bolt / VSFireWand.Fireball do the same).
+	if run.phase != "playing":
+		return
 	position += dir * speed * delta
 	life -= delta
 	if life <= 0.0:
