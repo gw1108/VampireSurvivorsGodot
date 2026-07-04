@@ -9,17 +9,18 @@ const FONT_SIZE := 14
 
 var _label: Label
 
-## Drop floating `text` at `at` (in `parent`'s coordinate space), tinted `color`.
-static func spawn(parent: Node, at: Vector2, text: String, color: Color) -> void:
+## Drop floating `text` at `at` (in `parent`'s coordinate space), tinted `color`. `font_size`
+## defaults to the standard pop; crit damage numbers pass a larger size so the spike stands out.
+static func spawn(parent: Node, at: Vector2, text: String, color: Color, font_size: int = FONT_SIZE) -> void:
 	var ft := VSFloatText.new()
 	ft.position = at
-	ft._make_label(text, color)
+	ft._make_label(text, color, font_size)
 	parent.add_child(ft)
 
-func _make_label(text: String, color: Color) -> void:
+func _make_label(text: String, color: Color, font_size: int = FONT_SIZE) -> void:
 	_label = Label.new()
 	_label.text = text
-	_label.add_theme_font_size_override("font_size", FONT_SIZE)
+	_label.add_theme_font_size_override("font_size", font_size)
 	_label.add_theme_color_override("font_color", color)
 	_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.7))
 	_label.add_theme_constant_override("outline_size", 4)

@@ -599,6 +599,26 @@ func extend_gold_fever(seconds: float) -> void:
 func total_luck() -> float:
 	return 100.0 + luck_bonus
 
+## Critical hits (GDD "Damage, Crit, Knockback, I-Frames"). Every weapon hit rolls for a crit
+## that deals CRIT_MULTIPLIER× damage. Faithful to the GDD's `crit = baseCritChance × totalLuck`:
+## the slice's base weapons carry NO native crit chance, so at base 100% Luck the chance is 0 and
+## damage is untouched (which also keeps the damage-assertion tests deterministic). Crit is instead
+## the Clover/Luck build's payoff — the chance rises with the +Luck bonus (each Little Clover ~+5%),
+## giving Luck a raw-damage identity it previously lacked (it only nudged drop weights and spawns).
+## One global run stat rather than per-weapon: the wiki's per-weapon crit tables are out of the
+## slice's data scope. Capped below certainty so crits stay a spike, not the norm.
+const CRIT_CHANCE_PER_LUCK := 0.005   # +0.5% crit chance per +1% Luck bonus (~+5% per Little Clover)
+const CRIT_CHANCE_MAX := 0.75
+const CRIT_MULTIPLIER := 2.0
+
+## Roll a crit for a single weapon hit of `amount` damage. Returns the (possibly doubled) damage
+## and whether it critted, so the caller can flag the floating number. No Luck bonus -> no crit.
+func roll_crit(amount: float) -> Dictionary:
+	var chance := minf(luck_bonus * CRIT_CHANCE_PER_LUCK, CRIT_CHANCE_MAX)
+	if chance > 0.0 and randf() < chance:
+		return {"amount": amount * CRIT_MULTIPLIER, "crit": true}
+	return {"amount": amount, "crit": false}
+
 ## Bank gold from a collected coin. Kept as a method so pickups and any future
 ## meta-progression hooks share one entry point onto the run's currency.
 func add_gold(amount: int) -> void:

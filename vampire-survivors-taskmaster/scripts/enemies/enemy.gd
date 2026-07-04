@@ -90,6 +90,9 @@ const KNOCKBACK_DECAY := 1500.0    # px/s^2 the impulse bleeds off — stops in 
 ## than a frictionless nudge — the classic freeze-frame juice, complementing knockback. Kept
 ## tiny so it's felt, not seen as a stutter, even when an AoE sweep freezes a whole pack at once.
 const HITSTOP_DURATION := 0.045    # seconds the enemy holds on hit — ~2-3 frames
+## Crit damage numbers pop bigger and gold so a spike reads instantly against the white regular hits.
+const CRIT_TEXT_COLOR := Color(1.0, 0.82, 0.18)
+const CRIT_TEXT_FONT_SIZE := 22
 
 var type: int = Type.BAT
 var speed := 62.0
@@ -287,6 +290,13 @@ func _separation() -> Vector2:
 func hit(amount: float, from: Vector2) -> void:
 	if _dying:
 		return
+	# Critical hits (GDD combat rule). Every weapon funnels through hit(), so rolling crit here
+	# applies it uniformly to all eight weapons at once. The chance scales with the run's Luck.
+	var is_crit := false
+	if run:
+		var rolled: Dictionary = run.roll_crit(amount)
+		amount = rolled["amount"]
+		is_crit = rolled["crit"]
 	health -= amount
 	_flash_time = FLASH_DURATION
 	_update_flash()
@@ -308,7 +318,11 @@ func hit(amount: float, from: Vector2) -> void:
 	var parent := get_parent()
 	if parent != null:
 		var at := position + Vector2(randf_range(-6.0, 6.0), -radius)
-		VSFloatText.spawn(parent, at, str(int(round(amount))), Color(1, 1, 1))
+		# A crit pops as a bigger gold number so the damage spike reads instantly against the swarm.
+		if is_crit:
+			VSFloatText.spawn(parent, at, str(int(round(amount))), CRIT_TEXT_COLOR, CRIT_TEXT_FONT_SIZE)
+		else:
+			VSFloatText.spawn(parent, at, str(int(round(amount))), Color(1, 1, 1))
 	if _show_health_bar:
 		queue_redraw()
 	if health <= 0.0:
