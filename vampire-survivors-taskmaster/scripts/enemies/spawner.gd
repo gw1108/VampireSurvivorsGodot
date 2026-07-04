@@ -187,9 +187,10 @@ func spawn_reaper() -> VSEnemy:
 ## 1:00 Zombie, 3:00 Skeleton, 5:00 Green Mudman, 12:00 Werewolf, 16:00 Mantichana,
 ## 25:00 Venus, etc). RUN_DURATION is already 1800s (30:00), matching Mad Forest's
 ## real time limit exactly, so minute marks below map 1:1 — no stretching needed.
-## The wiki's named enemies are mapped onto our existing 7 archetypes by combat role
-## (Pipeestrello -> BAT, Mudman -> MUMMY, Werewolf -> MANTIS, Venus/Mantichana ->
-## MANTIS_WARRIOR) since introducing their real sprites is separate follow-up work.
+## Green/Gray Mudman and Werewolf now have their own VSEnemy.Type + sprite, so the bands
+## where the wiki introduces them point at the real archetypes (MUDMAN from 5:00, WEREWOLF
+## from 12:00). The remaining named enemies without a distinct sprite yet stay role-mapped:
+## Pipeestrello -> BAT, Big Mummy -> MUMMY, Venus/Mantichana -> MANTIS_WARRIOR.
 ## Each entry's weights apply from its minute mark until the next entry's.
 const ROSTER_SCHEDULE := [
 	{"min": 0.0,  "weights": {VSEnemy.Type.BAT: 1.0}},
@@ -197,23 +198,23 @@ const ROSTER_SCHEDULE := [
 	{"min": 2.0,  "weights": {VSEnemy.Type.BAT: 1.0}},
 	{"min": 3.0,  "weights": {VSEnemy.Type.SKELETON: 1.0}},
 	{"min": 4.0,  "weights": {VSEnemy.Type.SKELETON: 0.6, VSEnemy.Type.GHOST: 0.4}},
-	{"min": 5.0,  "weights": {VSEnemy.Type.MUMMY: 1.0}},
-	{"min": 6.0,  "weights": {VSEnemy.Type.ZOMBIE: 0.5, VSEnemy.Type.MUMMY: 0.5}},
-	{"min": 7.0,  "weights": {VSEnemy.Type.BAT: 0.5, VSEnemy.Type.MUMMY: 0.5}},
+	{"min": 5.0,  "weights": {VSEnemy.Type.MUDMAN: 1.0}},
+	{"min": 6.0,  "weights": {VSEnemy.Type.ZOMBIE: 0.5, VSEnemy.Type.MUDMAN: 0.5}},
+	{"min": 7.0,  "weights": {VSEnemy.Type.BAT: 0.5, VSEnemy.Type.MUDMAN: 0.5}},
 	{"min": 8.0,  "weights": {VSEnemy.Type.ZOMBIE: 1.0}},
 	{"min": 9.0,  "weights": {VSEnemy.Type.BAT: 0.5, VSEnemy.Type.ZOMBIE: 0.5}},
-	{"min": 10.0, "weights": {VSEnemy.Type.MUMMY: 1.0}},
+	{"min": 10.0, "weights": {VSEnemy.Type.MUDMAN: 1.0}},
 	{"min": 11.0, "weights": {VSEnemy.Type.SKELETON: 1.0}},
-	{"min": 12.0, "weights": {VSEnemy.Type.MANTIS: 0.4, VSEnemy.Type.GHOST: 0.3, VSEnemy.Type.SKELETON: 0.3}},
-	{"min": 13.0, "weights": {VSEnemy.Type.MANTIS: 0.5, VSEnemy.Type.GHOST: 0.5}},
-	{"min": 14.0, "weights": {VSEnemy.Type.BAT: 0.5, VSEnemy.Type.MANTIS: 0.5}},
-	{"min": 15.0, "weights": {VSEnemy.Type.MANTIS: 0.4, VSEnemy.Type.BAT: 0.3, VSEnemy.Type.MUMMY: 0.3}},
-	{"min": 16.0, "weights": {VSEnemy.Type.MANTIS_WARRIOR: 0.3, VSEnemy.Type.MUMMY: 0.7}},
+	{"min": 12.0, "weights": {VSEnemy.Type.WEREWOLF: 0.4, VSEnemy.Type.GHOST: 0.3, VSEnemy.Type.SKELETON: 0.3}},
+	{"min": 13.0, "weights": {VSEnemy.Type.WEREWOLF: 0.5, VSEnemy.Type.GHOST: 0.5}},
+	{"min": 14.0, "weights": {VSEnemy.Type.BAT: 0.5, VSEnemy.Type.WEREWOLF: 0.5}},
+	{"min": 15.0, "weights": {VSEnemy.Type.WEREWOLF: 0.4, VSEnemy.Type.BAT: 0.3, VSEnemy.Type.MUDMAN: 0.3}},
+	{"min": 16.0, "weights": {VSEnemy.Type.MANTIS_WARRIOR: 0.3, VSEnemy.Type.MUDMAN: 0.7}},
 	{"min": 17.0, "weights": {VSEnemy.Type.MUMMY: 1.0}},
-	{"min": 20.0, "weights": {VSEnemy.Type.MUMMY: 0.7, VSEnemy.Type.BAT: 0.3}},
+	{"min": 20.0, "weights": {VSEnemy.Type.MUMMY: 0.5, VSEnemy.Type.MUDMAN: 0.2, VSEnemy.Type.BAT: 0.3}},
 	{"min": 22.0, "weights": {VSEnemy.Type.MUMMY: 1.0}},
 	{"min": 25.0, "weights": {VSEnemy.Type.MANTIS_WARRIOR: 0.5, VSEnemy.Type.MUMMY: 0.5}},
-	{"min": 27.0, "weights": {VSEnemy.Type.MUMMY: 0.6, VSEnemy.Type.MANTIS_WARRIOR: 0.4}},
+	{"min": 27.0, "weights": {VSEnemy.Type.MUMMY: 0.5, VSEnemy.Type.MUDMAN: 0.3, VSEnemy.Type.MANTIS_WARRIOR: 0.2}},
 ]
 
 func _pick_type() -> int:

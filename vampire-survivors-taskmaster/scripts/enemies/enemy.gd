@@ -55,7 +55,15 @@ const HEALTH_BAR_MIN_MAX_HEALTH := 40.0
 ## surfaces in the late (t>=9min) band to deepen the insect threat without a full boss.
 ## It scatters its 10 XP across a 5-gem ring (small green gems) so felling this tanky
 ## mini-elite reads as a jackpot burst like the ELITE — but without the boss camera shake.
-enum Type { BAT, ZOMBIE, SKELETON, GHOST, MUMMY, MANTIS, MANTIS_WARRIOR, ELITE, REAPER }
+## MUDMAN is Mad Forest's signature slow bruiser: a hulking mound of earth even tankier
+## and harder-hitting than the MUMMY, with its own distinct sprite. It anchors the mid-run
+## bands where the wiki's Green/Gray Mudman variants march in, replacing the role-mapped
+## MUMMY stand-in so the horde reads as the real Mad Forest roster.
+## WEREWOLF is the wiki's fast, heavy melee bruiser introduced from the 12:00 band: quicker
+## than a MUDMAN and hitting harder than a MANTIS, with a deep-enough HP pool that it shrugs
+## off chip damage — a distinct sprite replacing the MANTIS role-map so the late waves gain a
+## genuine lycan threat rather than reusing the insect skirmisher.
+enum Type { BAT, ZOMBIE, SKELETON, GHOST, MUMMY, MANTIS, MANTIS_WARRIOR, MUDMAN, WEREWOLF, ELITE, REAPER }
 
 const TYPES := {
 	Type.BAT:      {"tex": "res://art/enemy_bat.png",      "speed": 62.0, "health": 3.0,   "damage": 8.0,  "xp": 1},
@@ -65,6 +73,8 @@ const TYPES := {
 	Type.MUMMY:    {"tex": "res://art/enemy_mummy.png",    "speed": 34.0, "health": 10.0,  "damage": 12.0, "xp": 3},
 	Type.MANTIS:   {"tex": "res://art/enemy_mantis.png",   "speed": 96.0, "health": 5.0,   "damage": 11.0, "xp": 3},
 	Type.MANTIS_WARRIOR: {"tex": "res://art/enemy_mantis_warrior.png", "speed": 84.0, "health": 45.0, "damage": 16.0, "xp": 10, "scale": 1.4, "radius": 16.0, "gems": 5, "knock": 0.4, "tint": Color(0.68, 0.74, 0.82)},
+	Type.MUDMAN:   {"tex": "res://art/enemy_mudman.png",   "speed": 30.0, "health": 15.0,  "damage": 14.0, "xp": 4, "radius": 14.0, "knock": 0.7},
+	Type.WEREWOLF: {"tex": "res://art/enemy_werewolf.png", "speed": 92.0, "health": 16.0,  "damage": 15.0, "xp": 5, "radius": 14.0, "knock": 0.85},
 	Type.ELITE:    {"tex": "res://art/enemy_elite.png",    "speed": 40.0, "health": 140.0, "damage": 20.0, "xp": 25, "scale": 2.0, "radius": 22.0, "gems": 5, "knock": 0.25},
 	Type.REAPER:   {"tex": "res://art/enemy_reaper.png",   "speed": 130.0, "health": 600.0, "damage": 34.0, "xp": 60, "scale": 2.6, "radius": 30.0, "gems": 10, "knock": 0.06},
 }
