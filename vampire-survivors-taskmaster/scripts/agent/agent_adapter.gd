@@ -125,6 +125,15 @@ func _on_command(cmd: Dictionary) -> void:
 			# verify the "WEAPON EVOLVED!" banner. Defaults to Whip -> Bloody Tear. Inert in real
 			# builds (this whole channel only exists behind the agent gate — see agent_bridge.gd).
 			game.force_evolution_ready(str(cmd.get("value", "whip")))
+		"force_invulnerable":
+			# The whip-only starter dies to a dense swarm within ~18s — too soon to observe late-game
+			# visuals (accumulating crits, evolution/aura VFX, HUD under load) before racing death.
+			# Debug-only god-mode toggle: flag the player to ignore all incoming contact damage (value =
+			# bool, default true) so the harness can loiter in the swarm and verify those visuals; inert
+			# in real builds (this whole channel only exists behind the agent gate — see agent_bridge.gd).
+			var ip := game.player
+			if ip != null and is_instance_valid(ip):
+				ip.invulnerable = bool(cmd.get("value", true))
 		"force_low_health":
 			# The low-health warning vignette (hud.gd _refresh_lowhp) only shows once HP drops below
 			# LOWHP_THRESHOLD (30%) — hard to reach on demand in an automated playtest without dying.

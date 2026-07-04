@@ -56,6 +56,10 @@ const IDLE_SWAY_AMP := 1.2
 var max_health := 100.0
 var health := 100.0
 var alive := true
+## Debug god-mode: when set, take_damage ignores all incoming contact damage so the agent
+## harness can survive a swarm long enough to observe late-game visuals (crits, VFX, evolutions).
+## Only ever set via the agent gate's force_invulnerable command — inert in real builds.
+var invulnerable := false
 
 var _sprite: Sprite2D
 ## Persistent horizontal facing (+1 right, -1 left), driven by move input and mirroring the
@@ -190,6 +194,9 @@ func _update_hit_flash(delta: float) -> void:
 
 func take_damage(amount: float) -> void:
 	if not alive:
+		return
+	# Debug god-mode (agent gate only): swallow the hit entirely so the harness can outlast a swarm.
+	if invulnerable:
 		return
 	# Invulnerability window: while a prior hit's i-frames are still up, ignore the hit entirely.
 	# This is the shared window VS uses so a wall of enemies overlapping you deals ONE hit, not one
