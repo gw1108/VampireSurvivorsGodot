@@ -25,6 +25,16 @@ var _shake_trauma := 0.0
 const SHAKE_DECAY := 5.0          # trauma/sec — full trauma dissipates in ~0.2s
 const SHAKE_MAX_OFFSET := 14.0    # px of offset at trauma 1.0
 
+# Evolution slow-mo: on the run's rarest power spike (a weapon fusion) we dip Engine.time_scale
+# for a brief bullet-time beat, then ease it back to 1.0, so the moment lands with real heft.
+# Driven off the wall clock (Time.get_ticks_msec, unaffected by time_scale) rather than the
+# scaled process delta, so the recovery always finishes in SLOWMO_DURATION real seconds and
+# restores time_scale cleanly no matter how far it dipped. See _celebrate_evolution / _update_slowmo.
+const SLOWMO_SCALE := 0.4         # dip target — 40% speed at the instant of the fusion
+const SLOWMO_DURATION := 0.15     # real seconds to ease from SLOWMO_SCALE back up to 1.0
+var _slowmo_active := false
+var _slowmo_start_ms := 0
+
 var phase := "title"            # title | playing | level_up | paused | game_over | victory  (AgentState lifecycle)
 var kills := 0
 var elapsed := 0.0
@@ -471,6 +481,7 @@ func _process(delta: float) -> void:
 		elif elapsed >= reaper_deadline:
 			_on_victory()
 	_update_shake(delta)
+	_update_slowmo()
 	if hud:
 		hud.refresh(self)
 
@@ -485,6 +496,32 @@ func _update_shake(delta: float) -> void:
 		_cam.offset = Vector2(randf_range(-1.0, 1.0), randf_range(-1.0, 1.0)) * SHAKE_MAX_OFFSET * s
 	elif _cam.offset != Vector2.ZERO:
 		_cam.offset = Vector2.ZERO
+
+## Advance the evolution slow-mo, easing Engine.time_scale from SLOWMO_SCALE back to 1.0 over
+## SLOWMO_DURATION real seconds. Timed off the wall clock so the recovery is immune to the very
+## time_scale it's ramping (a scaled-delta tween would slow its own recovery into a crawl). Any
+## exit from "playing" — the level-up/pause freeze, game-over, victory, restart — snaps time_scale
+## back to 1.0 immediately so the dip never bleeds into a frozen screen or a later run.
+func _update_slowmo() -> void:
+	if not _slowmo_active:
+		return
+	if phase != "playing":
+		Engine.time_scale = 1.0
+		_slowmo_active = false
+		return
+	var t := float(Time.get_ticks_msec() - _slowmo_start_ms) / 1000.0 / SLOWMO_DURATION
+	if t >= 1.0:
+		Engine.time_scale = 1.0
+		_slowmo_active = false
+	else:
+		Engine.time_scale = lerpf(SLOWMO_SCALE, 1.0, t)
+
+## Begin the evolution slow-mo dip. Sets time_scale straight to SLOWMO_SCALE; _update_slowmo
+## eases it back each frame. Idempotent-ish: a re-trigger simply restarts the window.
+func _start_slowmo() -> void:
+	_slowmo_active = true
+	_slowmo_start_ms = Time.get_ticks_msec()
+	Engine.time_scale = SLOWMO_SCALE
 
 ## Add a burst of camera trauma (0..1), capped at 1.0. Called on impacts.
 func add_camera_shake(amount: float) -> void:
@@ -1113,10 +1150,12 @@ func _apply_upgrade(id: String) -> void:
 		_celebrate_evolution(id)
 	AgentBridge.emit_event("upgrade_chosen", {"id": id, "level": level})
 
-## Fanfare for a weapon evolution: a hard camera jolt (matched to the Reaper-arrival tier), the
-## centered HUD "WEAPON EVOLVED!" banner naming the evolved form, and a gold bloom at the player.
+## Fanfare for a weapon evolution: a hard camera jolt (matched to the Reaper-arrival tier), a brief
+## slow-mo dip (see _start_slowmo) for weight, the centered HUD "WEAPON EVOLVED!" banner naming the
+## evolved form, and a gold bloom at the player.
 func _celebrate_evolution(id: String) -> void:
 	add_camera_shake(1.0)
+	_start_slowmo()
 	if hud:
 		hud.show_evolution(_evolution_title(id))
 	if player and is_instance_valid(player):
