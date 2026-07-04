@@ -18,6 +18,7 @@ fire_wand_base_damage,20,Fire Wand base damage before any levels
 fire_wand_damage_per_level,6,Fire Wand damage added per level
 whip_base_interval,1.2,Whip cooldown between swings (seconds; does not scale per level)
 king_bible_tick_interval,0.35,King Bible min seconds between a book's hits (does not scale per level)
+garlic_tick_interval,0.5,Garlic seconds between damage pulses (does not scale per level)
 lightning_base_interval,4.5,Lightning Ring base cooldown between volleys before any levels
 lightning_interval_per_level,0.3,Lightning Ring cooldown shrink per level (floored at MIN_INTERVAL)
 knife_base_interval,1.0,Knife base cooldown between throws before any levels

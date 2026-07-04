@@ -9,7 +9,9 @@ extends Node2D
 
 const BASE_RADIUS := 74.0
 const RADIUS_PER_LEVEL := 20.0
-const TICK_INTERVAL := 0.5        # seconds between damage pulses
+## Seconds between damage pulses lives in res://data/balance.csv ("garlic_tick_interval")
+## so a designer can retune fire rate without touching this script.
+static var TICK_INTERVAL := BalanceData.get_value("garlic_tick_interval", 0.5)
 const FLASH_TIME := 0.18          # aura brightens briefly on each pulse
 
 ## Aura VFX: SourceArt/sheets/Poof.png, a puff that blooms into a solid ring then cracks
