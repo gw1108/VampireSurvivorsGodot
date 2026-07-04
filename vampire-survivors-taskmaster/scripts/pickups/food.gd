@@ -1,9 +1,10 @@
 class_name VSFood
 extends Node2D
-## Roast-chicken food pickup — the iconic Vampire Survivors heal. Rarely dropped on a
-## kill (see VSRun.add_kill), it magnetizes toward a nearby player and restores a chunk
-## of HP on pickup, giving the survival loop a real recovery lever instead of relying
-## solely on the rare Vitality upgrade. Cosmetic-only otherwise; grants no XP.
+## Roast-chicken food pickup — the iconic Vampire Survivors heal. Dropped from shattering a
+## candelabra (the Floor Chicken entry, see VSRun.drop_candelabra_bonus), it magnetizes toward
+## a nearby player and restores a chunk of HP on pickup, giving the survival loop a real
+## recovery lever instead of relying solely on the rare Vitality upgrade. Cosmetic-only
+## otherwise; grants no XP.
 
 const PICKUP := 26.0
 const MAGNET := 95.0

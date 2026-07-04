@@ -1,7 +1,7 @@
 class_name VSRosary
 extends Node2D
-## Rosary pickup — the Vampire Survivors "screen clear" lucky drop. Rarely dropped on a
-## kill (see VSRun._maybe_drop_rosary), it magnetizes toward a nearby player like food/magnet,
+## Rosary pickup — the Vampire Survivors "screen clear" lucky drop. Dropped from shattering a
+## candelabra (see VSRun.drop_candelabra_bonus), it magnetizes toward a nearby player like food/magnet,
 ## and on pickup smites EVERY on-screen enemy for a huge holy hit. Ordinary waves are wiped
 ## outright (their kills still pay out XP/gems/gold), while the enormous-HP finale Reaper and
 ## elite mini-bosses merely take a big dent — faithful to VS, where the Rosary clears the

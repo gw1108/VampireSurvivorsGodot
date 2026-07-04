@@ -1,9 +1,10 @@
 class_name VSMagnet
 extends Node2D
-## Magnet pickup — the Vampire Survivors "vacuum" reward. Occasionally dropped by an
-## elite (see VSRun.add_kill), it magnetizes toward a nearby player like food/gems, and
-## on pickup marks EVERY on-screen XP gem `attracted` so the whole field homes in and is
-## swept up at once. Grants no XP or HP itself; its payout is the gem harvest it triggers.
+## Magnet pickup — the Vampire Survivors "vacuum" reward. Dropped from shattering a candelabra
+## (the Vacuum entry, see VSRun.drop_candelabra_bonus), it magnetizes toward a nearby player
+## like food/gems, and on pickup marks EVERY on-screen XP gem `attracted` so the whole field
+## homes in and is swept up at once. Grants no XP or HP itself; its payout is the gem harvest
+## it triggers.
 
 const PICKUP := 26.0
 const MAGNET := 110.0          # slightly wider grab than food/gems — a treat worth reaching for

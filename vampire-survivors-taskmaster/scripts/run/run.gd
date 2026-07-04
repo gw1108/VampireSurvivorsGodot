@@ -534,33 +534,6 @@ func total_luck() -> float:
 func add_gold(amount: int) -> void:
 	gold += maxi(amount, 0)
 
-## Rarely drop a roast-chicken heal on a kill so the run has a survival-recovery lever.
-## The chance is biased by missing HP: near-full health it's a rare treat (~1.2%), but as
-## the player drops low it climbs (up to ~6%) so relief tends to arrive when it's needed —
-## faithful to VS's "food shows up when you're in trouble" feel, without a guaranteed crutch.
-func _maybe_drop_food(at: Vector2) -> void:
-	if player == null or not player.alive:
-		return
-	var missing := 1.0 - clampf(player.health / maxf(player.max_health, 1.0), 0.0, 1.0)
-	var chance := 0.012 + missing * 0.048
-	if randf() < chance:
-		var f := VSFood.new()
-		f.position = at
-		f.run = self
-		add_child(f)
-		AgentBridge.emit_event("spawn", {"type": "food", "pos": [at.x, at.y]})
-
-## Occasionally drop a Magnet from an elite kill — a VS-faithful treat that vacuums every
-## on-screen gem to the player. Elites are periodic mini-bosses, so a ~40% chance makes the
-## pickup a recurring-but-not-guaranteed reward that punctuates the wave rhythm.
-func _maybe_drop_magnet(at: Vector2) -> void:
-	if randf() < 0.40:
-		var m := VSMagnet.new()
-		m.position = at
-		m.run = self
-		add_child(m)
-		AgentBridge.emit_event("spawn", {"type": "magnet", "pos": [at.x, at.y]})
-
 ## Count of chests opened this run, so open_chest can follow VS's fixed "beginner's luck" item
 ## sequence for the first six chests before settling to single-item drops.
 var chests_opened := 0
@@ -655,59 +628,10 @@ func _upgrade_title(id: String) -> String:
 			return opt["title"]
 	return id
 
-## Rarely drop a Rosary — the VS screen-clear treat that smites every on-screen enemy on
-## pickup. Very rare from ordinary kills (~0.3%) so a clutch wipe feels like a lucky break,
-## and a slightly better shot from an elite kill (~10%) as a mini-boss reward. Deliberately
-## much rarer than food/coins: a mass clear is a run-swinging moment, not a staple.
-func _maybe_drop_rosary(at: Vector2, is_elite: bool) -> void:
-	var chance := 0.10 if is_elite else 0.003
-	if randf() >= chance:
-		return
-	var r := VSRosary.new()
-	r.position = at
-	r.run = self
-	add_child(r)
-	AgentBridge.emit_event("spawn", {"type": "rosary", "pos": [at.x, at.y]})
-
-## Rarely drop a Freeze Clock — the VS Orologion time-stop treat that halts every enemy on
-## pickup (see VSFrozenClock). Same rarity tuning as the Rosary (~0.3% from ordinary kills,
-## ~10% from an elite): a run-swinging breather that feels like a lucky break, not a staple.
-## The Rosary's complement — a pause to reposition rather than a mass clear.
-func _maybe_drop_freeze_clock(at: Vector2, is_elite: bool) -> void:
-	var chance := 0.10 if is_elite else 0.003
-	if randf() >= chance:
-		return
-	var c := VSFrozenClock.new()
-	c.position = at
-	c.run = self
-	add_child(c)
-	AgentBridge.emit_event("spawn", {"type": "frozen_clock", "pos": [at.x, at.y]})
-
-## Occasionally drop a gold coin on a kill so the run banks a little meta-currency. Ordinary
-## kills pay out rarely (~2%) and a single coin; elites are a jackpot — a guaranteed coin
-## worth a small handful — so the "coins" economy grows a touch faster from mini-boss fights,
-## faithful to VS where tougher enemies feed the between-run purse.
-func _maybe_drop_coin(at: Vector2, is_elite: bool) -> void:
-	var amount := 0
-	if is_elite:
-		amount = randi_range(3, 6)
-	elif randf() < 0.02:
-		amount = 1
-	if amount <= 0:
-		return
-	var c := VSCoin.new()
-	c.position = at
-	c.run = self
-	c.value = amount
-	# A kill-generated coin extends an active fever only negligibly (Gilded_Clover.md's 0.01s),
-	# unlike the light-source coin tiers, so heavy killing can't pin the fever timer to full.
-	c.tier = VSCoin.Tier.KILL_DROP
-	add_child(c)
-	AgentBridge.emit_event("spawn", {"type": "coin", "pos": [at.x, at.y], "gold": amount})
-
 ## While a Gold Fever is active (see start_gold_fever, started by the Gilded Clover pickup),
-## every kill has GOLD_FEVER_KILL_CHANCE to drop an extra Gold Coin on top of the normal
-## _maybe_drop_coin roll (Gilded_Clover.md: "75% chance it drops a Gold Coin"). Greed's coin-
+## every kill has GOLD_FEVER_KILL_CHANCE to drop an extra Gold Coin (Gilded_Clover.md: "75%
+## chance it drops a Gold Coin"). This is the ONLY coin a kill ever drops — the ordinary coin
+## economy comes from shattering candelabra (drop_candelabra_bonus), not kills. Greed's coin-
 ## value multiplier doesn't exist in this slice yet, so the bonus is a flat 1 gold, matching
 ## the candelabra table's own Gold Coin tier.
 func _maybe_drop_gold_fever_coin(at: Vector2) -> void:

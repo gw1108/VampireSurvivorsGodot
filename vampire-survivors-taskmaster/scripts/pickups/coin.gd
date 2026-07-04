@@ -1,9 +1,11 @@
 class_name VSCoin
 extends Node2D
-## Gold-coin pickup — the seed of Vampire Survivors' "coins" meta-currency. Occasionally
-## dropped on kills (with a fatter chance from elites, see VSRun.add_kill), it magnetizes
-## toward a nearby player like food/gems and increments the run's `gold` counter on pickup.
-## Grants no XP or HP; it exists to bank currency for a future between-run meta-progression.
+## Gold-coin pickup — the seed of Vampire Survivors' "coins" meta-currency. Dropped from
+## shattering a candelabra (see VSRun.drop_candelabra_bonus) in one of three value tiers, it
+## magnetizes toward a nearby player like food/gems and increments the run's `gold` counter on
+## pickup. The lone exception is the KILL_DROP tier — a single coin a kill coughs up only while
+## a Gold Fever is active (VSRun._maybe_drop_gold_fever_coin). Grants no XP or HP; it exists to
+## bank currency for a future between-run meta-progression.
 
 const PICKUP := 26.0
 const MAGNET := 95.0
