@@ -4,7 +4,14 @@ extends Node2D
 ## player; the base trickle's rate and concurrent-count follow Mad Forest's real
 ## per-minute spawn table (see DENSITY_SCHEDULE). Capped for performance.
 
-const MAX_ENEMIES := 90
+const MAX_ENEMIES := 90         # baseline concurrent-enemy render budget for most of the run
+# Late-run escalation lever. The wiki's DENSITY_SCHEDULE climbs to 300 in the endgame, but every
+# count past 90 clamps to MAX_ENEMIES, so 20:00-29:00 all read as the identical flat 90-enemy crush.
+# Rather than the (already-saturated) schedule counts, the honest lever is the render budget itself:
+# ramp the cap up over the final third so the late escalation the wiki intends actually shows on
+# screen. Kept modest (90 -> 130) so the extra sprite/VFX load stays inside the perf budget.
+const MAX_ENEMIES_LATE := 130   # cap the final-third ramp climbs toward
+const LATE_RAMP_START := 0.667  # fraction of RUN_DURATION where the cap begins to climb (~20:00)
 const SPAWN_RING := 520.0
 const ELITE_INTERVAL := 35.0   # seconds between mini-boss spawns
 const ELITE_FIRST := 35.0      # delay before the first elite appears
@@ -48,7 +55,7 @@ func _process(delta: float) -> void:
 	# stage's minibosses read through) instead of pinning at the flat cap for the whole run.
 	var density := _density()
 	var rate: float = 1.0 / density.interval   # enemies/sec entering this minute
-	var soft_cap: int = mini(int(density.count), MAX_ENEMIES)
+	var soft_cap: int = mini(int(density.count), _max_cap())
 	_accum += rate * delta
 	while _accum >= 1.0:
 		_accum -= 1.0
@@ -108,7 +115,7 @@ func _spawn_elite() -> void:
 ## so the crescendo lands, but stays bounded for performance.
 func _spawn_wave(minute: int) -> void:
 	var count := WAVE_BASE + maxi(minute - 1, 0) * WAVE_GROWTH
-	var ceiling := MAX_ENEMIES + WAVE_OVERFLOW
+	var ceiling := _max_cap() + WAVE_OVERFLOW
 	var base_ang := randf() * TAU
 	for i in count:
 		if get_tree().get_nodes_in_group("enemies").size() >= ceiling:
@@ -132,7 +139,7 @@ func _spawn_wave(minute: int) -> void:
 ## Length grows with time survived but is capped so it never becomes a full encirclement;
 ## shares MAX_ENEMIES so a wall never blows the performance budget.
 func _spawn_surge() -> void:
-	if get_tree().get_nodes_in_group("enemies").size() >= MAX_ENEMIES:
+	if get_tree().get_nodes_in_group("enemies").size() >= _max_cap():
 		return
 	var count := clampi(SURGE_BASE + int(run.elapsed * SURGE_GROWTH), SURGE_BASE, SURGE_MAX)
 	# The flank the wall comes from; its perpendicular spread axis is derived per wall.
@@ -158,7 +165,7 @@ func _spawn_wall(dir: Vector2, count: int) -> void:
 	var perp := dir.orthogonal()
 	var center := run.player.position + dir * SPAWN_RING
 	for i in count:
-		if get_tree().get_nodes_in_group("enemies").size() >= MAX_ENEMIES:
+		if get_tree().get_nodes_in_group("enemies").size() >= _max_cap():
 			break
 		# Space members evenly along the wall, centered on the flank point.
 		var lane := (float(i) - float(count - 1) * 0.5) * SURGE_SPACING
@@ -234,8 +241,9 @@ const ROSTER_SCHEDULE := [
 ## (rate = 1/interval, tightening from 1.0s early to 0.1s in the endgame); `count` is the
 ## concurrent enemy population the stage maintains. RUN_DURATION is already 1800s (30:00),
 ## matching Mad Forest exactly, so these minute marks map 1:1 — no stretching. The wiki's
-## counts climb to 300, far past what this slice renders smoothly, so they're clamped to
-## MAX_ENEMIES where used; the LOW values (the 5:00/10:00/etc. lulls the real stage uses to
+## counts climb to 300, far past what this slice renders smoothly, so they're clamped to the render
+## budget (_max_cap(), which itself ramps up over the final third so the endgame still escalates);
+## the LOW values (the 5:00/10:00/etc. lulls the real stage uses to
 ## frame its minibosses) read through and thin the field. Each row holds from its minute mark
 ## until the next. Waves/surges/elites keep their own cadence and the hard cap — this governs
 ## only the ambient trickle.
@@ -271,6 +279,18 @@ const DENSITY_SCHEDULE := [
 	{"min": 28.0, "interval": 0.1,  "count": 300},
 	{"min": 29.0, "interval": 0.1,  "count": 300},
 ]
+
+## The concurrent-enemy render budget for the current run time. Holds at MAX_ENEMIES for the first
+## two-thirds, then ramps linearly to MAX_ENEMIES_LATE across the final third so the endgame's
+## saturated DENSITY_SCHEDULE counts (100->300, all previously clamped flat to 90) actually read as
+## escalating population on screen instead of one unchanging crush. Every population cap in the
+## spawner routes through this so the late-game field grows as one coherent budget.
+func _max_cap() -> int:
+	var frac := run.elapsed / VSRun.RUN_DURATION
+	if frac <= LATE_RAMP_START:
+		return MAX_ENEMIES
+	var t := clampf((frac - LATE_RAMP_START) / (1.0 - LATE_RAMP_START), 0.0, 1.0)
+	return int(lerpf(float(MAX_ENEMIES), float(MAX_ENEMIES_LATE), t))
 
 ## The DENSITY_SCHEDULE row in effect for the current run time (same band lookup as
 ## _pick_type): the last row whose minute mark has passed.
