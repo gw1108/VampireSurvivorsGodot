@@ -316,7 +316,12 @@ func _separation() -> Vector2:
 func _recycle() -> void:
 	if target == null:
 		return
-	var ang := randf() * TAU
+	# Bias re-entry toward the player's heading so an outrun straggler mostly reappears in *front*
+	# of a fleeing player (faithful VS recycling): a kite keeps running INTO fresh pressure rather
+	# than shaking the horde by simply outrunning it. Sample within +/-90deg of the flee direction;
+	# falls back to fully random-feeling spread only when the player has never moved (heading RIGHT).
+	var heading := target.move_dir if target.move_dir.length_squared() > 0.0001 else Vector2.RIGHT
+	var ang := heading.angle() + (randf() - 0.5) * PI
 	position = target.position + Vector2(cos(ang), sin(ang)) * VSSpawner.SPAWN_RING
 	if run:
 		position.x = clampf(position.x, -run.arena_half.x, run.arena_half.x)

@@ -70,6 +70,10 @@ var _sprite: Sprite2D
 ## whip/knife convention so the character visibly faces the way it moves (and the way those
 ## weapons fire). The art faces right by default, so flip_h is set when facing left.
 var _facing := 1
+## Latched movement heading (unit vector) — the last non-zero direction the player moved, kept
+## through idle frames so it reads as "the way we're fleeing." Enemy recycling reads this to bias
+## outrun stragglers back in *front* of the player, so a kite keeps running into fresh pressure.
+var move_dir := Vector2.RIGHT
 ## Remaining hit-flash time (s), counting down in _process; set by take_damage.
 var _flash_time := 0.0
 ## Remaining invulnerability time (s), armed by a landed hit and counted down each playing
@@ -111,6 +115,9 @@ func _process(delta: float) -> void:
 	# movement, so the avatar keeps its last heading) and mirror the sprite accordingly.
 	if absf(dir.x) > 0.01:
 		_facing = 1 if dir.x > 0.0 else -1
+	# Latch the heading while actually moving so it survives idle frames as the flee direction.
+	if dir.length_squared() > 0.0001:
+		move_dir = dir.normalized()
 	if _sprite:
 		_sprite.flip_h = _facing < 0
 		_update_bob(dir, run.elapsed if run else 0.0)
