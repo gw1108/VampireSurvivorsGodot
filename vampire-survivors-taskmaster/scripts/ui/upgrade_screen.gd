@@ -332,7 +332,12 @@ func _make_card(index: int, opt: Dictionary) -> Button:
 	var id := str(opt.get("id", ""))
 	var is_evo := bool(opt.get("evolution", false))
 	var card := Button.new()
-	card.custom_minimum_size = Vector2(460, 96)
+	# Wide + tall enough for the longest base weapon/passive descriptions to fully show: the
+	# desc Label autowraps, and at 96px tall the wrapped second line was being clipped (e.g.
+	# Runetracer/Fire Wand read "...bounces around the" cut off mid-sentence). 540x120 fits every
+	# base description in <=2 lines and the rare 3-line evolution blurb without clipping.
+	card.custom_minimum_size = Vector2(540, 120)
+	card.clip_contents = true
 	card.text = ""
 	card.add_theme_stylebox_override("normal", _panel_style(false, is_evo))
 	card.add_theme_stylebox_override("hover", _panel_style(true, is_evo))
