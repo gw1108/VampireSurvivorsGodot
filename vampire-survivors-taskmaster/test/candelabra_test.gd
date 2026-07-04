@@ -36,7 +36,8 @@ func test_partial_hits_survive_then_final_hit_shatters_and_drops_one() -> void:
 	if run.get_child_count() == 1:
 		var drop := run.get_child(0)
 		var is_pickup: bool = drop is VSRosary or drop is VSMagnet or drop is VSCoin \
-			or drop is VSFood or drop is VSNduja or drop is VSFrozenClock
+			or drop is VSFood or drop is VSNduja or drop is VSFrozenClock \
+			or drop is VSLittleClover or drop is VSGildedClover
 		assert_bool(is_pickup).is_true()
 	else:
 		assert_int(run.rerolls_left).is_equal(4)   # the only zero-node outcome: Rerollo (starts at 3)

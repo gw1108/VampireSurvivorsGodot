@@ -54,6 +54,21 @@ var freeze_until := 0.0
 ## damage and burns nearby enemies with a fiery aura (see VSPlayer._process). Set by the Nduja
 ## pickup (VSNduja); measured in the run's own `elapsed` clock so it pauses cleanly during level-up.
 var nduja_until := 0.0
+
+## Gold Fever window: while `elapsed < gold_fever_until`, kills have a bonus chance to drop
+## extra gold (see _maybe_drop_gold_fever_coin / add_kill). Started by the Gilded Clover pickup
+## (VSGildedClover); measured in the run's own `elapsed` clock so it pauses cleanly during level-up,
+## same as the freeze/nduja windows above.
+var gold_fever_until := 0.0
+const GOLD_FEVER_DURATION := 10.0     # Gilded_Clover.md: Gold Fever lasts 10 seconds
+const GOLD_FEVER_KILL_CHANCE := 0.75  # Gilded_Clover.md: 75% chance a kill drops a bonus coin
+
+## Luck stat (Luck.md): base is 100% ("TotalLuck"), and this holds the +N% additive bonus on
+## top of that base — the wiki displays only this difference, e.g. a Little Clover pickup adds
+## LUCK_GAIN (10.0) here. No cap; Little Clover can be collected infinitely per the wiki. Only
+## Little Clover feeds this in the current slice (Clover passive / character starting Luck /
+## Golden Egg are out of scope — see tasks/lessons.md).
+var luck_bonus := 0.0
 var xp := 0
 var level := 1
 var gold := 0                   # run coins banked from coin pickups; seed of the VS meta-currency
@@ -461,6 +476,7 @@ func add_kill(at: Vector2, xp_value: int = 1, gem_count: int = 1, is_elite: bool
 		_spawn_gems(at, xp_value, gem_count)
 	_maybe_drop_food(at)
 	_maybe_drop_coin(at, is_elite)
+	_maybe_drop_gold_fever_coin(at)
 	_maybe_drop_rosary(at, is_elite)
 	_maybe_drop_freeze_clock(at, is_elite)
 	if is_elite:
@@ -478,6 +494,21 @@ func is_frozen() -> bool:
 ## `elapsed` clock so the berserk window pauses with the game rather than bleeding real seconds.
 func is_nduja_active() -> bool:
 	return elapsed < nduja_until
+
+## True while a Gold Fever (started by the Gilded Clover pickup) is active — add_kill reads
+## this each kill to roll the bonus coin drop. Compared against the run's own `elapsed` clock
+## so the window pauses with the game rather than bleeding real seconds during a level-up.
+func is_gold_fever_active() -> bool:
+	return elapsed < gold_fever_until
+
+## Start (or refresh to the full 10s) a Gold Fever. Called by VSGildedClover on pickup.
+func start_gold_fever() -> void:
+	gold_fever_until = elapsed + GOLD_FEVER_DURATION
+
+## Wiki's "TotalLuck" — the internal value the drop-weight/spawn-rate formulas key off, equal
+## to 100 plus the displayed +N% Luck bonus (Luck.md "Mechanics" section).
+func total_luck() -> float:
+	return 100.0 + luck_bonus
 
 ## Bank gold from a collected coin. Kept as a method so pickups and any future
 ## meta-progression hooks share one entry point onto the run's currency.
@@ -652,6 +683,21 @@ func _maybe_drop_coin(at: Vector2, is_elite: bool) -> void:
 	add_child(c)
 	AgentBridge.emit_event("spawn", {"type": "coin", "pos": [at.x, at.y], "gold": amount})
 
+## While a Gold Fever is active (see start_gold_fever, started by the Gilded Clover pickup),
+## every kill has GOLD_FEVER_KILL_CHANCE to drop an extra Gold Coin on top of the normal
+## _maybe_drop_coin roll (Gilded_Clover.md: "75% chance it drops a Gold Coin"). Greed's coin-
+## value multiplier doesn't exist in this slice yet, so the bonus is a flat 1 gold, matching
+## the candelabra table's own Gold Coin tier.
+func _maybe_drop_gold_fever_coin(at: Vector2) -> void:
+	if not is_gold_fever_active() or randf() >= GOLD_FEVER_KILL_CHANCE:
+		return
+	var c := VSCoin.new()
+	c.position = at
+	c.run = self
+	c.value = 1
+	add_child(c)
+	AgentBridge.emit_event("spawn", {"type": "coin", "pos": [at.x, at.y], "gold": 1})
+
 ## How many candelabra to scatter at run start, and how far from the player's origin the
 ## nearest may sit so they read as something to reach for rather than free at spawn.
 const CANDELABRA_COUNT := 6
@@ -681,32 +727,49 @@ func _spawn_candelabra() -> void:
 ## wiki's three coin tiers (values 1/10/100) mapped onto the one VSCoin node via `coin_value`.
 ## Rerollo's own weight/level are undocumented on the wiki (shown as "?"); given the same
 ## rarity tier as Rosary/Nduja/Rich Coin Bag since it's an equally uncommon treat.
+## `luck_scaled` mirrors Pickups.md's "Drop rate affected by Luck" column: Gold Coin, Coin Bag
+## and Little Clover are "No" (their weight is flat); everything else is "Yes" and gets scaled
+## by total_luck() in _candelabra_weight below.
 const CANDELABRA_TABLE := [
-	{"id": "gold_coin", "weight": 50.0, "min_level": 0, "coin_value": 1},
-	{"id": "coin_bag", "weight": 10.0, "min_level": 0, "coin_value": 10},
-	{"id": "rich_coin_bag", "weight": 1.0, "min_level": 5, "coin_value": 100},
-	{"id": "rosary", "weight": 1.0, "min_level": 8, "coin_value": 0},
-	{"id": "nduja", "weight": 1.0, "min_level": 0, "coin_value": 0},
-	{"id": "orologion", "weight": 2.0, "min_level": 4, "coin_value": 0},
-	{"id": "vacuum", "weight": 2.0, "min_level": 12, "coin_value": 0},
-	{"id": "floor_chicken", "weight": 12.0, "min_level": 0, "coin_value": 0},
-	{"id": "rerollo", "weight": 1.0, "min_level": 0, "coin_value": 0},
+	{"id": "gold_coin", "weight": 50.0, "min_level": 0, "coin_value": 1, "luck_scaled": false},
+	{"id": "coin_bag", "weight": 10.0, "min_level": 0, "coin_value": 10, "luck_scaled": false},
+	{"id": "rich_coin_bag", "weight": 1.0, "min_level": 5, "coin_value": 100, "luck_scaled": true},
+	{"id": "rosary", "weight": 1.0, "min_level": 8, "coin_value": 0, "luck_scaled": true},
+	{"id": "nduja", "weight": 1.0, "min_level": 0, "coin_value": 0, "luck_scaled": true},
+	{"id": "orologion", "weight": 2.0, "min_level": 4, "coin_value": 0, "luck_scaled": true},
+	{"id": "vacuum", "weight": 2.0, "min_level": 12, "coin_value": 0, "luck_scaled": true},
+	{"id": "floor_chicken", "weight": 12.0, "min_level": 0, "coin_value": 0, "luck_scaled": true},
+	{"id": "gilded_clover", "weight": 1.0, "min_level": 30, "coin_value": 0, "luck_scaled": true},
+	{"id": "little_clover", "weight": 0.5, "min_level": 0, "coin_value": 0, "luck_scaled": false},
+	{"id": "rerollo", "weight": 1.0, "min_level": 0, "coin_value": 0, "luck_scaled": false},
 ]
 
+## Effective pool weight for one CANDELABRA_TABLE entry: Luck.md's "itemWeight = rarity *
+## totalLuck" formula, normalized by /100 so the wiki-calibrated flat weights above keep their
+## already-tuned proportions at base (0%) Luck and only shift as Luck rises/falls from there —
+## applying the raw ~100-130 totalLuck value directly would blow those weights out of proportion
+## against the two flat (non-luck-scaled) coin entries.
+func _candelabra_weight(entry: Dictionary) -> float:
+	var w: float = float(entry["weight"])
+	if bool(entry.get("luck_scaled", false)):
+		w *= total_luck() / 100.0
+	return w
+
 ## Roll a random bonus when a candelabra is shattered (VSCandelabra calls this on break),
-## weighted per CANDELABRA_TABLE. Reuses the same pickup nodes the kill-drops spawn; Rerollo
-## is granted straight to the run's reroll budget (no pickup node).
+## weighted per CANDELABRA_TABLE (see _candelabra_weight for the Luck scaling). Reuses the same
+## pickup nodes the kill-drops spawn; Rerollo is granted straight to the run's reroll budget
+## (no pickup node).
 func drop_candelabra_bonus(at: Vector2) -> void:
 	var pool := []
 	var total := 0.0
 	for entry in CANDELABRA_TABLE:
 		if level >= int(entry["min_level"]):
 			pool.append(entry)
-			total += float(entry["weight"])
+			total += _candelabra_weight(entry)
 	var roll := randf() * total
 	var picked: Dictionary = pool.back()
 	for entry in pool:
-		roll -= float(entry["weight"])
+		roll -= _candelabra_weight(entry)
 		if roll < 0.0:
 			picked = entry
 			break
@@ -747,6 +810,18 @@ func drop_candelabra_bonus(at: Vector2) -> void:
 			f.run = self
 			add_child(f)
 			AgentBridge.emit_event("spawn", {"type": "food", "pos": [at.x, at.y]})
+		"little_clover":
+			var lc := VSLittleClover.new()
+			lc.position = at
+			lc.run = self
+			add_child(lc)
+			AgentBridge.emit_event("spawn", {"type": "little_clover", "pos": [at.x, at.y]})
+		"gilded_clover":
+			var gc := VSGildedClover.new()
+			gc.position = at
+			gc.run = self
+			add_child(gc)
+			AgentBridge.emit_event("spawn", {"type": "gilded_clover", "pos": [at.x, at.y]})
 		_:
 			# gold_coin / coin_bag / rich_coin_bag — same node, wiki-accurate value tier.
 			var amount: int = int(picked["coin_value"])
