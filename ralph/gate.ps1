@@ -25,6 +25,13 @@ if (-not (Test-Path (Join-Path $proj 'project.godot'))) {
 $godot = (Get-Command godot -ErrorAction SilentlyContinue).Source
 if (-not $godot) { $godot = Join-Path $env:USERPROFILE 'scoop\shims\godot.exe' }
 if (-not (Test-Path $godot)) {
+  # Manual installs (e.g. Program Files\Godot) ship a versioned exe, not `godot.exe` on PATH.
+  # Prefer the _console build so headless stdout isn't swallowed by the GUI subsystem.
+  $installed = Get-ChildItem -Path (Join-Path $env:ProgramFiles 'Godot') -Filter 'Godot_v4*.exe' -ErrorAction SilentlyContinue |
+               Sort-Object @{Expression = { $_.Name -notmatch '_console\.exe$' }}, Name
+  if ($installed) { $godot = $installed[0].FullName }
+}
+if (-not (Test-Path $godot)) {
   Write-Host "GATE FAIL: godot not found on PATH (set it / install Godot 4.6)." -ForegroundColor Red
   exit 2
 }
