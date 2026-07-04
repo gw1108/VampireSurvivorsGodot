@@ -95,5 +95,12 @@ func _on_command(cmd: Dictionary) -> void:
 			# escape hatch so the harness can exercise/verify it directly; inert in real builds
 			# (this whole channel only exists behind the agent gate — see agent_bridge.gd).
 			game.start_gold_fever()
+		"force_fire_wand":
+			# The Fire Wand needs several level-up picks (level 6 = 3 fireballs/volley, per
+			# VSFireWand._amount) to lob multiple simultaneous fireballs — too many XP levels to
+			# reach reliably in an automated playtest. Debug-only escape hatch so the harness can
+			# set the level directly and verify the multi-fireball VFX; inert in real builds (this
+			# whole channel only exists behind the agent gate — see agent_bridge.gd).
+			game.fire_wand_level = int(cmd.get("value", 6))
 		_:
 			AgentBridge.default_command(cmd)
