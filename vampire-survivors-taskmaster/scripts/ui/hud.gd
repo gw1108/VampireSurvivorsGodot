@@ -265,7 +265,7 @@ func _ready() -> void:
 	# announcement stays legible over the busy playfield the instant the game resumes.
 	_evolve = Label.new()
 	_evolve.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_evolve.position = Vector2(150, 96)
+	_evolve.position = Vector2(290, 96)
 	_evolve.size = Vector2(700, 0)
 	_evolve.add_theme_font_size_override("font_size", 32)
 	_evolve.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
