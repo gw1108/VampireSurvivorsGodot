@@ -21,6 +21,17 @@ const IMMUNE_SHIMMER_AMOUNT := 0.7   # how far the pulse lerps toward the hot re
 ## 30), so any neighbour whose body could overlap this one is always inside the 3x3 block of cells
 ## scanned per enemy (see _ensure_grid) — keeping the whole-horde cost ~O(n), not O(n²).
 const COLLIDE_CELL := 60.0
+## Cap on the number of neighbour bodies each enemy examines per frame while resolving overlaps.
+## The uniform grid is only ~O(n) while per-cell density is bounded; when the horde COLLAPSES into a
+## few COLLIDE_CELL cells (a stationary crush), one enemy's 3x3 block can hold most of the horde and
+## the scan reverts toward O(n²) — the density blowup that craters late-game FPS. Bounding the scan
+## keeps the per-frame cost linear in the enemy count no matter how tightly they pack. This costs
+## almost no correctness: in 2D a circle can be tangent to at most six equal circles (the kissing
+## number), so only a handful of neighbours ever *truly* overlap a given body; the cap only bites
+## when many bodies stack at nearly one point (deep interpenetration mid-collapse), and there the
+## separation is a per-frame relaxation that converges over successive frames anyway. Own cell is
+## scanned first (see _CELL_OFFSETS) so the budget is always spent on the nearest, deepest overlaps.
+const MAX_OVERLAP_CHECKS := 16
 ## Enemies at or above this max health (mini-bosses like ELITE) get a health bar
 ## once damaged, so their long HP pool reads as visible progress.
 const HEALTH_BAR_MIN_MAX_HEALTH := 40.0
@@ -141,6 +152,18 @@ static var _grid_frame: int = -1
 ## Grid cell a world position falls into (integer cell coords at COLLIDE_CELL spacing).
 static func _cell_key(pos: Vector2) -> Vector2i:
 	return Vector2i(floori(pos.x / COLLIDE_CELL), floori(pos.y / COLLIDE_CELL))
+
+## The 3x3 block of cell offsets scanned around an enemy, ordered OWN CELL FIRST, then the four
+## edge-adjacent cells, then the diagonals. Two things ride on this order: (1) when the per-frame
+## MAX_OVERLAP_CHECKS budget is hit, the bodies already examined are the nearest ones — the deepest,
+## most important overlaps — rather than an arbitrary corner of the block; (2) the edge cells are
+## listed in opposing pairs (L,R,U,D) so a partial scan doesn't systematically bias the correction
+## toward one direction and slide the whole crush sideways.
+const _CELL_OFFSETS: Array[Vector2i] = [
+	Vector2i(0, 0),
+	Vector2i(-1, 0), Vector2i(1, 0), Vector2i(0, -1), Vector2i(0, 1),
+	Vector2i(-1, -1), Vector2i(1, 1), Vector2i(1, -1), Vector2i(-1, 1),
+]
 
 ## Ensure the shared grid is current for this frame. The first enemy to resolve overlaps each
 ## frame rebuilds it (frame counter advanced); the rest reuse it. Also rebuilds if THIS enemy isn't
@@ -310,21 +333,27 @@ func _overlap_correction() -> Vector2:
 	_ensure_grid()
 	var correction := Vector2.ZERO
 	var base := _cell_key(position)
-	for cx in range(base.x - 1, base.x + 2):
-		for cy in range(base.y - 1, base.y + 2):
-			var bucket: Variant = _grid.get(Vector2i(cx, cy))
-			if bucket == null:
+	# Bodies examined this frame. Capped at MAX_OVERLAP_CHECKS so a collapsed horde (most of the
+	# horde packed into this enemy's 3x3 block) can't drive the scan back to O(n²). Own cell is
+	# scanned first (see _CELL_OFFSETS) so the budget lands on the nearest, deepest overlaps.
+	var checked := 0
+	for offset in _CELL_OFFSETS:
+		var bucket: Variant = _grid.get(base + offset)
+		if bucket == null:
+			continue
+		for other in bucket:
+			# The 'enemies' group also holds non-enemy bodies (e.g. breakable candelabras) that
+			# lack a collider radius; only solid VSEnemy bodies collide.
+			if other == self or not (other is VSEnemy):
 				continue
-			for other in bucket:
-				# The 'enemies' group also holds non-enemy bodies (e.g. breakable candelabras) that
-				# lack a collider radius; only solid VSEnemy bodies collide.
-				if other == self or not (other is VSEnemy):
-					continue
-				var min_d: float = radius + other.radius
-				var away: Vector2 = position - other.position
-				var dist := away.length()
-				if dist > 0.001 and dist < min_d:
-					correction += away / dist * (min_d - dist) * 0.5
+			checked += 1
+			if checked > MAX_OVERLAP_CHECKS:
+				return correction
+			var min_d: float = radius + other.radius
+			var away: Vector2 = position - other.position
+			var dist := away.length()
+			if dist > 0.001 and dist < min_d:
+				correction += away / dist * (min_d - dist) * 0.5
 	return correction
 
 ## Teleport an outrun straggler back onto the spawn ring around the player (VS enemy recycling),

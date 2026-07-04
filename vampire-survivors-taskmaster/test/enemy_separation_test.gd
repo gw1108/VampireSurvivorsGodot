@@ -45,14 +45,34 @@ func _brute_correction(e: VSEnemy, all: Array) -> Vector2:
 ## neighbours that straddle cell boundaries (the real failure mode of a uniform grid: a
 ## colliding body in an adjacent cell must still be found). Build a dense cloud spanning several
 ## cells and cross-check every enemy's grid result against the brute-force reference.
+## Kept UNDER VSEnemy.MAX_OVERLAP_CHECKS bodies so the per-frame neighbour cap never bites here:
+## below the cap the grid scan is exhaustive and must match brute force exactly. (The cap's
+## intentional divergence past that density is pinned by test_cap_still_separates_dense_pack.)
 func test_grid_matches_bruteforce_across_cells() -> void:
 	var all: Array = []
-	# A 6×6 lattice at 18px spacing (< combined radius 24) so neighbours in adjacent cells
-	# genuinely overlap and many pairs cross cell edges; offset off-origin to exercise negative cells.
-	for gx in range(6):
-		for gy in range(6):
-			all.append(_make_enemy(Vector2(gx * 18 - 40, gy * 18 - 40)))
+	# A 4×4 lattice at 18px spacing (< combined radius 24) so neighbours in adjacent cells
+	# genuinely overlap and many pairs cross cell edges; offset so it straddles the x=0/y=0 cell
+	# boundaries (exercising negative cells). 16 bodies < MAX_OVERLAP_CHECKS keeps the scan exhaustive.
+	for gx in range(4):
+		for gy in range(4):
+			all.append(_make_enemy(Vector2(gx * 18 - 27, gy * 18 - 27)))
 	for e in all:
 		var grid_push: Vector2 = e._overlap_correction()
 		var brute_push: Vector2 = _brute_correction(e, all)
 		assert_float(grid_push.distance_to(brute_push)).is_less(0.001)
+
+## Density guard: when the horde collapses so tightly that one enemy's 3×3 block holds far more
+## bodies than MAX_OVERLAP_CHECKS, the scan stops summing every neighbour (that reversion to O(n²)
+## is the frame-crushing blowup this cap exists to prevent). It must still separate correctly:
+## an enemy on the edge of the pack is shoved AWAY from the mass. Own-cell-first scan order means
+## the capped subset is the nearest bodies, so the push keeps the right direction. Here `a` sits at
+## the left edge of a dense cluster entirely to its right, so it must be pushed LEFT.
+func test_cap_still_separates_dense_pack() -> void:
+	var a := _make_enemy(Vector2.ZERO)
+	# 40 bodies (>> MAX_OVERLAP_CHECKS = 16) packed just to the right of `a`, all within the combined
+	# radius (24) so every one overlaps it. Deterministic grid, no randomness.
+	for i in range(40):
+		_make_enemy(Vector2(3.0 + (i % 8) * 2.0, (i / 8) * 2.0))
+	var push: Vector2 = a._overlap_correction()
+	assert_float(push.length()).is_greater(0.0)   # cap did not zero out separation
+	assert_float(push.x).is_less(0.0)              # shoved left, away from the cluster to its right
