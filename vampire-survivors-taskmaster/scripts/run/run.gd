@@ -1105,7 +1105,30 @@ func _apply_upgrade(id: String) -> void:
 			# profile (more runes, faster carom, bigger hits, longer life).
 			runetracer_evolved = true
 			evolved[id] = true
+	# Weapon evolution is the run's biggest, rarest power spike — crown it with a jolt, a centered
+	# HUD banner, and a bloom at the player so the moment reads as a "wow" rather than a silent flag
+	# flip. `evolved.has(id)` is true exactly for an evolution just applied (the match set it above);
+	# every ordinary upgrade leaves `evolved` untouched, so this fires only on the fusion moment.
+	if evolved.has(id):
+		_celebrate_evolution(id)
 	AgentBridge.emit_event("upgrade_chosen", {"id": id, "level": level})
+
+## Fanfare for a weapon evolution: a hard camera jolt (matched to the Reaper-arrival tier), the
+## centered HUD "WEAPON EVOLVED!" banner naming the evolved form, and a gold bloom at the player.
+func _celebrate_evolution(id: String) -> void:
+	add_camera_shake(1.0)
+	if hud:
+		hud.show_evolution(_evolution_title(id))
+	if player and is_instance_valid(player):
+		VSPickupFlash.spawn(self, player.position, Color(1.0, 0.85, 0.3))
+
+## The display title of an evolution id (e.g. "bloody_tear" -> "Bloody Tear"), read from
+## EVOLUTIONS. Returns "" if the id isn't an evolution, so a non-evolution never banners.
+func _evolution_title(id: String) -> String:
+	for evo in EVOLUTIONS:
+		if evo["id"] == id:
+			return evo["title"]
+	return ""
 
 func _on_player_died() -> void:
 	if phase == "game_over" or phase == "victory":

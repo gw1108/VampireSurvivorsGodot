@@ -11,6 +11,7 @@ var _reroll: Label
 var _reaper: Label
 var _slain: Label
 var _chest: Label
+var _evolve: Label
 var _over: Label
 # Pause overlay: a full-screen dim + a centered "PAUSED" banner shown while run.phase == "paused"
 # (ESC toggles it). Purely a readability layer — the freeze itself is the phase, driven in run.gd.
@@ -24,6 +25,15 @@ const CHEST_REVEAL_HOLD := 1.8
 const CHEST_REVEAL_FADE := 0.9
 const CHEST_REVEAL_COLOR := Color(1.0, 0.85, 0.3)   # treasure gold, matching the chest's floats
 var _chest_time := 0.0
+
+# Weapon-evolution banner: a transient centered banner crowning the run's biggest power spike —
+# a maxed weapon fusing with its passive into an evolved form. Shown by show_evolution(); held
+# bright then faded by _process_evolution. Arcane violet so it reads as distinct from the gold
+# chest/treasure banner, and pitched larger since an evolution is a rarer, bigger moment.
+const EVOLVE_HOLD := 2.0
+const EVOLVE_FADE := 1.1
+const EVOLVE_COLOR := Color(0.86, 0.42, 1.0)   # arcane violet — the evolution "wow"
+var _evolve_time := 0.0
 
 # XP progress bar: a thin full-width track across the very top of the screen that fills toward
 # the next level — VS's iconic level-loop feedback, so the player reads their progress to the
@@ -250,6 +260,20 @@ func _ready() -> void:
 	_chest.visible = false
 	add_child(_chest)
 
+	# Weapon-evolution banner: hidden until show_evolution() names an evolved weapon, then a large
+	# centered violet banner punches in and fades (mirrors the chest reveal's fade). Outlined so the
+	# announcement stays legible over the busy playfield the instant the game resumes.
+	_evolve = Label.new()
+	_evolve.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_evolve.position = Vector2(150, 96)
+	_evolve.size = Vector2(700, 0)
+	_evolve.add_theme_font_size_override("font_size", 32)
+	_evolve.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
+	_evolve.add_theme_constant_override("outline_size", 5)
+	_evolve.modulate = EVOLVE_COLOR
+	_evolve.visible = false
+	add_child(_evolve)
+
 	# Reaper boss health bar (top-center), hidden until the finale summons the Reaper. Added
 	# border -> track -> fill so the draining fill draws on top; driven each frame in _refresh_boss.
 	_boss_border = ColorRect.new()
@@ -437,6 +461,7 @@ func telegraph_surge(dir: Vector2) -> void:
 func _process(delta: float) -> void:
 	_process_xp_flash(delta)
 	_process_chest_reveal(delta)
+	_process_evolution(delta)
 	if _surge_arrow == null or not _surge_arrow.visible:
 		return
 	_surge_time -= delta
@@ -475,6 +500,28 @@ func _process_chest_reveal(delta: float) -> void:
 		return
 	var a := clampf(_chest_time / CHEST_REVEAL_FADE, 0.0, 1.0)
 	_chest.modulate = Color(CHEST_REVEAL_COLOR.r, CHEST_REVEAL_COLOR.g, CHEST_REVEAL_COLOR.b, a)
+
+## Flash a centered "WEAPON EVOLVED!" banner naming the evolved form (e.g. "Bloody Tear"), so the
+## run's rarest, biggest power spike lands as a crowned moment rather than a silent stat swap.
+## Paired in VSRun._apply_upgrade with a camera jolt + a bloom at the player.
+func show_evolution(evolved_name: String) -> void:
+	if _evolve == null:
+		return
+	_evolve.text = "WEAPON EVOLVED!\n%s" % evolved_name
+	_evolve.visible = true
+	_evolve_time = EVOLVE_HOLD + EVOLVE_FADE
+
+## Drive the evolution banner's fade: hold full alpha for EVOLVE_HOLD, then ease its alpha to zero
+## over EVOLVE_FADE and hide, so the announcement punches in and drifts away.
+func _process_evolution(delta: float) -> void:
+	if _evolve == null or not _evolve.visible:
+		return
+	_evolve_time -= delta
+	if _evolve_time <= 0.0:
+		_evolve.visible = false
+		return
+	var a := clampf(_evolve_time / EVOLVE_FADE, 0.0, 1.0)
+	_evolve.modulate = Color(EVOLVE_COLOR.r, EVOLVE_COLOR.g, EVOLVE_COLOR.b, a)
 
 func refresh(run: VSRun) -> void:
 	if _stat == null:
