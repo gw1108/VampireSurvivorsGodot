@@ -14,21 +14,40 @@ var value := 1   # XP granted on pickup; scaled by the enemy that dropped it
 ## ignoring the normal short-range MAGNET radius, so the whole field vacuums in.
 var attracted := false
 
+var _sprite: Sprite2D
+
 ## Sprite tint per XP value so reward reads at a glance (blue=1, green=2, red=3+).
 const VALUE_COLORS := {
 	1: Color(0.45, 0.7, 1.0),   # blue
 	2: Color(0.5, 1.0, 0.55),   # green
 	3: Color(1.0, 0.45, 0.45),  # red
 }
+## Cap the per-value scale growth: an ordinary red gem tops out here, and a heavily-merged
+## gem (from the on-ground cap folding many drops together) stays chunky instead of ballooning
+## across the screen. 8 steps -> ~1.96x, matching the wiki's "Red 9+" tier feel.
+const MAX_VISUAL_STEPS := 8
 
 func _ready() -> void:
 	add_to_group("gems")
-	var sprite := Sprite2D.new()
-	sprite.texture = load("res://art/gem.png")
-	sprite.modulate = VALUE_COLORS.get(value, VALUE_COLORS[3])
-	add_child(sprite)
-	# Higher-value gems read bigger (1.0 at value 1, +0.12 per extra point).
-	var s := 1.0 + 0.12 * float(maxi(value - 1, 0))
+	_sprite = Sprite2D.new()
+	_sprite.texture = load("res://art/gem.png")
+	add_child(_sprite)
+	_refresh_visual()
+
+## Fold another drop's XP into this gem. The GDD's on-ground gem cap merges excess drops into
+## existing gems rather than spawning unbounded nodes; the absorbing gem reddens and fattens so
+## it reads as the richer reward it now carries.
+func absorb(extra: int) -> void:
+	value += maxi(extra, 0)
+	_refresh_visual()
+
+## Tint + size the gem from its current value (blue=1, green=2, red=3+; bigger = richer),
+## clamped so a merged gem never grows past MAX_VISUAL_STEPS.
+func _refresh_visual() -> void:
+	if _sprite:
+		_sprite.modulate = VALUE_COLORS.get(value, VALUE_COLORS[3])
+	# Higher-value gems read bigger (1.0 at value 1, +0.12 per extra point, capped).
+	var s := 1.0 + 0.12 * float(clampi(value - 1, 0, MAX_VISUAL_STEPS))
 	scale = Vector2(s, s)
 
 func _process(delta: float) -> void:

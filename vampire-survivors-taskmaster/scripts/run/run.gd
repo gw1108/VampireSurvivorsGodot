@@ -894,7 +894,34 @@ func _spawn_gems(at: Vector2, total_xp: int, count: int) -> void:
 			offset = Vector2(cos(ang), sin(ang)) * 18.0
 		_spawn_gem(at + offset, maxi(v, 1))
 
+## GDD leveling rule: at most MAX_GROUND_GEMS loose XP gems exist on the ground at once; any
+## excess merges into a single (red) gem. Bounds the live gem-node count so a late-game field
+## that out-drops the player's pickup rate never balloons into thousands of per-frame nodes.
+const MAX_GROUND_GEMS := 400
+
 func _spawn_gem(at: Vector2, xp_value: int = 1) -> void:
+	# On-ground gem cap: once the field already holds MAX_GROUND_GEMS gems, fold this drop's XP
+	# into the nearest existing gem (which reddens/fattens) instead of adding another node, so the
+	# reward is conserved and stays roughly where it fell while the node count holds at the cap.
+	# Skipped when the run isn't in the scene tree (get_tree() null — only in standalone unit tests
+	# that new() a VSRun without adding it), where there's no group to query and no cap to enforce.
+	var tree := get_tree()
+	if tree != null:
+		var gems := tree.get_nodes_in_group("gems")
+		if gems.size() >= MAX_GROUND_GEMS:
+			var target: VSGem = null
+			var best_d := INF
+			for node in gems:
+				var gm := node as VSGem
+				if gm == null:
+					continue
+				var dd := gm.position.distance_squared_to(at)
+				if dd < best_d:
+					best_d = dd
+					target = gm
+			if target != null:
+				target.absorb(xp_value)
+				return
 	var g := VSGem.new()
 	g.position = at
 	g.run = self
