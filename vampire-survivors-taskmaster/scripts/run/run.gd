@@ -475,15 +475,17 @@ func _gem_drop_chance(enemy_max_health: float) -> float:
 func add_kill(at: Vector2, xp_value: int = 1, gem_count: int = 1, is_elite: bool = false, enemy_max_health: float = 3.0) -> void:
 	kills += 1
 	AgentBridge.emit_event("despawn", {"type": "enemy", "pos": [at.x, at.y]})
+	# Wiki-faithful drop model (Pickups.md / Light_source.md): a defeated enemy drops ONLY an
+	# Experience Gem, rolled against its own HP-scaled chance (_gem_drop_chance). Coins, Floor
+	# Chicken, Rosary, Orologion, Vacuum/Magnet, etc. are LIGHT-SOURCE drops — they come from
+	# shattering a candelabra (drop_candelabra_bonus), NOT from kills. Two deliberate exceptions,
+	# both distinct from the baseline enemy drop: a "boss" elite (the Mad Forest wave table's
+	# Bosses & Treasure column) additionally drops a Treasure Chest ("Dropped by strong enemies"),
+	# and an active Gold Fever buff (the Gilded Clover mechanic) makes kills cough up bonus gold.
 	if randf() < _gem_drop_chance(enemy_max_health):
 		_spawn_gems(at, xp_value, gem_count)
-	_maybe_drop_food(at)
-	_maybe_drop_coin(at, is_elite)
 	_maybe_drop_gold_fever_coin(at)
-	_maybe_drop_rosary(at, is_elite)
-	_maybe_drop_freeze_clock(at, is_elite)
 	if is_elite:
-		_maybe_drop_magnet(at)
 		_maybe_drop_chest(at)
 
 ## True while an Orologion freeze is active — enemies read this each frame and halt (see
