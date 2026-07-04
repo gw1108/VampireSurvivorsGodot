@@ -43,6 +43,10 @@ func _provide() -> Dictionary:
 			"tick": game.frame_tick,
 			"elapsed": game.elapsed,
 			"enemies": get_tree().get_nodes_in_group("enemies").size() - get_tree().get_nodes_in_group("candelabra").size(),
+			# Live render framerate, surfaced so the harness can verify the late-game crush holds ~60fps
+			# under a full horde (the 300-alive cap). Unaffected by set_time_scale (that scales delta, not
+			# real frame cadence), so it reads true even while fast-forwarding the clock.
+			"fps": Engine.get_frames_per_second(),
 		},
 	}
 
@@ -134,6 +138,15 @@ func _on_command(cmd: Dictionary) -> void:
 			var ip := game.player
 			if ip != null and is_instance_valid(ip):
 				ip.invulnerable = bool(cmd.get("value", true))
+		"force_time_set":
+			# Jump the run clock so the harness can reach the late-game 300-enemy crush + framerate
+			# check without waiting ~20:00 into a 30:00 run. Value is seconds; default 1740 (29:00),
+			# safely under RUN_DURATION so the Reaper finale doesn't fire. Debug-only (agent gate).
+			game.elapsed = float(cmd.get("value", 1740.0))
+			# Re-baseline the spawner's wave/elite/surge timers to the new clock so the jump doesn't
+			# dump a catch-up burst (e.g. ~48 elites) that would skew a late-game population/FPS check.
+			if game._spawner != null and is_instance_valid(game._spawner):
+				game._spawner.resync_timers()
 		"force_low_health":
 			# The low-health warning vignette (hud.gd _refresh_lowhp) only shows once HP drops below
 			# LOWHP_THRESHOLD (30%) — hard to reach on demand in an automated playtest without dying.

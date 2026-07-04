@@ -61,6 +61,20 @@ func _ready() -> void:
 	assert(MAX_ENEMIES_LATE <= COLLIDER_SAFE_CAP,
 		"MAX_ENEMIES_LATE > COLLIDER_SAFE_CAP: re-profile the per-node enemy cost (Sprite2D + _process + weapon hit-testing — now the dominant term, collision is O(n) via VSEnemy._grid) before raising the enemy cap further.")
 
+## Re-baseline the wave/elite/surge cadence timers to just after the current run clock. Used only
+## by the debug `force_time_set` command: jumping run.elapsed forward by many minutes would otherwise
+## make _process fire one elite (and wave/surge) per frame to "catch up" from the old timers — dumping
+## ~48 elites in a burst that no natural run ever has and skewing a late-game population/FPS check.
+## Pushing each timer to the next boundary after `elapsed` keeps the ambient trickle (which fills to
+## the density cap) while suppressing the artificial catch-up crescendo.
+func resync_timers() -> void:
+	if run == null:
+		return
+	var t := run.elapsed
+	_next_elite = t + ELITE_INTERVAL
+	_next_wave = (floorf(t / WAVE_INTERVAL) + 1.0) * WAVE_INTERVAL
+	_next_surge = t + SURGE_INTERVAL
+
 func _process(delta: float) -> void:
 	if run == null or run.phase != "playing" or run.player == null:
 		return
