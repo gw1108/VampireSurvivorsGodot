@@ -117,5 +117,13 @@ func _on_command(cmd: Dictionary) -> void:
 			# verify the "WEAPON EVOLVED!" banner. Defaults to Whip -> Bloody Tear. Inert in real
 			# builds (this whole channel only exists behind the agent gate — see agent_bridge.gd).
 			game.force_evolution_ready(str(cmd.get("value", "whip")))
+		"force_low_health":
+			# The low-health warning vignette (hud.gd _refresh_lowhp) only shows once HP drops below
+			# LOWHP_THRESHOLD (30%) — hard to reach on demand in an automated playtest without dying.
+			# Debug-only escape hatch: set HP to `value` (a fraction of max, default 12%) so the harness
+			# can verify the pulsing crimson edge; inert in real builds (agent gate only — agent_bridge.gd).
+			var lp := game.player
+			if lp != null and is_instance_valid(lp):
+				lp.health = clampf(float(cmd.get("value", 0.12)) * lp.max_health, 1.0, lp.max_health)
 		_:
 			AgentBridge.default_command(cmd)

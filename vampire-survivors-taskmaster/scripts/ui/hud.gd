@@ -85,6 +85,30 @@ void fragment() {
 }
 """
 
+# Low-health warning vignette: a pulsing crimson screen-edge glow that swells in the closer the
+# player is to death, so the survival stakes read viscerally in the moment rather than only as a
+# tiny HP bar under the avatar. Mirrors the freeze vignette's shader/ColorRect pattern; driven each
+# frame from _refresh_lowhp off the player's health fraction, and made to BREATHE (a heartbeat that
+# quickens as HP falls) via _lowhp_pulse so it reads as urgent danger, not a static tint.
+var _lowhp_vig: ColorRect
+var _lowhp_pulse := 0.0     # ever-advancing seconds accumulator driving the breathing sine
+const LOWHP_THRESHOLD := 0.30    # warning begins once HP drops to 30% of max
+const LOWHP_TINT := Color(1.0, 0.15, 0.12)   # danger crimson, distinct from the icy freeze vignette
+# Same edge-vignette falloff as FREEZE_SHADER, red-tinted. `strength` (0..1) is set from how deep
+# below the threshold the player is; it scales the whole overlay's alpha so a near-death sliver of
+# HP glows near-solid at the edges while just-under-threshold is a faint pulse.
+const LOWHP_SHADER := """
+shader_type canvas_item;
+uniform vec4 tint : source_color = vec4(1.0, 0.15, 0.12, 1.0);
+uniform float strength = 0.0;
+void fragment() {
+	float d = length(UV - vec2(0.5)) * 1.41421356;
+	float vig = smoothstep(0.35, 1.05, d);
+	float a = strength * mix(0.0, 0.62, vig);
+	COLOR = vec4(tint.rgb, a);
+}
+"""
+
 # Nduja berserk countdown: while run.is_nduja_active() a small fiery bar sits bottom-center of the
 # screen, its fill shrinking as the ~8s invincibility window burns down so the player can read how
 # long they can keep charging the horde untouchable. Border -> track -> shrinking fire fill plus a
@@ -321,6 +345,20 @@ func _ready() -> void:
 	_freeze_label.visible = false
 	add_child(_freeze_label)
 
+	# Low-health warning vignette, full-viewport and kept behind the HUD text like the freeze one.
+	# Starts invisible (strength 0); driven each frame from _refresh_lowhp while HP is low.
+	_lowhp_vig = ColorRect.new()
+	_lowhp_vig.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_lowhp_vig.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var lowhp_shader := Shader.new()
+	lowhp_shader.code = LOWHP_SHADER
+	var lowhp_mat := ShaderMaterial.new()
+	lowhp_mat.shader = lowhp_shader
+	_lowhp_vig.material = lowhp_mat
+	_lowhp_vig.visible = false
+	add_child(_lowhp_vig)
+	move_child(_lowhp_vig, 0)   # behind all the stat/build labels, same as the freeze vignette
+
 	# Nduja berserk countdown bar (bottom-center), hidden until a Nduja buff is active. Added
 	# border -> track -> fill so the shrinking fire fill draws on top; driven each frame in
 	# _refresh_nduja. Mouse-ignored so it never eats input.
@@ -459,6 +497,7 @@ func telegraph_surge(dir: Vector2) -> void:
 ## Drive the surge telegraph's fade. Holds full alpha for SURGE_TELEGRAPH_HOLD, then eases to
 ## zero over SURGE_TELEGRAPH_FADE and hides. A subtle pulse keeps the eye drawn while held.
 func _process(delta: float) -> void:
+	_lowhp_pulse += delta   # free-running heartbeat clock for the low-health vignette's breathing
 	_process_xp_flash(delta)
 	_process_chest_reveal(delta)
 	_process_evolution(delta)
@@ -546,6 +585,7 @@ func refresh(run: VSRun) -> void:
 	_refresh_loadout(run)
 	_refresh_xp(run)
 	_refresh_freeze(run)
+	_refresh_lowhp(run)
 	_refresh_nduja(run)
 	_refresh_gold_fever(run)
 	# Reaper finale countdown, live only during the last stand (Reaper summoned, run not yet won).
@@ -647,6 +687,28 @@ func _refresh_freeze(run: VSRun) -> void:
 	(_freeze_vig.material as ShaderMaterial).set_shader_parameter("strength", strength)
 	_freeze_label.text = "FROZEN  %d" % int(ceil(remaining))
 	_freeze_label.modulate = Color(FREEZE_TINT.r, FREEZE_TINT.g, FREEZE_TINT.b, strength)
+
+## Drive the low-health warning vignette from the player's HP fraction. Below LOWHP_THRESHOLD the
+## crimson edge-glow swells in (deeper the closer to death) and BREATHES via a sine whose frequency
+## rises as HP falls — a quickening heartbeat. Hidden while healthy, dead, or outside the live run
+## so it never bleeds over the death/victory/title screens.
+func _refresh_lowhp(run: VSRun) -> void:
+	if _lowhp_vig == null:
+		return
+	var p := run.player
+	var alive := p != null and is_instance_valid(p) and p.health > 0.0
+	var ratio := (p.health / maxf(p.max_health, 1.0)) if alive else 1.0
+	var danger := alive and run.phase == "playing" and ratio < LOWHP_THRESHOLD
+	_lowhp_vig.visible = danger
+	if not danger:
+		return
+	# Depth below the threshold, 0 at the threshold edge -> 1 at death's door.
+	var depth := clampf((LOWHP_THRESHOLD - ratio) / LOWHP_THRESHOLD, 0.0, 1.0)
+	# Heartbeat: 0.55..1.0 breathing, beating faster (3.5 -> 7.5 rad/s) as HP drains.
+	var beat := 0.55 + 0.45 * (0.5 + 0.5 * sin(_lowhp_pulse * (3.5 + 4.0 * depth)))
+	# Base glow ramps 0.35 -> 1.0 with depth so a near-death sliver is a near-solid crimson edge.
+	var strength := clampf((0.35 + 0.65 * depth) * beat, 0.0, 1.0)
+	(_lowhp_vig.material as ShaderMaterial).set_shader_parameter("strength", strength)
 
 ## Drive the Nduja berserk countdown from the run's fiery invincibility window. While
 ## run.is_nduja_active() the bottom-center bar shows and its fill shrinks from full to empty as
