@@ -14,12 +14,24 @@ func test_run_boots_spawns_and_makes_progress() -> void:
 	run.start_run()
 	assert_str(run.phase).is_equal("playing")
 
-	# Let waves spawn and the auto-weapon work for ~6 simulated seconds.
-	await runner.simulate_frames(360, 16)
+	# Let waves spawn and the auto-weapon work for ~8 simulated seconds. Antonio's starting
+	# loadout is melee-only (the level-1 Whip, 140px reach; the Magic Wand is pick-only), and
+	# bats spawn at SPAWN_RING=520px closing at 62px/s — they don't enter whip range until ~6s,
+	# so 6s left the loop with nothing struck. 8s (500 frames) gives the nearest bats time to
+	# march into the lash.
+	await runner.simulate_frames(500, 16)
 
 	var enemies := run.get_tree().get_nodes_in_group("enemies")
 	assert_int(enemies.size()).is_greater(0)
 
+	# Progress = the auto-weapon connected. Count a kill, a projectile in flight, OR any enemy
+	# that has taken damage (health below its max) — the last proves the whip swung and landed
+	# without hinging on a precise one-shot-kill window.
 	var projectiles := run.get_tree().get_nodes_in_group("projectiles")
-	var progressed: bool = run.kills > 0 or projectiles.size() > 0
+	var enemy_damaged := false
+	for e in enemies:
+		if e.health < e.max_health:
+			enemy_damaged = true
+			break
+	var progressed: bool = run.kills > 0 or projectiles.size() > 0 or enemy_damaged
 	assert_bool(progressed).is_true()
