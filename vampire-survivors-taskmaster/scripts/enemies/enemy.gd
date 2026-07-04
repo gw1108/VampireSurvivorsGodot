@@ -270,7 +270,9 @@ func _process(delta: float) -> void:
 ## Sum of unit repulsions from every enemy inside SEPARATION_RADIUS, each weighted
 ## by how close it is (nearer neighbours push harder). Returned un-normalized so the
 ## push grows with crowding; the caller normalizes the blended move. O(n) per enemy
-## (O(n²) per frame) which is fine within the spawner's MAX_ENEMIES cap.
+## (O(n²) per frame) which is fine within the spawner's MAX_ENEMIES cap. Raising that cap
+## past VSSpawner.SEPARATION_SAFE_CAP is gated on rewriting this global scan into a spatial
+## hash / uniform grid so only nearby neighbours are checked (see the assert in VSSpawner._ready).
 func _separation() -> Vector2:
 	var push := Vector2.ZERO
 	for other in get_tree().get_nodes_in_group("enemies"):
