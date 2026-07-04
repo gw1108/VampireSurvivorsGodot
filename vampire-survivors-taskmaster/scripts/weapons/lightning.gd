@@ -26,29 +26,45 @@ const STRIKE_RADIUS := 46.0          # AoE splash around each bolt's impact
 static var BASE_INTERVAL := BalanceData.get_value("lightning_base_interval", 4.5)
 static var INTERVAL_PER_LEVEL := BalanceData.get_value("lightning_interval_per_level", 0.3)
 const MIN_INTERVAL := 1.8
-const FLASH_TIME := 0.18             # how long a drawn bolt lingers before fading out
-const BOLT_TOP := 460.0              # how far above the impact the bolt appears to fall from
-const BOLT_COLOR := Color(0.82, 0.92, 1.0)
-const GLOW_COLOR := Color(0.55, 0.7, 1.0)
+
+## Strike VFX: SourceArt/pixel_art-animations-warrior "VFX 5", a jagged burst of spikes radiating
+## from a point and fading — reads as a crackling discharge, unlike VFX3's smooth claw arc (used
+## by the whip). All 8 cells are populated (unlike VFX2/VFX4, which have an empty cell), so no
+## blank frame ever plays. VFX5 is natively red/orange, which a plain modulate tint can't turn
+## blue (multiplying a near-zero blue channel by any tint still leaves it near zero — confirmed
+## by an in-game screenshot check: the tinted burst still read as dark maroon). Baked instead as
+## lightning_bolt.png: every pixel replaced by its own luminance times an electric-blue tint (hue-
+## agnostic, so the shape/gradient survive but the color is genuinely blue-white), then copied in.
+const VFX_TEX := "res://art/lightning_bolt.png"
+const VFX_COLS := 2
+const VFX_ROWS := 4
+const VFX_FPS := 40.0                     # 8 frames / 40fps = 0.2s, a punchy flash
+const VFX_TINT := Color(1.0, 1.0, 1.0)    # the baked texture is already electric blue-white
+const EVO_VFX_TINT := Color(1.3, 1.2, 1.4)  # Thunder Loop's crack burns brighter/whiter
+## Radius (px, in the sheet's own pixels) the burst's alpha bounding box reaches at its widest
+## frame (measured directly: row2/col1 used_rect ~100x85, row3/col0 ~112x73) — calibrates
+## _vfx_pool scale so the sprite's visual reach lines up with each strike's actual splash radius.
+const VFX_REFERENCE_RADIUS_PX := 55.0
 
 var run: VSRun
 var _cd := 0.0
-## Active bolt visuals, each { "pos": Vector2 (local to the player), "t": float seconds left }.
-## Faded down in _process and rendered in _draw so a strike reads as a bright flash of lightning.
-var _bolts: Array = []
+## Pooled strike VFX, one per possible simultaneous bolt (sized to the evolved cap so a maxed
+## Thunder Loop volley never runs out). Positioned and played per strike in _strike().
+var _vfx_pool: Array = []
+
+func _ready() -> void:
+	var frames := _build_vfx_frames()
+	for i in EVO_MAX_STRIKES:
+		var vfx := AnimatedSprite2D.new()
+		vfx.sprite_frames = frames
+		vfx.visible = false
+		vfx.animation_finished.connect(func() -> void: vfx.visible = false)
+		add_child(vfx)
+		_vfx_pool.append(vfx)
 
 func _process(delta: float) -> void:
 	if run == null:
 		return
-	# Fade any lingering bolt visuals every frame (even while paused, so they don't hang).
-	if not _bolts.is_empty():
-		var still := []
-		for b in _bolts:
-			b["t"] -= delta
-			if b["t"] > 0.0:
-				still.append(b)
-		_bolts = still
-		queue_redraw()
 	var lvl: int = run.lightning_level
 	if lvl <= 0:
 		return
@@ -73,7 +89,7 @@ func _strike_count(lvl: int) -> int:
 	return clampi(BASE_STRIKES + lvl / 3, BASE_STRIKES, MAX_STRIKES)
 
 ## One volley: pick a random subset of in-range enemies and smite each, splashing every enemy
-## within STRIKE_RADIUS of the impact. Records a bolt visual per strike.
+## within STRIKE_RADIUS of the impact. Plays a pooled strike VFX per bolt.
 func _strike(lvl: int) -> void:
 	var targets := []
 	for e in get_tree().get_nodes_in_group("enemies"):
@@ -96,6 +112,7 @@ func _strike(lvl: int) -> void:
 	var strikes_per_bolt := 2 if evolved else 1
 	var n := mini(_strike_count(lvl), targets.size())
 	var hit_any := false
+	var tint := EVO_VFX_TINT if evolved else VFX_TINT
 	for i in n:
 		var at: Vector2 = targets[i].position
 		for other in get_tree().get_nodes_in_group("enemies"):
@@ -106,30 +123,30 @@ func _strike(lvl: int) -> void:
 				for _s in strikes_per_bolt:
 					other.hit(dmg, at)
 				hit_any = true
-		_bolts.append({"pos": at - global_position, "t": FLASH_TIME})
+		var vfx: AnimatedSprite2D = _vfx_pool[i]
+		vfx.position = at - global_position
+		vfx.rotation = randf() * TAU   # a fixed orientation would look mechanically repetitive
+		vfx.scale = Vector2.ONE * (splash / VFX_REFERENCE_RADIUS_PX)
+		vfx.modulate = tint
+		vfx.visible = true
+		vfx.play("default")
 	if hit_any:
 		run.add_camera_shake(0.12)   # a small jolt so the smite lands with weight
 		AgentBridge.emit_event("sfx_played", {"name": "lightning"})
-	queue_redraw()
 
-## Render each active bolt: a jagged streak falling from above onto the impact, plus a fading
-## glow disc. Drawn in local space (the node rides the player); bolts are brief so the small
-## drift as the player moves reads fine, matching how the other weapons self-draw.
-func _draw() -> void:
-	for b in _bolts:
-		var p: Vector2 = b["pos"]
-		var frac: float = clampf(b["t"] / FLASH_TIME, 0.0, 1.0)
-		var top := Vector2(p.x, p.y - BOLT_TOP)
-		var pts := PackedVector2Array()
-		var segs := 7
-		for i in segs + 1:
-			var f := float(i) / float(segs)
-			var base := top.lerp(p, f)
-			# Deterministic zigzag (no RNG in _draw so the bolt doesn't jitter each frame).
-			var jitter := 0.0 if i == 0 or i == segs else sin(f * 23.0 + p.x * 0.5) * 12.0
-			pts.append(base + Vector2(jitter, 0.0))
-		var glow := STRIKE_RADIUS * run.area_mult
-		if run.lightning_evolved:
-			glow *= EVO_SPLASH_MULT   # match the wider Thunder Loop blast the damage now covers
-		draw_polyline(pts, Color(BOLT_COLOR.r, BOLT_COLOR.g, BOLT_COLOR.b, frac), 2.5)
-		draw_circle(p, glow * (0.45 + 0.55 * frac), Color(GLOW_COLOR.r, GLOW_COLOR.g, GLOW_COLOR.b, 0.5 * frac))
+## Builds the strike VFX's frames from lightning_bolt.png (2 cols x 4 rows, read left->right
+## top->bottom), per the import_sprite_sheet_animation skill's in-code SpriteFrames pattern.
+func _build_vfx_frames() -> SpriteFrames:
+	var sf := SpriteFrames.new()
+	sf.set_animation_speed("default", VFX_FPS)
+	sf.set_animation_loop("default", false)
+	var tex := load(VFX_TEX) as Texture2D
+	var fw := tex.get_width() / VFX_COLS
+	var fh := tex.get_height() / VFX_ROWS
+	for row in VFX_ROWS:
+		for col in VFX_COLS:
+			var frame := AtlasTexture.new()
+			frame.atlas = tex
+			frame.region = Rect2(col * fw, row * fh, fw, fh)
+			sf.add_frame("default", frame)
+	return sf
