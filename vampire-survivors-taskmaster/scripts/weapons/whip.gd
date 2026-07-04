@@ -82,9 +82,12 @@ func _swing(lvl: int) -> void:
 	if _is_evolved():
 		dmg *= EVOLVED_DAMAGE_MULT
 	var hit_any := false
+	var hit_enemies := {}  # enemies already damaged this swing (both sides share one set)
 	for s in _sides():
 		var facing_vec := Vector2(s, 0)
 		for e in get_tree().get_nodes_in_group("enemies"):
+			if hit_enemies.has(e):
+				continue
 			var to: Vector2 = e.position - global_position
 			var er: float = e.radius if "radius" in e else VSEnemy.RADIUS
 			var d := to.length()
@@ -93,6 +96,7 @@ func _swing(lvl: int) -> void:
 			# On top of us, or inside the angular wedge on this side.
 			if d < 1.0 or absf(to.angle_to(facing_vec)) <= arc:
 				e.hit(dmg, global_position)
+				hit_enemies[e] = true
 				hit_any = true
 	if hit_any:
 		AgentBridge.emit_event("sfx_played", {"name": "whip"})
