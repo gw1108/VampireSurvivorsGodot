@@ -31,6 +31,7 @@ const ICONS := {
 	"attract": "res://art/magnet.png",             # Attractorb reuses the in-world Magnet sprite
 	"growth": "res://art/gem.png",                 # Growth reuses the XP gem sprite
 	"armor": "res://art/up_armor.png",             # Armor passive
+	"recovery": "res://art/food_chicken.png",      # Pummarola (Recovery) reuses the heal/food sprite (HP over time)
 	"luck": "res://art/clover_green.png",          # Clover reuses the in-world Little Clover sprite
 	"knife": "res://art/projectile_dagger.png",   # reuse the in-world dagger bolt as the Knife icon
 	"runetracer": "res://art/weapon_runetracer.png",  # the bouncing rune polyhedron sprite

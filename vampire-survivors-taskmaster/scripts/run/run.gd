@@ -112,6 +112,7 @@ var projectile_speed_mult := 1.0  # Bracer: scales how fast thrown/fired project
 var pickup_range_mult := 1.0     # Attractorb: scales the magnet radius of gems/coins/food so pickups fly in from farther
 var xp_gain_mult := 1.0          # Growth: multiplies XP collected from gems so leveling accelerates as it stacks
 var armor := 0                   # Armor: flat damage subtracted from each hit the player takes (min 1 gets through)
+var recovery := 0.0              # Recovery (Pummarola): HP regenerated per second, ticked in _process while playing
 var garlic_level := 0            # 0 = Garlic aura not yet chosen; each pick grows it
 var whip_level := 0              # 0 = Whip melee arc not yet chosen; each pick grows it
 var bible_level := 0             # 0 = King Bible orbit not yet chosen; each pick grows it
@@ -193,6 +194,7 @@ const UPGRADE_POOL := [
 	{"id": "attract", "title": "Attractorb", "desc": "+30% pickup range (gems, coins, food fly in from farther)", "max": 4},
 	{"id": "growth", "title": "Growth", "desc": "+8% XP gained (levels come faster)", "max": 5},
 	{"id": "armor", "title": "Armor", "desc": "-1 damage taken per hit (min 1 always lands)", "max": 3},
+	{"id": "recovery", "title": "Pummarola", "desc": "+0.2 HP recovered per second", "max": 5},
 	{"id": "luck", "title": "Clover", "desc": "+10% Luck", "max": 5},
 	{"id": "garlic", "title": "Garlic", "desc": "Damaging aura around you (grows each pick)", "max": 8},
 	{"id": "whip", "title": "Whip", "desc": "Melee arc lashing your facing side; both sides at Lv 2+", "max": 8},
@@ -475,6 +477,11 @@ func _process(delta: float) -> void:
 	frame_tick += 1
 	if phase == "playing":
 		elapsed += delta
+		# Recovery (Pummarola): regenerate HP over time, capped at max_health so it tops up but
+		# never overheals. Ticks only while playing (halts on the level-up/pause freeze) and only
+		# on a living player, mirroring the other playing-phase stat effects.
+		if recovery > 0.0 and player and player.alive and player.health < player.max_health:
+			player.health = minf(player.max_health, player.health + recovery * delta)
 		if not reaper_active:
 			if elapsed >= RUN_DURATION:
 				_summon_reaper()
@@ -1137,6 +1144,8 @@ func _apply_upgrade(id: String) -> void:
 			xp_gain_mult *= 1.08
 		"armor":
 			armor += 1
+		"recovery":
+			recovery += 0.2   # +0.2 HP/s per level, additive; max level 5 = +1.0 HP/s (Pummarola)
 		"luck":
 			luck_bonus += 10.0
 		"garlic":
