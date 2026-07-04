@@ -147,6 +147,18 @@ var rerolls_left := 3
 ## flows through _apply_upgrade.
 var upgrade_levels := {}
 
+## Inventory cap (GDD "Inventory cap: 6 weapons + 6 passives"): the player can OWN at most six
+## weapons and six passives. Once six of a kind are owned, the level-up roll stops offering a
+## seventh — only already-owned items of that kind keep appearing (for their upgrades) until
+## maxed, at which point the hand pads with Gold/Floor Chicken consolation (see _roll_upgrades).
+const MAX_WEAPONS := 6
+const MAX_PASSIVES := 6
+
+## The eight auto-firing weapons in UPGRADE_POOL; every other pool id is a passive stat item.
+## `multishot` is Antonio's Magic Wand (each pick adds a bolt). Used to bucket a pool entry as
+## weapon-vs-passive when enforcing the inventory cap above.
+const WEAPON_IDS := ["multishot", "garlic", "whip", "bible", "lightning", "knife", "runetracer", "fire_wand"]
+
 ## Pool the level-up screen draws 3 distinct choices from each time. `max` is the highest
 ## level each upgrade reaches — weapons cap at 8 (VS convention), passives lower — after
 ## which it stops appearing in the roll.
@@ -872,6 +884,17 @@ func _roll_upgrades() -> Array:
 			var card: Dictionary = evo.duplicate()
 			card["evolution"] = true      # no "level" key -> the card skips the Lv N->N+1 line
 			options.append(card)
+	# Inventory cap (GDD 6 weapons + 6 passives): tally what's already owned so a not-yet-owned
+	# item of a full category can be withheld below. Only counts pool items (level >= 1), so
+	# evolutions and consolation ids never inflate the count.
+	var owned_weapons := 0
+	var owned_passives := 0
+	for opt in UPGRADE_POOL:
+		if int(upgrade_levels.get(opt["id"], 0)) >= 1:
+			if WEAPON_IDS.has(opt["id"]):
+				owned_weapons += 1
+			else:
+				owned_passives += 1
 	# Fill the remaining slots with normal not-yet-maxed upgrades.
 	var pool := []
 	for opt in UPGRADE_POOL:
@@ -880,10 +903,19 @@ func _roll_upgrades() -> Array:
 		if opt["id"] == "luck" and not MetaSave.is_unlocked(CLOVER_UNLOCK_ID):
 			continue
 		var lvl: int = upgrade_levels.get(opt["id"], 0)
-		if lvl < int(opt["max"]):
-			var display: Dictionary = opt.duplicate()
-			display["level"] = lvl        # current level; the pick raises it to lvl+1
-			pool.append(display)
+		if lvl >= int(opt["max"]):
+			continue
+		# A brand-new item (level 0) is withheld once its category's inventory is full; already-owned
+		# items keep offering their upgrades regardless, so a full build still climbs to max level.
+		if lvl == 0:
+			if WEAPON_IDS.has(opt["id"]):
+				if owned_weapons >= MAX_WEAPONS:
+					continue
+			elif owned_passives >= MAX_PASSIVES:
+				continue
+		var display: Dictionary = opt.duplicate()
+		display["level"] = lvl        # current level; the pick raises it to lvl+1
+		pool.append(display)
 	pool.shuffle()
 	for opt in pool:
 		if options.size() >= 3:
