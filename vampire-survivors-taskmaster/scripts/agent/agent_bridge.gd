@@ -164,6 +164,14 @@ func _on_js_command(args: Array) -> void:
 	_default_command(cmd)
 
 
+## Public: a registered command_handler can defer commands it doesn't recognize
+## (press/release/tap) back to the built-in input synthesizer. Without this, a handler
+## that only matches its own game-specific commands silently swallows movement/tap input,
+## because a registered handler short-circuits _default_command in _on_js_command above.
+func default_command(cmd: Dictionary) -> void:
+	_default_command(cmd)
+
+
 func _drop_events_through(seq: int) -> void:
 	var kept: Array = []
 	for ev in _events:

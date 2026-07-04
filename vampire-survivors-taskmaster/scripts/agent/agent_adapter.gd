@@ -81,7 +81,10 @@ func _entities() -> Array:
 		out.append({"id": str(g.get_instance_id()), "type": "xp", "pos": [g.position.x, g.position.y], "state": "idle"})
 	return out
 
-# Only commands NOT handled by the bridge (press/release/tap/set_time_scale/ack/restart).
+# Handles this game's custom commands; everything else (press/release/tap the harness
+# sends to move the player and make level-up picks) falls through to the bridge's default
+# input synthesizer. Registering a handler at all short-circuits that synthesizer in the
+# bridge, so an adapter MUST defer unrecognized types or the JS command channel goes dead.
 func _on_command(cmd: Dictionary) -> void:
 	match str(cmd.get("type", "")):
 		"set_seed":
@@ -93,4 +96,4 @@ func _on_command(cmd: Dictionary) -> void:
 			# (this whole channel only exists behind the agent gate — see agent_bridge.gd).
 			game.start_gold_fever()
 		_:
-			pass
+			AgentBridge.default_command(cmd)
