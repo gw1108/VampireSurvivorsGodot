@@ -9,15 +9,20 @@ const FLASH_DURATION := 0.1
 ## time-stop is active, so its exemption reads as a deliberate design, not a stuck sprite.
 const IMMUNE_SHIMMER_FREQ := 9.0     # rad/s of the sine pulse — a fast, alarming flicker
 const IMMUNE_SHIMMER_AMOUNT := 0.7   # how far the pulse lerps toward the hot red at its peak
-## Boid separation: enemies repel from neighbours within this radius so the horde
-## spreads into a mass that SURROUNDS the player instead of every unit collapsing
-## onto the exact player position into one overlapping column. STRENGTH weights the
-## push against the toward-player drive; at equilibrium they pack ~SEPARATION_RADIUS
-## apart, forming the VS-style pincer wall.
-const SEPARATION_RADIUS := 26.0
-const SEPARATION_STRENGTH := 0.65
+## Enemy colliders: every enemy carries a solid circular body (RADIUS, or its per-type
+## `radius`), so two units can never occupy the same space. Each enemy homes STRAIGHT at the
+## player; after moving, a positional overlap-resolution pass (see _overlap_correction) shoves
+## any interpenetrating pair apart until their circles just touch. The horde therefore packs into
+## the VS-style crush wall as a mass of solid bodies pressing on the player — no steering force
+## bends the beeline the way the old boid-separation blend did. GHOSTs are intangible and phase
+## straight through; heavy units barely budge (the shove is scaled by knock_resist), so the finale
+## REAPER ploughs through the pack instead of getting mired in it.
+## COLLIDE_CELL sizes the shared spatial grid: it is >= twice the largest enemy radius (REAPER's
+## 30), so any neighbour whose body could overlap this one is always inside the 3x3 block of cells
+## scanned per enemy (see _ensure_grid) — keeping the whole-horde cost ~O(n), not O(n²).
+const COLLIDE_CELL := 60.0
 ## Per-archetype movement flavour, so the horde doesn't read as one uniform blob:
-## - GHOST ignores separation entirely, drifting straight through the pack and even
+## - GHOST ignores collision entirely, drifting straight through the pack and even
 ##   overlapping other units (faithful to VS's phasing ghosts).
 ## - BAT threads a small perpendicular sine weave over its homing drive, giving the
 ##   swarm a fluttering, erratic look. WEAVE_AMP is relative to the unit toward-drive
@@ -141,23 +146,24 @@ var _was_frozen := false
 var _sprite: Sprite2D
 
 ## Uniform spatial grid shared across every enemy, rebuilt at most once per process frame,
-## so _separation() only scans the handful of neighbours in nearby cells instead of the whole
-## 'enemies' group. This turns the horde's per-frame separation cost from O(n²) (every enemy
+## so _overlap_correction() only scans the handful of neighbours in nearby cells instead of the
+## whole 'enemies' group. This turns the horde's per-frame collision cost from O(n²) (every enemy
 ## walking every other enemy) into ~O(n), which is what lets the concurrent-enemy cap climb to
 ## the GDD's 300-alive late-game crush without the quadratic scan eating the frame.
-## Cell size = SEPARATION_RADIUS: a neighbour within that radius can be at most one cell away on
-## each axis, so scanning the 3×3 block of cells around an enemy covers every possible repeller.
+## Cell size = COLLIDE_CELL (>= twice the largest radius): two bodies that overlap have centres
+## within their combined radius, so their cells differ by at most one on each axis — scanning the
+## 3×3 block of cells around an enemy covers every possible colliding neighbour.
 ## Static, so it persists across frames; each rebuild clears and repopulates from the live group,
 ## so a torn-down scene's stale entries are never queried (the next query rebuilds — see below).
 static var _grid: Dictionary = {}
 static var _grid_frame: int = -1
 
-## Grid cell a world position falls into (integer cell coords at SEPARATION_RADIUS spacing).
+## Grid cell a world position falls into (integer cell coords at COLLIDE_CELL spacing).
 static func _cell_key(pos: Vector2) -> Vector2i:
-	return Vector2i(floori(pos.x / SEPARATION_RADIUS), floori(pos.y / SEPARATION_RADIUS))
+	return Vector2i(floori(pos.x / COLLIDE_CELL), floori(pos.y / COLLIDE_CELL))
 
-## Ensure the shared grid is current for this frame. The first enemy to separate each frame
-## rebuilds it (frame counter advanced); the rest reuse it. Also rebuilds if THIS enemy isn't
+## Ensure the shared grid is current for this frame. The first enemy to resolve overlaps each
+## frame rebuilds it (frame counter advanced); the rest reuse it. Also rebuilds if THIS enemy isn't
 ## in the cached grid — a bulletproof staleness guard so a grid left over from a prior scene or
 ## a direct test call (where the process frame may not advance between cases) can never linger.
 func _ensure_grid() -> void:
@@ -216,7 +222,7 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	# On a run restart the scene is torn down while enemies are mid-flight; a _process tick
-	# landing on an already-detached enemy makes _separation()'s get_tree() call fault with
+	# landing on an already-detached enemy makes _overlap_correction()'s get_tree() call fault with
 	# "Parameter data.tree is null" (harmless but ~12 lines of console noise, one per live
 	# enemy). Bail out the moment we're outside the tree — there is nothing to move anyway.
 	if not is_inside_tree():
@@ -276,14 +282,11 @@ func _process(delta: float) -> void:
 		_recycle()
 		return
 	var desired := to / d if d > 0.5 else Vector2.ZERO
-	# Blend the toward-player drive with a repulsion from crowded neighbours so the
-	# swarm spreads around the player rather than stacking on one point. In dense
-	# packs the push counters the inward drive, settling enemies into a surrounding
-	# ring while they still press contact range; when spread out the push fades.
-	# GHOST opts out — it phases straight through the pack, faithful to VS's ghosts.
+	# Enemies home STRAIGHT at the player — no steering force bends the beeline. Bodies that
+	# would overlap are pushed apart AFTER moving by the collider pass below, so the horde still
+	# packs into a surrounding crush wall rather than one overlapping column, but every unit's
+	# intent is the direct line at the player.
 	var move := desired
-	if type != Type.GHOST:
-		move += _separation() * SEPARATION_STRENGTH
 	# BAT flutters: add a small oscillating shove perpendicular to its homing drive
 	# so bats weave in and out rather than beelining, and the per-enemy phase keeps
 	# the flock from snaking as one. No perpendicular exists when desired is zero.
@@ -310,6 +313,12 @@ func _process(delta: float) -> void:
 		step += _knockback * delta
 		_knockback = _knockback.move_toward(Vector2.ZERO, KNOCKBACK_DECAY * delta)
 	position += step
+	# Solid enemy colliders: after homing straight in, shove this body out of any neighbour it
+	# now overlaps so no two enemies occupy the same space — the crush wall forms from bodies
+	# pressing on bodies, not a steering force. Scaled by knock_resist so heavy units barely give
+	# ground (the finale REAPER ploughs through the pack); GHOST phases through, so it skips this.
+	if type != Type.GHOST:
+		position += _overlap_correction() * knock_resist
 	# Solid body vs the player: the same combined radius that gates contact damage also
 	# caps how close an enemy's sprite can get, so a wall of enemies packs into a ring right
 	# at the player's edge instead of visually marching inside the avatar sprite. Checked
@@ -327,15 +336,18 @@ func _process(delta: float) -> void:
 		target.take_damage(contact_damage)
 		_contact_cd = 0.5
 
-## Sum of unit repulsions from every enemy inside SEPARATION_RADIUS, each weighted
-## by how close it is (nearer neighbours push harder). Returned un-normalized so the
-## push grows with crowding; the caller normalizes the blended move. Backed by the shared
-## uniform grid (see _ensure_grid): only the 3×3 block of cells around this enemy is scanned,
-## so the per-frame cost across the whole horde is ~O(n) instead of O(n²) — the change that
-## lets the spawner's concurrent-enemy cap climb to the GDD's 300-alive late-game crush.
-func _separation() -> Vector2:
+## Positional correction that separates this enemy's body from every neighbour it currently
+## overlaps: for each other enemy whose centre is nearer than the combined radii, add a shove
+## along the line between them equal to HALF the overlap (the other enemy corrects its own half in
+## its _process pass, so a pair meeting head-on splits the gap symmetrically). Summed across all
+## overlapping neighbours and applied to `position`, this is the solid-body collider — bodies can't
+## interpenetrate. GHOST neighbours are intangible and skipped. Backed by the shared uniform grid
+## (see _ensure_grid): only the 3×3 block of cells around this enemy is scanned, so the per-frame
+## cost across the whole horde is ~O(n) instead of O(n²) — what lets the spawner's concurrent-enemy
+## cap sit at the GDD's 300-alive late-game crush.
+func _overlap_correction() -> Vector2:
 	_ensure_grid()
-	var push := Vector2.ZERO
+	var correction := Vector2.ZERO
 	var base := _cell_key(position)
 	for cx in range(base.x - 1, base.x + 2):
 		for cy in range(base.y - 1, base.y + 2):
@@ -343,13 +355,16 @@ func _separation() -> Vector2:
 			if bucket == null:
 				continue
 			for other in bucket:
-				if other == self:
+				# The 'enemies' group also holds non-enemy bodies (e.g. breakable candelabras) that
+				# lack a collider radius; only solid VSEnemy bodies collide, and GHOSTs phase through.
+				if other == self or not (other is VSEnemy) or other.type == Type.GHOST:
 					continue
+				var min_d: float = radius + other.radius
 				var away: Vector2 = position - other.position
 				var dist := away.length()
-				if dist > 0.001 and dist < SEPARATION_RADIUS:
-					push += away / dist * (1.0 - dist / SEPARATION_RADIUS)
-	return push
+				if dist > 0.001 and dist < min_d:
+					correction += away / dist * (min_d - dist) * 0.5
+	return correction
 
 ## Teleport an outrun straggler back onto the spawn ring around the player (VS enemy recycling),
 ## so the concurrent-enemy budget stays spent on units that can actually threaten the player rather

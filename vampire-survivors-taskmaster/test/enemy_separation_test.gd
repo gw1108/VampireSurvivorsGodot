@@ -1,6 +1,7 @@
-## Pins VSEnemy._separation(): enemies inside SEPARATION_RADIUS repel away from a neighbour
-## (so the horde spreads into a surrounding mass instead of collapsing onto one point), and
-## neighbours beyond the radius exert no pull. Deterministic — no spawner/weapon noise.
+## Pins VSEnemy._overlap_correction(): enemies carry solid circular colliders, so an enemy that
+## overlaps a neighbour is shoved directly away by HALF the overlap (the neighbour corrects its own
+## half), while a neighbour whose body doesn't touch this one exerts no push. Deterministic — no
+## spawner/weapon noise.
 extends GdUnitTestSuite
 
 func _make_enemy(at: Vector2) -> VSEnemy:
@@ -12,44 +13,46 @@ func _make_enemy(at: Vector2) -> VSEnemy:
 	auto_free(e)   # freed after each test so cases don't see each other's enemies
 	return e
 
-func test_close_neighbour_pushes_away() -> void:
+func test_overlapping_neighbour_pushes_away() -> void:
 	var a := _make_enemy(Vector2.ZERO)
-	_make_enemy(Vector2(10, 0))            # 10px < SEPARATION_RADIUS (26)
-	var push: Vector2 = a._separation()
-	# a sits left of b, so it should be shoved further left (negative x).
-	assert_float(push.length()).is_greater(0.0)
+	_make_enemy(Vector2(10, 0))            # 10px < combined radius (2 * RADIUS = 24)
+	var push: Vector2 = a._overlap_correction()
+	# a sits left of b and they overlap, so it should be shoved further left (negative x) by
+	# half the overlap: half of (24 - 10) = 7px.
+	assert_float(push.length()).is_equal_approx(7.0, 0.001)
 	assert_float(push.x).is_less(0.0)
 
-func test_far_neighbour_no_push() -> void:
+func test_non_overlapping_neighbour_no_push() -> void:
 	var a := _make_enemy(Vector2.ZERO)
-	_make_enemy(Vector2(80, 0))            # 80px > SEPARATION_RADIUS
-	var push: Vector2 = a._separation()
+	_make_enemy(Vector2(30, 0))            # 30px > combined radius (24): bodies don't touch
+	var push: Vector2 = a._overlap_correction()
 	assert_float(push.length()).is_less(0.001)
 
-## Brute-force reference: the old O(n²) scan the grid replaced.
-func _brute_separation(e: VSEnemy, all: Array) -> Vector2:
-	var push := Vector2.ZERO
+## Brute-force reference: the naive O(n²) "push out of every overlapping enemy" scan the grid replaces.
+func _brute_correction(e: VSEnemy, all: Array) -> Vector2:
+	var correction := Vector2.ZERO
 	for other in all:
-		if other == e:
+		if other == e or other.type == VSEnemy.Type.GHOST:
 			continue
+		var min_d: float = e.radius + other.radius
 		var away: Vector2 = e.position - other.position
 		var dist := away.length()
-		if dist > 0.001 and dist < VSEnemy.SEPARATION_RADIUS:
-			push += away / dist * (1.0 - dist / VSEnemy.SEPARATION_RADIUS)
-	return push
+		if dist > 0.001 and dist < min_d:
+			correction += away / dist * (min_d - dist) * 0.5
+	return correction
 
 ## The spatial grid must return EXACTLY what the brute-force scan would, including for
 ## neighbours that straddle cell boundaries (the real failure mode of a uniform grid: a
-## repeller in an adjacent cell must still be found). Build a dense cloud spanning several
+## colliding body in an adjacent cell must still be found). Build a dense cloud spanning several
 ## cells and cross-check every enemy's grid result against the brute-force reference.
 func test_grid_matches_bruteforce_across_cells() -> void:
 	var all: Array = []
-	# A 6×6 lattice at 18px spacing (< SEPARATION_RADIUS 26) so neighbours in adjacent cells
-	# genuinely repel and many pairs cross cell edges; offset off-origin to exercise negative cells.
+	# A 6×6 lattice at 18px spacing (< combined radius 24) so neighbours in adjacent cells
+	# genuinely overlap and many pairs cross cell edges; offset off-origin to exercise negative cells.
 	for gx in range(6):
 		for gy in range(6):
 			all.append(_make_enemy(Vector2(gx * 18 - 40, gy * 18 - 40)))
 	for e in all:
-		var grid_push: Vector2 = e._separation()
-		var brute_push: Vector2 = _brute_separation(e, all)
+		var grid_push: Vector2 = e._overlap_correction()
+		var brute_push: Vector2 = _brute_correction(e, all)
 		assert_float(grid_push.distance_to(brute_push)).is_less(0.001)
