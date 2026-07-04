@@ -9,6 +9,9 @@ func test_run_boots_spawns_and_makes_progress() -> void:
 	var run = runner.scene()
 	assert_object(run).is_not_null()
 	assert_object(run.player).is_not_null()
+	# The run boots frozen on the title screen (only the live AgentBridge web harness
+	# auto-starts); start it explicitly, exactly as clicking Start does, to enter play.
+	run.start_run()
 	assert_str(run.phase).is_equal("playing")
 
 	# Let waves spawn and the auto-weapon work for ~6 simulated seconds.

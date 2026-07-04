@@ -8,6 +8,9 @@ extends GdUnitTestSuite
 func test_survive_to_the_goal_summons_reaper_then_wins_and_banks_gold_once() -> void:
 	var runner := scene_runner("res://scenes/run.tscn")
 	var run = runner.scene()
+	# The run boots frozen on the title screen (only the live AgentBridge web harness
+	# auto-starts); start it explicitly, exactly as clicking Start does, to enter play.
+	run.start_run()
 	assert_str(run.phase).is_equal("playing")
 
 	run.gold = 7
