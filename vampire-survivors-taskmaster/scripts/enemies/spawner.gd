@@ -182,27 +182,59 @@ func spawn_reaper() -> VSEnemy:
 	AgentBridge.emit_event("spawn", {"type": "reaper", "pos": [pos.x, pos.y]})
 	return e
 
-## Weighted enemy-type roll that introduces tougher archetypes as the run ramps.
-## Brackets are proportional to RUN_DURATION (Mad Forest's 30:00), preserving the
-## original 5-minute run's pacing shape — early/mid/late each cover the same fraction
-## of the run (10% / 30% / 60%) — so new archetypes keep appearing across the full
-## 30 minutes instead of the whole run settling into the late-band mix by minute 1.5.
+## Roster schedule modeled directly on Mad Forest's real per-minute wave table
+## (.firecrawl/wiki-offline/Mad_Forest.htm, "Waves" section: 0:00 Pipeestrello,
+## 1:00 Zombie, 3:00 Skeleton, 5:00 Green Mudman, 12:00 Werewolf, 16:00 Mantichana,
+## 25:00 Venus, etc). RUN_DURATION is already 1800s (30:00), matching Mad Forest's
+## real time limit exactly, so minute marks below map 1:1 — no stretching needed.
+## The wiki's named enemies are mapped onto our existing 7 archetypes by combat role
+## (Pipeestrello -> BAT, Mudman -> MUMMY, Werewolf -> MANTIS, Venus/Mantichana ->
+## MANTIS_WARRIOR) since introducing their real sprites is separate follow-up work.
+## Each entry's weights apply from its minute mark until the next entry's.
+const ROSTER_SCHEDULE := [
+	{"min": 0.0,  "weights": {VSEnemy.Type.BAT: 1.0}},
+	{"min": 1.0,  "weights": {VSEnemy.Type.ZOMBIE: 0.4, VSEnemy.Type.BAT: 0.6}},
+	{"min": 2.0,  "weights": {VSEnemy.Type.BAT: 1.0}},
+	{"min": 3.0,  "weights": {VSEnemy.Type.SKELETON: 1.0}},
+	{"min": 4.0,  "weights": {VSEnemy.Type.SKELETON: 0.6, VSEnemy.Type.GHOST: 0.4}},
+	{"min": 5.0,  "weights": {VSEnemy.Type.MUMMY: 1.0}},
+	{"min": 6.0,  "weights": {VSEnemy.Type.ZOMBIE: 0.5, VSEnemy.Type.MUMMY: 0.5}},
+	{"min": 7.0,  "weights": {VSEnemy.Type.BAT: 0.5, VSEnemy.Type.MUMMY: 0.5}},
+	{"min": 8.0,  "weights": {VSEnemy.Type.ZOMBIE: 1.0}},
+	{"min": 9.0,  "weights": {VSEnemy.Type.BAT: 0.5, VSEnemy.Type.ZOMBIE: 0.5}},
+	{"min": 10.0, "weights": {VSEnemy.Type.MUMMY: 1.0}},
+	{"min": 11.0, "weights": {VSEnemy.Type.SKELETON: 1.0}},
+	{"min": 12.0, "weights": {VSEnemy.Type.MANTIS: 0.4, VSEnemy.Type.GHOST: 0.3, VSEnemy.Type.SKELETON: 0.3}},
+	{"min": 13.0, "weights": {VSEnemy.Type.MANTIS: 0.5, VSEnemy.Type.GHOST: 0.5}},
+	{"min": 14.0, "weights": {VSEnemy.Type.BAT: 0.5, VSEnemy.Type.MANTIS: 0.5}},
+	{"min": 15.0, "weights": {VSEnemy.Type.MANTIS: 0.4, VSEnemy.Type.BAT: 0.3, VSEnemy.Type.MUMMY: 0.3}},
+	{"min": 16.0, "weights": {VSEnemy.Type.MANTIS_WARRIOR: 0.3, VSEnemy.Type.MUMMY: 0.7}},
+	{"min": 17.0, "weights": {VSEnemy.Type.MUMMY: 1.0}},
+	{"min": 20.0, "weights": {VSEnemy.Type.MUMMY: 0.7, VSEnemy.Type.BAT: 0.3}},
+	{"min": 22.0, "weights": {VSEnemy.Type.MUMMY: 1.0}},
+	{"min": 25.0, "weights": {VSEnemy.Type.MANTIS_WARRIOR: 0.5, VSEnemy.Type.MUMMY: 0.5}},
+	{"min": 27.0, "weights": {VSEnemy.Type.MUMMY: 0.6, VSEnemy.Type.MANTIS_WARRIOR: 0.4}},
+]
+
 func _pick_type() -> int:
-	var t := run.elapsed
-	var roll := randf()
-	if t < 0.1 * VSRun.RUN_DURATION:
-		return VSEnemy.Type.BAT if roll < 0.8 else VSEnemy.Type.ZOMBIE
-	elif t < 0.3 * VSRun.RUN_DURATION:
-		if roll < 0.45: return VSEnemy.Type.BAT
-		elif roll < 0.70: return VSEnemy.Type.ZOMBIE
-		elif roll < 0.90: return VSEnemy.Type.SKELETON
-		else: return VSEnemy.Type.GHOST
-	else:
-		if roll < 0.28: return VSEnemy.Type.BAT
-		elif roll < 0.46: return VSEnemy.Type.ZOMBIE
-		elif roll < 0.63: return VSEnemy.Type.SKELETON
-		elif roll < 0.76: return VSEnemy.Type.GHOST
-		elif roll < 0.88: return VSEnemy.Type.MANTIS
-		elif roll < 0.95: return VSEnemy.Type.MUMMY
-		# The armored Mantis Warrior is a rare late-band mini-elite, deepening the bug faction.
-		else: return VSEnemy.Type.MANTIS_WARRIOR
+	var minute := run.elapsed / 60.0
+	var weights: Dictionary = ROSTER_SCHEDULE[0].weights
+	for band in ROSTER_SCHEDULE:
+		if minute >= band.min:
+			weights = band.weights
+		else:
+			break
+	return _roll_weighted(weights)
+
+## Weighted pick over a {Type: weight} dictionary; weights need not sum to 1.
+func _roll_weighted(weights: Dictionary) -> int:
+	var total := 0.0
+	for w in weights.values():
+		total += w
+	var roll := randf() * total
+	var acc := 0.0
+	for type in weights:
+		acc += weights[type]
+		if roll < acc:
+			return type
+	return weights.keys().back()
