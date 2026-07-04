@@ -155,6 +155,7 @@ const UPGRADE_POOL := [
 	{"id": "attract", "title": "Attractorb", "desc": "+30% pickup range (gems, coins, food fly in from farther)", "max": 4},
 	{"id": "growth", "title": "Growth", "desc": "+8% XP gained (levels come faster)", "max": 5},
 	{"id": "armor", "title": "Armor", "desc": "-1 damage taken per hit (min 1 always lands)", "max": 3},
+	{"id": "luck", "title": "Clover", "desc": "+10% Luck", "max": 5},
 	{"id": "garlic", "title": "Garlic", "desc": "Damaging aura around you (grows each pick)", "max": 8},
 	{"id": "whip", "title": "Whip", "desc": "Melee arc lashing your facing side; both sides at Lv 2+", "max": 8},
 	{"id": "bible", "title": "King Bible", "desc": "Holy books orbit you, striking enemies they pass through", "max": 8},
@@ -1032,6 +1033,8 @@ func _apply_upgrade(id: String) -> void:
 			xp_gain_mult *= 1.08
 		"armor":
 			armor += 1
+		"luck":
+			luck_bonus += 10.0
 		"garlic":
 			garlic_level += 1
 		"whip":

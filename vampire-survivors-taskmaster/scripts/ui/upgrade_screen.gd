@@ -31,6 +31,7 @@ const ICONS := {
 	"attract": "res://art/magnet.png",             # Attractorb reuses the in-world Magnet sprite
 	"growth": "res://art/gem.png",                 # Growth reuses the XP gem sprite
 	"armor": "res://art/up_armor.png",             # Armor passive
+	"luck": "res://art/clover_green.png",          # Clover reuses the in-world Little Clover sprite
 	"knife": "res://art/projectile_dagger.png",   # reuse the in-world dagger bolt as the Knife icon
 	"runetracer": "res://art/weapon_runetracer.png",  # the bouncing rune polyhedron sprite
 	"fire_wand": "res://art/up_fire_wand.png",    # the flaming wand sprite (fireball weapon)
@@ -181,6 +182,7 @@ func _refresh_stat_rail(run: VSRun, preview_id := "") -> void:
 	_add_rail_line("Pickup", "%d%%" % int(round(run.pickup_range_mult * 100.0)), pv.get("Pickup", ""))
 	_add_rail_line("XP Gain", "%d%%" % int(round(run.xp_gain_mult * 100.0)), pv.get("XP Gain", ""))
 	_add_rail_line("Armor", "%d" % run.armor, pv.get("Armor", ""))
+	_add_rail_line("Luck", "%d%%" % int(round(run.total_luck())), pv.get("Luck", ""))
 	_add_rail_line("Might", "%d%%" % int(round(run.might_mult() * 100.0)))
 	# Owned inventory, in UPGRADE_POOL order so the list stays stable as picks come in.
 	var owned := 0
@@ -232,6 +234,8 @@ func _compute_preview(run: VSRun, id: String) -> Dictionary:
 			out["XP Gain"] = "%d%%" % int(round(run.xp_gain_mult * 1.08 * 100.0))
 		"armor":
 			out["Armor"] = "%d" % (run.armor + 1)
+		"luck":
+			out["Luck"] = "%d%%" % int(round(run.total_luck() + 10.0))
 	# Owned weapons/passives also advance their ITEMS "Lv N" line (only rendered when owned).
 	# A not-yet-owned pick (lvl == 0) with no dedicated stat row above (i.e. a weapon/passive, not a
 	# stat boost like Power/Haste) has nothing on the rail to change, so flag it under __new_item__ so
