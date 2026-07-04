@@ -102,6 +102,14 @@ func _on_command(cmd: Dictionary) -> void:
 			# escape hatch so the harness can exercise/verify it directly; inert in real builds
 			# (this whole channel only exists behind the agent gate — see agent_bridge.gd).
 			game.start_gold_fever()
+		"force_luck":
+			# Crit chance scales with the run's +Luck bonus (run.roll_crit: ~+0.5% crit per +1% Luck,
+			# capped at 75%). Reaching that cap organically means stacking many Little Clover / Clover
+			# picks — too many level-ups to reach reliably in an automated playtest. Debug-only escape
+			# hatch: set luck_bonus directly (default 300 -> crit chance pinned at the 75% cap) so the
+			# harness can make crits fire on nearly every hit and verify the gold CRIT_TEXT numbers;
+			# inert in real builds (this whole channel only exists behind the agent gate — see agent_bridge.gd).
+			game.luck_bonus = float(cmd.get("value", 300.0))
 		"force_fire_wand":
 			# The Fire Wand needs several level-up picks (level 6 = 3 fireballs/volley, per
 			# VSFireWand._amount) to lob multiple simultaneous fireballs — too many XP levels to
