@@ -58,6 +58,8 @@ ExportedObj/
 
 # agent_play playtest run artifacts (screenshots / session traces, regenerated each run)
 agent_play/runs/
+# agent_play scratch/temp artifacts (throwaway scripts + screenshots, e.g. tmp_gemcheck*)
+agent_play/tmp_*
 
 # Secrets / local environment — never commit API keys
 .env
