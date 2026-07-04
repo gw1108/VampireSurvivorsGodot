@@ -17,9 +17,9 @@ func test_power_pick_raises_power_mult_and_haste_pick_lowers_haste_mult() -> voi
 	var run := VSRun.new()
 	auto_free(run)
 	run._apply_upgrade("damage")
-	assert_float(run.power_mult()).is_equal_approx(1.5, 0.001)   # (2 base + 1 per pick) / 2 base
+	assert_float(run.power_mult()).is_equal_approx(1.2, 0.001)   # 1.0 + POWER_MULT_PER_PICK (0.2) * 1 pick
 	run._apply_upgrade("firerate")
-	assert_float(run.haste_mult()).is_equal_approx(0.85, 0.001)
+	assert_float(run.haste_mult()).is_equal_approx(0.8333, 0.001)   # 1 / (1.0 + HASTE_MULT_PER_PICK (0.2) * 1 pick)
 
 func test_power_pick_boosts_a_non_wand_weapons_damage() -> void:
 	var run := VSRun.new()

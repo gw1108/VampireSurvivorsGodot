@@ -68,12 +68,6 @@ var player_speed_mult := 1.0
 ## designer can retune them without touching this script.
 var weapon_damage := BalanceData.get_value("magic_wand_base_damage", 2.0)
 var weapon_fire_interval := 0.6
-## Baseline snapshot of the two vars above, captured at construction (before any Power/Haste
-## picks or meta PowerUps land) so power_mult()/haste_mult() below can express their growth as
-## a ratio every weapon shares, not just the Magic Wand (which reads weapon_damage/
-## weapon_fire_interval directly instead).
-var _weapon_damage_base := weapon_damage
-var _weapon_fire_interval_base := weapon_fire_interval
 var weapon_count := 0            # 0 = Magic Wand not yet chosen; each Multishot pick grows it
 var area_mult := 1.0             # Candelabrador: scales AoE weapon reach/radius (garlic, whip, bible, lightning)
 var projectile_speed_mult := 1.0  # Bracer: scales how fast thrown/fired projectiles travel
@@ -357,18 +351,22 @@ func _init_character() -> void:
 func might_mult() -> float:
 	return 1.0 + 0.10 * float(clampi(level / 10, 0, 5))
 
-## Global damage multiplier from Power level-up picks and the Might PowerUp: expresses how much
-## weapon_damage has grown above its baseline, so every OTHER owned weapon (whip, garlic, bible,
-## lightning, knife, runetracer, fire wand) can apply the same build-wide bonus their card text
-## promises, not just the Magic Wand (which reads weapon_damage directly instead).
+## Global damage multiplier from Power level-up picks, so every OTHER owned weapon (whip,
+## garlic, bible, lightning, knife, runetracer, fire wand) gets the build-wide bonus their card
+## text promises, not just the Magic Wand (which reads weapon_damage directly instead). A flat
+## +20%/pick on its own independent constant, NOT derived from weapon_damage's ratio — deriving
+## it from the wand's own (small-base, flat +1/pick) curve made Power ~3-4x more DPS-efficient
+## per pick than a weapon's own card once a build owns 2-3 weapons (playtest-tuning found via
+## analysis, no Godot binary in this pass's env to play it live — see ws-01kwn3dwqxkrqqp3drjrp3wdgh).
+const POWER_MULT_PER_PICK := 0.2   # +20% weapon damage per Power pick, max 5 picks => +100%
 func power_mult() -> float:
-	return weapon_damage / _weapon_damage_base if _weapon_damage_base > 0.0 else 1.0
+	return 1.0 + POWER_MULT_PER_PICK * float(upgrade_levels.get("damage", 0))
 
-## Global fire-rate multiplier from Haste level-up picks and the Cooldown PowerUp: mirrors
-## power_mult() but for attack speed, shrinking every other weapon's own attack interval by the
-## same ratio the Magic Wand's weapon_fire_interval shrank.
+## Global fire-rate multiplier from Haste level-up picks: mirrors power_mult() but shrinks every
+## other weapon's own attack interval. Same independent-constant fix as power_mult() above.
+const HASTE_MULT_PER_PICK := 0.2   # +20% attack speed per Haste pick, max 5 picks => +100%
 func haste_mult() -> float:
-	return weapon_fire_interval / _weapon_fire_interval_base if _weapon_fire_interval_base > 0.0 else 1.0
+	return 1.0 / (1.0 + HASTE_MULT_PER_PICK * float(upgrade_levels.get("firerate", 0)))
 
 ## Read permanent PowerUps bought in the shop and fold them into this run's starting stats.
 ## Called once at run start so every run reflects the between-run meta-progression. Uses the
