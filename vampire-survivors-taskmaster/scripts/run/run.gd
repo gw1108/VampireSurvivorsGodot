@@ -457,9 +457,11 @@ func _on_player_damaged(_amount: float) -> void:
 ## tankier threats should feel like a sure payout. Chance ramps linearly from a 25% floor
 ## at/below GEM_DROP_FLOOR_HP up to a guaranteed drop at GEM_DROP_CEIL_HP (ELITE/REAPER
 ## territory), so the horde's early chaff reads as a gamble rather than a loot pinata.
-const GEM_DROP_FLOOR_HP := 15.0
-const GEM_DROP_FLOOR_CHANCE := 0.25
-const GEM_DROP_CEIL_HP := 180.0
+## Lives in res://data/balance.csv so a designer can retune the curve without touching this
+## script, same as the weapon damage/interval and player speed tunables above.
+static var GEM_DROP_FLOOR_HP := BalanceData.get_value("gem_drop_floor_hp", 15.0)
+static var GEM_DROP_FLOOR_CHANCE := BalanceData.get_value("gem_drop_floor_chance", 0.25)
+static var GEM_DROP_CEIL_HP := BalanceData.get_value("gem_drop_ceil_hp", 180.0)
 
 func _gem_drop_chance(enemy_max_health: float) -> float:
 	if enemy_max_health <= GEM_DROP_FLOOR_HP:
