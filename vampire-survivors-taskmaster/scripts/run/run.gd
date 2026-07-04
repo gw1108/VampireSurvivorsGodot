@@ -89,6 +89,13 @@ var player_speed_mult := 1.0
 ## designer can retune them without touching this script.
 var weapon_damage := BalanceData.get_value("magic_wand_base_damage", 2.0)
 var weapon_fire_interval := 0.6
+## Meta-PowerUp contributions to the build-wide multipliers, so the shop's generically-worded
+## "Might" / "Cooldown" upgrades reach EVERY weapon, not just the Magic Wand (which reads
+## weapon_damage / weapon_fire_interval directly). Set once at run start in _apply_meta_powerups;
+## folded into power_mult() / haste_mult() — the ratios every OTHER weapon consumes. 1.0 = neutral,
+## so a fresh VSRun (no _apply_meta_powerups) behaves exactly as before.
+var meta_power_mult := 1.0   # >=1.0 damage bonus for non-wand weapons from meta Might
+var meta_haste_mult := 1.0   # <=1.0 cooldown reduction for non-wand weapons from meta Cooldown
 var weapon_count := 0            # 0 = Magic Wand not yet chosen; each Multishot pick grows it
 var area_mult := 1.0             # Candelabrador: scales AoE weapon reach/radius (garlic, whip, bible, lightning)
 var projectile_speed_mult := 1.0  # Bracer: scales how fast thrown/fired projectiles travel
@@ -396,14 +403,19 @@ func might_mult() -> float:
 ## per pick than a weapon's own card once a build owns 2-3 weapons (playtest-tuning found via
 ## analysis, no Godot binary in this pass's env to play it live — see ws-01kwn3dwqxkrqqp3drjrp3wdgh).
 const POWER_MULT_PER_PICK := 0.2   # +20% weapon damage per Power pick, max 5 picks => +100%
+## Meta "Might" shop upgrade's build-wide slice: +10% weapon damage per level for every non-wand
+## weapon (max 5 levels => +50%), stacked into power_mult via meta_power_mult. The wand's slice is
+## its own flat +2/level on weapon_damage (see _apply_meta_powerups) — an independent constant, not
+## derived from the wand's small-base flat curve, for the same DPS-balance reason as POWER_MULT_PER_PICK.
+const META_MIGHT_MULT_PER_LEVEL := 0.10
 func power_mult() -> float:
-	return 1.0 + POWER_MULT_PER_PICK * float(upgrade_levels.get("damage", 0))
+	return (1.0 + POWER_MULT_PER_PICK * float(upgrade_levels.get("damage", 0))) * meta_power_mult
 
 ## Global fire-rate multiplier from Haste level-up picks: mirrors power_mult() but shrinks every
 ## other weapon's own attack interval. Same independent-constant fix as power_mult() above.
 const HASTE_MULT_PER_PICK := 0.2   # +20% attack speed per Haste pick, max 5 picks => +100%
 func haste_mult() -> float:
-	return 1.0 / (1.0 + HASTE_MULT_PER_PICK * float(upgrade_levels.get("firerate", 0)))
+	return meta_haste_mult / (1.0 + HASTE_MULT_PER_PICK * float(upgrade_levels.get("firerate", 0)))
 
 ## Read permanent PowerUps bought in the shop and fold them into this run's starting stats.
 ## Called once at run start so every run reflects the between-run meta-progression. Uses the
@@ -412,14 +424,20 @@ func _apply_meta_powerups() -> void:
 	var levels := MetaSave.load_powerups()
 	var might := int(levels.get("might", 0))
 	if might > 0:
+		# Magic Wand reads weapon_damage directly; every OTHER weapon reads power_mult(), so fold
+		# the shop's generically-worded Might into both — otherwise 7 of 8 weapons ignore it.
 		weapon_damage += 2.0 * might
+		meta_power_mult *= 1.0 + META_MIGHT_MULT_PER_LEVEL * might
 	var armor := int(levels.get("armor", 0))
 	if armor > 0 and player:
 		player.max_health += 20.0 * armor
 		player.health = player.max_health
 	var haste := int(levels.get("haste", 0))
 	if haste > 0:
+		# Same split for Cooldown: the wand reads weapon_fire_interval directly; other weapons read
+		# haste_mult(). pow(0.95, haste) is the same -5%/level ratio the shop card promises.
 		weapon_fire_interval *= pow(0.95, haste)
+		meta_haste_mult *= pow(0.95, haste)
 	var boots := int(levels.get("boots", 0))
 	if boots > 0:
 		player_speed_mult *= pow(1.05, boots)
