@@ -96,6 +96,32 @@ static func buy_powerup(id: String, cost: int, max_level: int) -> bool:
 	return true
 
 
+## Whether unlockable `id` has been earned in some past (or the current) run. VS-style
+## content unlocks survive across runs, so they live here rather than on the transient
+## VSRun. Missing/garbage reads as not-unlocked, so a fresh or corrupt save gates every
+## unlockable — matching a brand-new profile.
+static func is_unlocked(id: String) -> bool:
+	var raw: Variant = _load_data().get("unlocks", [])
+	if typeof(raw) != TYPE_ARRAY:
+		return false
+	return raw.has(id)
+
+
+## Persist that unlockable `id` has been earned (e.g. the Clover passive after a first
+## Little Clover pickup). Idempotent: re-unlocking an already-earned id is a no-op that
+## skips the disk write, so it's cheap to call on every pickup.
+static func unlock(id: String) -> void:
+	var data := _load_data()
+	var raw: Variant = data.get("unlocks", [])
+	var unlocks: Array = raw if typeof(raw) == TYPE_ARRAY else []
+	if unlocks.has(id):
+		return
+	unlocks.append(id)
+	data["unlocks"] = unlocks
+	data["version"] = SCHEMA_VERSION
+	_save_data(data)
+
+
 ## Coerce whatever came off disk (int, float, string, or garbage) into a valid,
 ## in-range coin count. Anything non-numeric collapses to 0.
 static func _sanitize(value: Variant) -> int:

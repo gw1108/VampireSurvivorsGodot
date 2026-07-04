@@ -42,6 +42,9 @@ func _process(delta: float) -> void:
 func _collect() -> void:
 	if run:
 		run.luck_bonus += LUCK_GAIN
+	# Finding a Little Clover permanently unlocks the Clover level-up passive (VS-style), so it
+	# starts appearing in future level-up rolls this run and in every run after. See VSRun._roll_upgrades.
+	MetaSave.unlock(VSRun.CLOVER_UNLOCK_ID)
 	AgentBridge.emit_event("pickup", {"type": "little_clover", "luck_bonus": run.luck_bonus if run else 0.0})
 	var parent := get_parent()
 	if parent != null:

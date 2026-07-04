@@ -69,6 +69,12 @@ const GOLD_FEVER_KILL_CHANCE := 0.75  # Gilded_Clover.md: 75% chance a kill drop
 ## Little Clover feeds this in the current slice (Clover passive / character starting Luck /
 ## Golden Egg are out of scope — see tasks/lessons.md).
 var luck_bonus := 0.0
+
+## MetaSave unlock id for the Clover ("luck") level-up passive. Faithful to VS, the Clover
+## upgrade only enters the level-up pool once the player has found their first Little Clover
+## drop (set on pickup via VSLittleClover). A fresh profile has no unlocks, so it's gated
+## from the very first run too. See _roll_upgrades and MetaSave.is_unlocked/unlock.
+const CLOVER_UNLOCK_ID := "clover"
 var xp := 0
 var level := 1
 var gold := 0                   # run coins banked from coin pickups; seed of the VS meta-currency
@@ -922,6 +928,10 @@ func _roll_upgrades() -> Array:
 	# Fill the remaining slots with normal not-yet-maxed upgrades.
 	var pool := []
 	for opt in UPGRADE_POOL:
+		# Clover is unlock-gated (VS-style): it only joins the pool once the player has found
+		# their first Little Clover, persisted in MetaSave so the unlock carries across runs.
+		if opt["id"] == "luck" and not MetaSave.is_unlocked(CLOVER_UNLOCK_ID):
+			continue
 		var lvl: int = upgrade_levels.get(opt["id"], 0)
 		if lvl < int(opt["max"]):
 			var display: Dictionary = opt.duplicate()
