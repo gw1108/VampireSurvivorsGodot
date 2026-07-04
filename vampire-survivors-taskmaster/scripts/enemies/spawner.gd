@@ -5,20 +5,30 @@ extends Node2D
 ## per-minute spawn table (see DENSITY_SCHEDULE). Capped for performance.
 
 const MAX_ENEMIES := 90         # baseline concurrent-enemy render budget for most of the run
+# This baseline (and the pre-20:00 LATE_RAMP_START below) intentionally clamps the mid-run
+# DENSITY_SCHEDULE spikes (11:00 -> 300, 13:00 -> 150, 15:00/16:00 -> 100) down to 90. Raising the
+# baseline, or starting the ramp earlier so those authored surges crest sooner, is BLOCKED on the
+# density-collision blowup: a real Web-export profiling run (see completions / the open "density-
+# dependent collision blowup" backlog task) showed FPS drops below 60 at only ~65 PACKED enemies —
+# so even 90 is over budget for the worst-case crush, let alone a mid-game 150/300. DO NOT raise
+# MAX_ENEMIES / MAX_ENEMIES_LATE or pull LATE_RAMP_START earlier until that packed-crush frame holds
+# ~60fps.
 # Late-run escalation lever. The wiki's DENSITY_SCHEDULE climbs to 300 in the endgame, but every
 # count past MAX_ENEMIES clamps to the baseline, so the endgame would otherwise read as one flat
 # 90-enemy crush. Ramp the cap up over the final third so the late escalation the wiki intends
-# actually shows on screen, up to the GDD's "periodic spawns stop at 300 alive" — the real
-# Mad Forest late-game population. Now affordable because VSEnemy's collider pass is O(n) (see below).
+# shows on screen, up to the GDD's "periodic spawns stop at 300 alive" — the real Mad Forest late
+# population. (Same profiling caveat: the ramp is aspirational until the packed crush holds 60fps.)
 const MAX_ENEMIES_LATE := 300   # cap the final-third ramp climbs toward (GDD: 300-alive periodic cap)
-# Perf gate (historical). Enemies carry solid circular colliders (VSEnemy._overlap_correction), so a
-# naive "push out of every other enemy" pass would walk the whole 'enemies' group per enemy per frame
-# — a clean O(n²) curve that ate the frame past ~130 enemies. It is instead backed by a shared uniform
-# spatial grid (VSEnemy._ensure_grid / _grid): each enemy scans only the 3×3 block of cells around it,
-# so the horde's per-frame collision cost is ~O(n). That is what unlocks the 300-alive cap above. Any
-# FURTHER raise past COLLIDER_SAFE_CAP should first re-profile the general per-node cost (Sprite2D +
-# _process + weapon/VFX hit-testing), which is now the dominant term, not collision.
-const COLLIDER_SAFE_CAP := 300  # max late cap validated with the O(n) grid-backed collider pass
+# Perf gate. Enemies carry solid circular colliders (VSEnemy._overlap_correction), backed by a shared
+# uniform spatial grid (VSEnemy._ensure_grid / _grid): each enemy scans only the 3×3 block of cells
+# around it. That scan is ~O(n) ONLY while per-cell density is bounded. Live profiling refuted the
+# earlier "collision is solved, 300 is safe" premise: when the horde collapses into a few 60px
+# COLLIDE_CELL cells, each enemy's 3×3 block holds most of the horde and the pass reverts toward
+# O(n²) — the crush craters (see the "density-dependent collision blowup" backlog task). So the
+# collapsed-density collision cost (and Sprite2D overdraw of stacked bodies) is the next lever, NOT
+# the general per-node Sprite2D/_process/weapon cost. COLLIDER_SAFE_CAP is therefore an aspiration,
+# not a validated ceiling.
+const COLLIDER_SAFE_CAP := 300  # late-cap aspiration; NOT yet validated at packed density (see above)
 const LATE_RAMP_START := 0.667  # fraction of RUN_DURATION where the cap begins to climb (~20:00)
 const SPAWN_RING := 520.0
 const ELITE_INTERVAL := 35.0   # seconds between mini-boss spawns
@@ -54,12 +64,13 @@ var _next_wave := WAVE_INTERVAL
 var _next_surge := SURGE_FIRST
 
 func _ready() -> void:
-	# Enforce the perf gate at load: the collider pass is O(n) via VSEnemy's uniform grid, so the late
-	# cap can sit at the GDD's 300-alive population. Any raise past COLLIDER_SAFE_CAP should first
-	# re-profile the now-dominant per-node cost (Sprite2D + _process + weapon hit-testing), not
-	# collision. Debug-build only, so it never costs a shipped frame.
+	# Enforce the perf gate at load. COLLIDER_SAFE_CAP is an aspiration, not a validated ceiling: live
+	# profiling showed the packed crush drops below 60fps at ~65 enemies because the grid collision
+	# pass reverts toward O(n²) at collapsed density. Any raise past it should first make that packed
+	# crush hold ~60fps (see the "density-dependent collision blowup" backlog task). Debug-build only,
+	# so it never costs a shipped frame.
 	assert(MAX_ENEMIES_LATE <= COLLIDER_SAFE_CAP,
-		"MAX_ENEMIES_LATE > COLLIDER_SAFE_CAP: re-profile the per-node enemy cost (Sprite2D + _process + weapon hit-testing — now the dominant term, collision is O(n) via VSEnemy._grid) before raising the enemy cap further.")
+		"MAX_ENEMIES_LATE > COLLIDER_SAFE_CAP: the packed-density crush already drops below 60fps at ~65 enemies (grid collision reverts toward O(n²) when the horde collapses into a few cells) — fix that before raising the enemy cap further.")
 
 ## Re-baseline the wave/elite/surge cadence timers to just after the current run clock. Used only
 ## by the debug `force_time_set` command: jumping run.elapsed forward by many minutes would otherwise
