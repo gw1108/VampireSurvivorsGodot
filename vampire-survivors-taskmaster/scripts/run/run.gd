@@ -625,6 +625,15 @@ const CRIT_CHANCE_PER_LUCK := 0.005   # +0.5% crit chance per +1% Luck bonus (~+
 const CRIT_CHANCE_MAX := 0.75
 const CRIT_MULTIPLIER := 2.0
 
+## Per-hit damage variance (offline wiki Damage.md: "Base damage ... has a random variance").
+## Every weapon rolls its BASE damage within +/-DAMAGE_VARIANCE each time it fires/strikes,
+## BEFORE flat per-level growth and the Might/Power multipliers apply. So a base-10 weapon with
+## no level-ups and no Might lands anywhere in 5-15 per hit. Weapons multiply their BASE_DAMAGE
+## by this each attack; the flat per-level bonus is added AFTER (only the base varies, per design).
+const DAMAGE_VARIANCE := 0.5
+func damage_variance() -> float:
+	return randf_range(1.0 - DAMAGE_VARIANCE, 1.0 + DAMAGE_VARIANCE)
+
 ## Roll a crit for a single weapon hit of `amount` damage. Returns the (possibly doubled) damage
 ## and whether it critted, so the caller can flag the floating number. No Luck bonus -> no crit.
 func roll_crit(amount: float) -> Dictionary:

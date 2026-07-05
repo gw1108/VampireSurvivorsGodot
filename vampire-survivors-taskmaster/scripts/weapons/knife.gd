@@ -83,7 +83,7 @@ func _throw(lvl: int) -> void:
 	# Persistent horizontal facing + instantaneous vertical: always throws forward, angled up/down
 	# as the player steers. Standing still (mv.y == 0) throws dead ahead.
 	var base := Vector2(float(_facing), mv.y).normalized()
-	var dmg := (BASE_DAMAGE + DAMAGE_PER_LEVEL * float(lvl - 1)) * run.might_mult() * run.power_mult()
+	var dmg := (BASE_DAMAGE * run.damage_variance() + DAMAGE_PER_LEVEL * float(lvl - 1)) * run.might_mult() * run.power_mult()
 	if _is_evolved():
 		dmg *= EVOLVED_DAMAGE_MULT
 	var count := _amount(lvl)

@@ -103,7 +103,7 @@ func _strike(lvl: int) -> void:
 		return
 	targets.shuffle()
 	var evolved: bool = run.lightning_evolved
-	var dmg := (BASE_DAMAGE + DAMAGE_PER_LEVEL * float(lvl)) * run.might_mult() * run.power_mult()
+	var dmg := (BASE_DAMAGE * run.damage_variance() + DAMAGE_PER_LEVEL * float(lvl)) * run.might_mult() * run.power_mult()
 	var splash := STRIKE_RADIUS * run.area_mult   # Candelabrador passive widens each bolt's splash
 	if evolved:
 		splash *= EVO_SPLASH_MULT                 # Thunder Loop's blast reaches wider

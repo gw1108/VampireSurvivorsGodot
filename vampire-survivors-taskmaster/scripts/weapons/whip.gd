@@ -78,7 +78,7 @@ func _swing(lvl: int) -> void:
 	var r := _range(lvl)
 	var arc := _arc_half()
 	_play_vfx(r)
-	var dmg := (BASE_DAMAGE + DAMAGE_PER_LEVEL * float(lvl)) * run.might_mult() * run.power_mult()
+	var dmg := (BASE_DAMAGE * run.damage_variance() + DAMAGE_PER_LEVEL * float(lvl)) * run.might_mult() * run.power_mult()
 	if _is_evolved():
 		dmg *= EVOLVED_DAMAGE_MULT
 	var hit_any := false

@@ -9,6 +9,11 @@ extends Node2D
 const RANGE := 620.0
 const SPREAD := 0.14            # radians between extra multishot projectiles
 
+## The wand's level-1 base damage, read from the same balance key run.weapon_damage seeds from.
+## run.weapon_damage accumulates base + flat growth (Power picks, meta Might) into one stat, so we
+## subtract this base back out to apply the +/-50% variance to ONLY the base (see run.damage_variance).
+static var BASE_DAMAGE := BalanceData.get_value("magic_wand_base_damage", 2.0)
+
 # Evolved (Holy Wand) profile — applied when run.projectile_evolved: the Magic Wand becomes a
 # relentless piercing storm. Gated on Multishot being maxed + Haste owned, so this is the run's
 # payoff for maxing the projectile line. Mirrors the King Bible / Bloody Tear evolution pattern.
@@ -62,7 +67,9 @@ func _fire_at(t: VSEnemy) -> void:
 		p.position = global_position
 		p.dir = base.rotated(offset)
 		p.speed *= run.projectile_speed_mult
-		p.damage = run.weapon_damage * run.might_mult()
+		# Roll +/-50% variance on the base only; flat growth (weapon_damage above the base) is added after.
+		var flat: float = maxf(0.0, run.weapon_damage - BASE_DAMAGE)
+		p.damage = (BASE_DAMAGE * run.damage_variance() + flat) * run.might_mult()
 		if evolved:
 			p.damage *= EVOLVED_DAMAGE_MULT
 			p.pierce = EVOLVED_PIERCE
