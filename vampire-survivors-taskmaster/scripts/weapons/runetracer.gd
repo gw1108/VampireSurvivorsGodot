@@ -68,7 +68,7 @@ func _amount(lvl: int) -> int:
 ## fan out to different corners of the arena rather than overlapping.
 func _fire(lvl: int) -> void:
 	var evolved: bool = run.runetracer_evolved
-	var dmg := (BASE_DAMAGE + DAMAGE_PER_LEVEL * float(lvl - 1)) * run.might_mult() * run.power_mult()
+	var dmg := (BASE_DAMAGE * run.damage_variance() + DAMAGE_PER_LEVEL * float(lvl - 1)) * run.might_mult() * run.power_mult()
 	var speed := BASE_SPEED * run.projectile_speed_mult   # Bracer passive speeds the carom up
 	var life := BASE_LIFE + LIFE_PER_LEVEL * float(lvl - 1)
 	if evolved:
