@@ -24,6 +24,19 @@ func test_little_clover_stacks_luck_with_no_cap() -> void:
 	assert_float(run.luck_bonus).is_equal(50.0)
 	assert_float(run.total_luck()).is_equal(150.0)
 
+func test_fourth_option_chance_scales_with_luck() -> void:
+	# Luck.md "Fourth level up option": chanceFourth = 1 - (1 / totalLuck), totalLuck as a ratio
+	# (100% Luck = 1.0). Base Luck yields 0; every point of Luck widens the odds toward (never
+	# reaching) 1. Pins the ratio interpretation so a literal "1 - 1/130" reading can't creep back.
+	var run := _state_run()
+	assert_float(run._chance_fourth_option()).is_equal(0.0)   # base 100 -> 1 - 100/100
+
+	run.luck_bonus = 30.0   # total_luck() -> 130
+	assert_float(run._chance_fourth_option()).is_equal_approx(1.0 - (100.0 / 130.0), 0.0001)
+
+	run.luck_bonus = 50.0   # Clover maxed, total_luck() -> 150
+	assert_float(run._chance_fourth_option()).is_equal_approx(1.0 - (100.0 / 150.0), 0.0001)
+
 func test_candelabra_weight_scales_luck_entries_but_not_flat_ones() -> void:
 	var run := _state_run()
 	var luck_entry := {"weight": 10.0, "luck_scaled": true}
