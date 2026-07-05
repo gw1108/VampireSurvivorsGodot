@@ -1,12 +1,13 @@
 class_name VSKnife
 extends Node2D
 ## A directional fast-fire weapon — the classic Vampire Survivors "Knife": on a short cooldown
-## it hurls fast VSProjectiles straight in the direction the player is FACING, no aiming. Unlike
+## it hurls fast VSProjectiles straight in the direction the player is MOVING, no aiming. Unlike
 ## the Magic Wand (auto-aims the nearest enemy), the Whip (melee arc), the Garlic (static aura),
 ## the King Bible (orbit), and the Lightning Ring (random smites), the Knife rewards steering the
 ## player into the horde: it fires where you point, fast and hard, punching a lane through whatever
-## you run toward. Facing follows the Whip's persistent horizontal axis plus the current vertical
-## input, so it always throws forward-and-slightly-up/down as you move. Mounted on the player,
+## you run toward. Facing tracks the full movement heading — 8 directions with WASD (straight up on
+## W, down-left on A+S, …) or the precise angle for analog stick/mouse steering — and persists
+## while standing still, so an idle player throws the way they last ran. Mounted on the player,
 ## enabled/scaled by run.knife_level (0 = not yet picked: no throws, inert). The slice's sixth,
 ## mechanically-distinct weapon.
 
@@ -36,7 +37,7 @@ const EVOLVED_DAMAGE_MULT := 1.7      # each blade bites much deeper
 
 var run: VSRun
 var _cd := 0.0
-var _facing := 1          # persistent horizontal facing: +1 right, -1 left (mirrors VSWhip)
+var _facing := Vector2.RIGHT   # latched full movement heading (unit vector); throws travel along it
 
 func _process(delta: float) -> void:
 	if run == null:
@@ -46,11 +47,14 @@ func _process(delta: float) -> void:
 		return
 	if run.phase != "playing":
 		return
-	# Track facing from horizontal input so the knife throws the way the player moves, exactly
-	# like the Whip — the last non-neutral horizontal press wins and persists while standing still.
-	var h := Input.get_axis("move_left", "move_right")
-	if absf(h) > 0.1:
-		_facing = 1 if h > 0.0 else -1
+	# Track the full movement heading so the knife throws exactly the way the player moves — 8
+	# directions with WASD (straight up on W alone, down-left on A+S, …), or the precise angle
+	# for analog stick/mouse steering. get_vector is already normalized + deadzoned. The last
+	# non-zero heading wins and persists while standing still, so an idle player still throws the
+	# direction they last ran.
+	var mv := Input.get_vector("move_left", "move_right", "move_up", "move_down")
+	if mv.length_squared() > 0.01:
+		_facing = mv.normalized()
 	_cd -= delta
 	if _cd <= 0.0:
 		_throw(lvl)
@@ -76,13 +80,10 @@ func _amount(lvl: int) -> int:
 		amount += EVOLVED_AMOUNT_BONUS
 	return amount
 
-## One throw: hurl `amount` fast bolts in the current facing direction (persistent horizontal axis
-## + current vertical input), fanned symmetrically so extra knives read as a tight spread.
+## One throw: hurl `amount` fast bolts along the latched movement heading (the way the player is —
+## or last was — moving), fanned symmetrically so extra knives read as a tight spread.
 func _throw(lvl: int) -> void:
-	var mv := Input.get_vector("move_left", "move_right", "move_up", "move_down")
-	# Persistent horizontal facing + instantaneous vertical: always throws forward, angled up/down
-	# as the player steers. Standing still (mv.y == 0) throws dead ahead.
-	var base := Vector2(float(_facing), mv.y).normalized()
+	var base := _facing
 	var dmg := (BASE_DAMAGE * run.damage_variance() + DAMAGE_PER_LEVEL * float(lvl - 1)) * run.might_mult() * run.power_mult()
 	if _is_evolved():
 		dmg *= EVOLVED_DAMAGE_MULT
