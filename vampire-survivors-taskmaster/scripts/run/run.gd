@@ -613,6 +613,17 @@ func extend_gold_fever(seconds: float) -> void:
 func total_luck() -> float:
 	return 100.0 + luck_bonus
 
+## Luck's "fourth level-up option" (Luck.md "Mechanics" > "Fourth level up option"):
+## chanceFourth = 1 - (1 / totalLuck), with totalLuck read as a ratio (100% Luck = 1.0). So base
+## Luck (total_luck() == 100) yields 0% and every point of Luck widens the odds — e.g. +30% Luck
+## (total 130) gives ~0.23, +50% (Clover maxed, total 150) ~0.33. Rolled per level-up in
+## _roll_upgrades to sometimes widen the hand to a 4th real card. Returns a probability in [0, 1).
+func _chance_fourth_option() -> float:
+	var tl := total_luck()
+	if tl <= 0.0:
+		return 0.0
+	return clampf(1.0 - (100.0 / tl), 0.0, 1.0)
+
 ## Critical hits (GDD "Damage, Crit, Knockback, I-Frames"). Every weapon hit rolls for a crit
 ## that deals CRIT_MULTIPLIER× damage. Faithful to the GDD's `crit = baseCritChance × totalLuck`:
 ## the slice's base weapons carry NO native crit chance, so at base 100% Luck the chance is 0 and
@@ -1003,9 +1014,9 @@ func _open_level_up() -> void:
 	phase = "level_up"
 	upgrade_screen.present(options, rerolls_left, self)
 
-## Pick up to 3 distinct not-yet-maxed options, each annotated with its current level so
-## the card can show "Lv N → N+1". Maxed upgrades are excluded so the pool shrinks over
-## the run and picks stay meaningful. Returns [] only when everything is maxed.
+## Pick up to 3 distinct not-yet-maxed options (4 on a Luck roll — see below), each annotated
+## with its current level so the card can show "Lv N → N+1". Maxed upgrades are excluded so the
+## pool shrinks over the run and picks stay meaningful. Returns [] only when everything is maxed.
 func _roll_upgrades() -> Array:
 	var options := []
 	# Evolutions take priority: when a weapon is maxed and its paired passive owned, always
@@ -1048,8 +1059,13 @@ func _roll_upgrades() -> Array:
 		display["level"] = lvl        # current level; the pick raises it to lvl+1
 		pool.append(display)
 	pool.shuffle()
+	# Luck's fourth level-up option (Luck.md > Mechanics): a Luck-scaled chance to widen the hand
+	# from 3 to 4 REAL cards. The extra slot is only granted when a genuine upgrade can fill it —
+	# it is never padded with consolation below, so stacking Luck feels like more real choices, not
+	# more filler. Base Luck (100) never triggers it; Clover / Little Clover / a Luck PowerUp do.
+	var max_real := 4 if randf() < _chance_fourth_option() else 3
 	for opt in pool:
-		if options.size() >= 3:
+		if options.size() >= max_real:
 			break
 		options.append(opt)
 	# Pad any short hand (a near- or fully-maxed build leaves fewer than 3 real upgrades) with
@@ -1069,7 +1085,7 @@ func _roll_upgrades() -> Array:
 	while options.size() < 3:
 		options.append(pad[pi % pad.size()].duplicate())
 		pi += 1
-	return options.slice(0, 3)
+	return options.slice(0, max_real)
 
 ## An evolution is offerable when its weapon is at max level, its paired passive is owned
 ## (level >= 1, VS-style: the passive need only be present), and it hasn't been taken yet.
