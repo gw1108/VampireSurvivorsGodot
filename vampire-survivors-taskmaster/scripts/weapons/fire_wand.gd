@@ -74,7 +74,7 @@ func _fire(lvl: int) -> void:
 		return
 	enemies.shuffle()
 	var evolved: bool = run.fire_wand_evolved
-	var dmg_base := BASE_DAMAGE + DAMAGE_PER_LEVEL * float(lvl - 1)
+	var dmg_base := BASE_DAMAGE * run.damage_variance() + DAMAGE_PER_LEVEL * float(lvl - 1)
 	var speed := BASE_SPEED * run.projectile_speed_mult   # Bracer passive speeds the lob up
 	var blast := BLAST_RADIUS * run.area_mult             # Candelabrador passive widens the blast
 	var life := BASE_LIFE

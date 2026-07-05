@@ -38,13 +38,20 @@ func test_power_pick_boosts_a_non_wand_weapons_damage() -> void:
 	auto_free(e)
 	e.position = Vector2(100, 0)   # inside whip range (140) and the +x facing wedge
 
-	e.health = 1000.0
-	whip._swing(1)
-	var dmg_no_power := 1000.0 - e.health
+	# Weapon damage now rolls +/-50% base variance per swing (see VSRun.damage_variance), so a
+	# single-swing compare could flake on an unlucky roll. Sum many swings: the +20% Power boost
+	# reliably clears the noise over the sample.
+	var dmg_no_power := 0.0
+	for i in 200:
+		e.health = 1000.0
+		whip._swing(1)
+		dmg_no_power += 1000.0 - e.health
 
-	e.health = 1000.0
 	run._apply_upgrade("damage")   # a Power pick — should now ALSO boost the whip, not just the wand
-	whip._swing(1)
-	var dmg_with_power := 1000.0 - e.health
+	var dmg_with_power := 0.0
+	for i in 200:
+		e.health = 1000.0
+		whip._swing(1)
+		dmg_with_power += 1000.0 - e.health
 
 	assert_float(dmg_with_power).is_greater(dmg_no_power)
