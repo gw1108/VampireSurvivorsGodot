@@ -71,7 +71,21 @@ const DESPAWN_RADIUS := 1000.0
 ## than a MUDMAN and hitting harder than a MANTIS, with a deep-enough HP pool that it shrugs
 ## off chip damage — a distinct sprite replacing the MANTIS role-map so the late waves gain a
 ## genuine lycan threat rather than reusing the insect skirmisher.
-enum Type { BAT, ZOMBIE, SKELETON, GHOST, MUMMY, MANTIS, MANTIS_WARRIOR, MUDMAN, WEREWOLF, ELITE, REAPER }
+## GLOW_BAT is Mad Forest's early "Giant Bat" mini-boss beat (spawned by the spawner at 0:30 and
+## 3:00, not the weighted roll): the regular bat art scaled up with a deep HP pool and a pulsing
+## blue outline shader (the "glowing" bit). It is NOT the death-reaper — the wiki's Mad Forest has
+## no Death enemy until the finale — so it drops gems (not a chest) and pops without a boss camera
+## shake. Appended to the enum so every existing Type ordinal stays put.
+enum Type { BAT, ZOMBIE, SKELETON, GHOST, MUMMY, MANTIS, MANTIS_WARRIOR, MUDMAN, WEREWOLF, ELITE, REAPER, GLOW_BAT }
+
+## Canvas_item outline shader + transparent-margin (texels) for "glowing" variants (see
+## _make_glow_texture / the GLOW_BAT type). Margin gives the outward rim room so it is never
+## clipped where the art touches the texture edge (the bat's wingtips do).
+const GLOW_SHADER := "res://shaders/glow_outline.gdshader"
+const GLOW_TEX_MARGIN := 5
+## Cache of padded "glow" textures keyed by base texture path — a run spawns only a couple of
+## glow bats, but caching keeps a repeat spawn from re-blitting the same image.
+static var _glow_tex_cache: Dictionary = {}
 
 const TYPES := {
 	Type.BAT:      {"tex": "res://art/enemy_bat.png",      "speed": 62.0, "health": 3.0,   "damage": 8.0,  "xp": 1},
@@ -85,6 +99,12 @@ const TYPES := {
 	Type.WEREWOLF: {"tex": "res://art/enemy_werewolf.png", "speed": 92.0, "health": 16.0,  "damage": 15.0, "xp": 5, "radius": 14.0, "knock": 0.85},
 	Type.ELITE:    {"tex": "res://art/enemy_elite.png",    "speed": 40.0, "health": 140.0, "damage": 20.0, "xp": 25, "scale": 2.0, "radius": 22.0, "gems": 5, "knock": 0.25},
 	Type.REAPER:   {"tex": "res://art/enemy_reaper.png",   "speed": 130.0, "health": 600.0, "damage": 34.0, "xp": 60, "scale": 2.6, "radius": 30.0, "gems": 10, "knock": 0.06},
+	# Glow bat: bat art, upscaled 1.5x (the wiki's Giant Bat is 1.5x) with a deep HP pool so it
+	# shows a health bar and reads as a beefy mini-boss, plus the pulsing blue outline shader.
+	# The wiki Giant Bat is 270 HP against a normal bat's handful; scaled into this game's
+	# compressed economy (base bat 3, ELITE 140) that lands at ~60 — clearly "extra health",
+	# still killable with an early weapon. Semi-KB-resistant like the real Giant Bat.
+	Type.GLOW_BAT: {"tex": "res://art/enemy_bat.png",      "speed": 68.0, "health": 60.0,  "damage": 12.0, "xp": 5, "scale": 1.5, "radius": 16.0, "gems": 3, "knock": 0.3, "outline": Color(0.30, 0.60, 1.0)},
 }
 
 ## Knockback: a weapon hit shoves the enemy directly away from the hit source with an
@@ -218,16 +238,47 @@ func _ready() -> void:
 	_base_tint = cfg.get("tint", Color(1, 1, 1))
 	scale = Vector2(base_scale, base_scale)
 	_sprite = Sprite2D.new()
-	_sprite.texture = load(cfg["tex"])
+	var base_tex: Texture2D = load(cfg["tex"])
+	_sprite.texture = base_tex
 	_sprite.modulate = _base_tint
-	add_child(_sprite)
 	# Sprite is centered (default) and unrotated, so its world rect is position +/- this half-extent.
-	_half_extent = _sprite.texture.get_size() * 0.5 * base_scale
+	# Captured from the BASE texture (the true silhouette) before any glow padding swaps in a larger,
+	# mostly-transparent texture below — so occlusion still uses the real body size, not the margin.
+	_half_extent = base_tex.get_size() * 0.5 * base_scale
+	# "Glowing" variants (GLOW_BAT) wear a pulsing blue rim via the outline shader. The body art is
+	# unchanged — literally the base sprite, re-centered inside a transparent margin so the outward
+	# outline has room and never clips where the art touches the texture edge.
+	if cfg.has("outline"):
+		_sprite.texture = _make_glow_texture(base_tex)
+		var mat := ShaderMaterial.new()
+		mat.shader = load(GLOW_SHADER)
+		mat.set_shader_parameter("outline_color", cfg["outline"])
+		_sprite.material = mat
+	add_child(_sprite)
 	# Tinted mini-elites (MANTIS_WARRIOR) flare with a brief bright spawn glint —
 	# reusing the hit-flash channel — so their arrival pops before settling to the
 	# resting armour tint, clocking the elite instantly if they spawn on-screen.
 	if _base_tint != Color(1, 1, 1):
 		_flash_time = FLASH_DURATION
+
+## Build (and cache) a copy of `base_tex` re-centered inside a transparent margin, so the outline
+## shader has room to draw the rim OUTWARD without clipping where the art touches the texture edge.
+## The visible pixels are identical to the base sprite — this only adds empty border. Converts to
+## RGBA8 first so blit_rect always has a matching, alpha-capable format.
+func _make_glow_texture(base_tex: Texture2D) -> Texture2D:
+	var key := base_tex.resource_path
+	var cached: Variant = _glow_tex_cache.get(key)
+	if cached != null:
+		return cached
+	var src := base_tex.get_image()
+	src.convert(Image.FORMAT_RGBA8)
+	var m := GLOW_TEX_MARGIN
+	var padded := Image.create(src.get_width() + m * 2, src.get_height() + m * 2, false, Image.FORMAT_RGBA8)
+	padded.fill(Color(0, 0, 0, 0))
+	padded.blit_rect(src, Rect2i(Vector2i.ZERO, src.get_size()), Vector2i(m, m))
+	var tex := ImageTexture.create_from_image(padded)
+	_glow_tex_cache[key] = tex
+	return tex
 
 func _process(delta: float) -> void:
 	# On a run restart the scene is torn down while enemies are mid-flight; a _process tick
