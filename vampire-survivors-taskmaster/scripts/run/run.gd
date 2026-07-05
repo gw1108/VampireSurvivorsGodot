@@ -13,6 +13,7 @@ var player: VSPlayer
 var hud: VSHud
 var adapter: Node
 var upgrade_screen: VSUpgradeScreen
+var chest_screen: VSChestScreen
 var shop_screen: VSShopScreen
 var title_screen: VSTitleScreen
 var _spawner: VSSpawner
@@ -35,7 +36,7 @@ const SLOWMO_DURATION := 0.15     # real seconds to ease from SLOWMO_SCALE back 
 var _slowmo_active := false
 var _slowmo_start_ms := 0
 
-var phase := "title"            # title | playing | level_up | paused | game_over | victory  (AgentState lifecycle)
+var phase := "title"            # title | playing | level_up | chest | paused | game_over | victory  (AgentState lifecycle)
 var kills := 0
 var elapsed := 0.0
 
@@ -357,6 +358,12 @@ func _build_world() -> void:
 	upgrade_screen.skipped.connect(_on_upgrade_skipped)
 	add_child(upgrade_screen)
 
+	# Treasure-chest reward reveal — plays the chest-open animation (beam, item spew, coin
+	# ramp) when a chest is opened, then resumes the run on `continued` (see open_chest).
+	chest_screen = VSChestScreen.new()
+	chest_screen.continued.connect(_on_chest_continue)
+	add_child(chest_screen)
+
 	# Between-run PowerUp shop, opened from the game-over screen (key B). Spends banked
 	# meta-coins on permanent boosts; hidden until the run ends.
 	shop_screen = VSShopScreen.new()
@@ -663,32 +670,44 @@ func _maybe_drop_chest(at: Vector2) -> void:
 	AgentBridge.emit_event("spawn", {"type": "chest", "pos": [at.x, at.y]})
 
 ## Open a Treasure Chest (VSChest calls this on pickup): grant a burst of random not-yet-maxed
-## upgrades (count from the beginner's-luck sequence) plus gold, popping a floating label per item
-## so the spike reads. Any item that can't be granted because everything is maxed converts to extra
-## gold — faithful to VS's "full inventory → gold bag". No evolutions come from chests (slice scope).
+## upgrades (count from the beginner's-luck sequence) plus gold, then hand the gained item(s) and
+## coin award to the VSChestScreen reveal animation so the spike reads as a crowned moment. Any
+## item that can't be granted because everything is maxed converts to extra gold — faithful to VS's
+## "full inventory → gold bag". No evolutions come from chests (slice scope).
 func open_chest(at: Vector2) -> void:
 	var count: int = CHEST_LUCK_SEQ[chests_opened] if chests_opened < CHEST_LUCK_SEQ.size() else 1
 	chests_opened += 1
 	add_camera_shake(0.5)
 	var granted := 0
+	var ids: Array[String] = []
 	var titles: Array[String] = []
 	for i in count:
 		var id := _random_open_upgrade()
 		if id == "":
 			break   # everything maxed — remaining items convert to gold below
 		_apply_upgrade(id)
-		var title := _upgrade_title(id)
-		titles.append(title)
-		VSFloatText.spawn(self, at + Vector2(0.0, -18.0 - float(granted) * 16.0), title, Color(1.0, 0.85, 0.3))
+		ids.append(id)
+		titles.append(_upgrade_title(id))
 		granted += 1
 	var gold_award := count * randi_range(4, 8) + (count - granted) * 12
 	add_gold(gold_award)
-	VSFloatText.spawn(self, at, "+%d Gold" % gold_award, Color(1.0, 0.85, 0.3))
-	# Centered HUD reveal so a multi-item jackpot reads as one build spike, not a scatter of floats.
-	if hud:
+	# Freeze the run (entities gate on phase != "playing", like the level-up picker) and play the
+	# chest-open reveal animation; the player resumes it via Continue -> _on_chest_continue.
+	if chest_screen:
+		phase = "chest"
+		chest_screen.present(ids, titles, gold_award)
+	elif hud:
+		# Fallback for a headless run with no chest screen: the old centered HUD banner.
 		hud.show_chest_reveal(titles, gold_award)
 	AgentBridge.emit_event("chest_open", {"items": granted, "gold": gold_award})
 	_maybe_drop_chest_consumable(at)
+
+## Resume the run once the player dismisses the chest reveal (VSChestScreen.continued). The reward
+## was already applied in open_chest; opening a chest never grants XP, so there's no pending
+## level-up to chain into — we simply return to play.
+func _on_chest_continue() -> void:
+	if phase == "chest":
+		phase = "playing"
 
 ## Occasionally have an opened chest also cough up a consumable power-up — the Nduja berserk,
 ## the Rosary screen-clear, or the Orologion freeze — so chests hand out temporary run-swinging
