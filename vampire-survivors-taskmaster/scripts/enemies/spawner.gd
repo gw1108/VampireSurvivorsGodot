@@ -53,11 +53,19 @@ const SURGE_SPACING := 46.0    # px between adjacent enemies along the wall
 const PINCER_FIRST := 150.0    # seconds survived before a surge may become a pincer
 const PINCER_CHANCE := 0.25    # chance an eligible (late-run) surge doubles into a pincer
 
+# Mad Forest "glow bat" events: a beefy, blue-rimmed Giant Bat (bat art + extra HP + outline
+# shader, see VSEnemy.Type.GLOW_BAT) drops in as a one-off mini-boss at 0:30 and again at 3:00.
+# The wiki's Mad Forest has no Death/reaper enemy this early (the finale Reaper owns 30:00), so
+# these glow-bat beats are the intended early mini-boss flavor. Fired off a walked schedule so a
+# debug time-jump past a mark still spawns it exactly once.
+const GLOW_BAT_TIMES := [30.0, 180.0]
+
 var run: VSRun
 var _accum := 0.0
 var _next_elite := ELITE_FIRST
 var _next_wave := WAVE_INTERVAL
 var _next_surge := SURGE_FIRST
+var _glow_bat_idx := 0
 
 func _ready() -> void:
 	# Enforce the perf gate at load. COLLIDER_SAFE_CAP is the validated packed-density ceiling: a real
@@ -100,6 +108,11 @@ func _process(delta: float) -> void:
 	if run.elapsed >= _next_elite:
 		_next_elite += ELITE_INTERVAL
 		_spawn_elite()
+	# One-off glow-bat mini-boss events at their scheduled marks (0:30, 3:00). The index walks
+	# the schedule so each fires exactly once; a debug time-jump past a mark still spawns it.
+	while _glow_bat_idx < GLOW_BAT_TIMES.size() and run.elapsed >= GLOW_BAT_TIMES[_glow_bat_idx]:
+		_glow_bat_idx += 1
+		_spawn_glow_bat()
 	# Each minute mark crescendos into a coordinated ring-burst so the run visibly
 	# escalates toward RUN_DURATION. The final minute is skipped — the Reaper finale
 	# owns that beat.
@@ -145,6 +158,23 @@ func _spawn_elite() -> void:
 	e.target = run.player
 	run.add_child(e)
 	AgentBridge.emit_event("spawn", {"type": "elite", "pos": [pos.x, pos.y]})
+
+## Summon a single Mad Forest "glow bat" mini-boss on the ring. Modeled on _spawn_elite (bypasses
+## the enemy cap, tags its event) but injects the GLOW_BAT — bat art, extra HP, pulsing blue
+## outline — and drops NO chest (that stays an elite reward), so it reads as a beefy special bat
+## rather than the death-reaper the operator (rightly) did not want appearing early.
+func _spawn_glow_bat() -> void:
+	var ang := randf() * TAU
+	var pos := run.player.position + Vector2(cos(ang), sin(ang)) * SPAWN_RING
+	pos.x = clampf(pos.x, -run.arena_half.x, run.arena_half.x)
+	pos.y = clampf(pos.y, -run.arena_half.y, run.arena_half.y)
+	var e := VSEnemy.new()
+	e.type = VSEnemy.Type.GLOW_BAT
+	e.position = pos
+	e.run = run
+	e.target = run.player
+	run.add_child(e)
+	AgentBridge.emit_event("spawn", {"type": "glow_bat", "pos": [pos.x, pos.y]})
 
 ## Minute-milestone surge: drop a full ring of enemies around the player in one beat so the
 ## survival clock reads as escalating waves (a VS "wave" event) rather than a smooth trickle.
