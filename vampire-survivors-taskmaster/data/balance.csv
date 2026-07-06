@@ -30,3 +30,6 @@ gem_drop_floor_hp,15,Enemy max HP at/below which a kill has only the floor chanc
 gem_drop_floor_chance,0.25,Floor chance (0-1) an XP gem drops from a kill at/below gem_drop_floor_hp
 gem_drop_ceil_hp,180,Enemy max HP at/above which a kill is guaranteed (100%) to drop an XP gem
 camera_zoom,0.8,Camera zoom factor for the whole run (less than 1 zooms out so everything reads smaller; greater than 1 zooms in)
+player_scale,1.0,Visual scale multiplier for the player avatar sprite (1 = native art size; does not change the hitbox)
+enemy_scale,1.0,Global visual scale multiplier applied on top of each enemy type's own scale (1 = per-type size; does not change collision radius)
+projectile_scale,1.0,Visual scale multiplier for flying projectile sprites — the dagger bolts thrown by Knife and fired by the Magic Wand (1 = native art size; does not change the hit radius)
