@@ -190,19 +190,24 @@ const WEAPON_IDS := ["multishot", "garlic", "whip", "bible", "lightning", "knife
 ## Pool the level-up screen draws 3 distinct choices from each time. `max` is the highest
 ## level each upgrade reaches — weapons cap at 8 (VS convention), passives lower — after
 ## which it stops appearing in the roll.
+## Passive-item `desc` strings are the offline-wiki Passive_Items.md captions VERBATIM (punctuation
+## and pluralization included) — passive items show the same description at every level in VS, so the
+## static desc is wiki-exact for all levels. Weapon `desc` here is only a fallback: LEVEL_DESCRIPTIONS
+## overrides each weapon card with its per-level wiki caption (see _roll_upgrades). Armor drops the
+## wiki's "Increases retaliatory damage by 10%" clause because retaliatory damage isn't in the slice.
 const UPGRADE_POOL := [
-	{"id": "damage", "title": "Spinach", "desc": "Raises inflicted damage by 10%", "max": 5},
-	{"id": "firerate", "title": "Empty Tome", "desc": "Reduces weapon cooldown by 8%", "max": 5},
-	{"id": "speed", "title": "Wings", "desc": "Character moves 10% faster", "max": 5},
-	{"id": "health", "title": "Hollow Heart", "desc": "Augments max health by 20%", "max": 5},
-	{"id": "multishot", "title": "Multishot", "desc": "+1 projectile", "max": 4},
-	{"id": "area", "title": "Candelabrador", "desc": "Augments area of attacks by 10%", "max": 5},
-	{"id": "projspeed", "title": "Bracer", "desc": "Increases projectile speed by 10%", "max": 5},
-	{"id": "attract", "title": "Attractorb", "desc": "Pick up items from further away", "max": 5},
-	{"id": "growth", "title": "Crown", "desc": "Character gains 8% more experience", "max": 5},
-	{"id": "armor", "title": "Armor", "desc": "Reduces incoming damage by 1 (min 1 always lands)", "max": 5},
-	{"id": "recovery", "title": "Pummarola", "desc": "Character recovers 0.2 HP per second", "max": 5},
-	{"id": "luck", "title": "Clover", "desc": "Character gets 10% luckier", "max": 5},
+	{"id": "damage", "title": "Spinach", "desc": "Raises inflicted damage by 10%.", "max": 5},
+	{"id": "firerate", "title": "Empty Tome", "desc": "Reduces weapons cooldown by 8%.", "max": 5},
+	{"id": "speed", "title": "Wings", "desc": "Character moves 10% faster.", "max": 5},
+	{"id": "health", "title": "Hollow Heart", "desc": "Augments max health by 20%.", "max": 5},
+	{"id": "multishot", "title": "Multishot", "desc": "Weapons fire more projectiles.", "max": 4},
+	{"id": "area", "title": "Candelabrador", "desc": "Augments area of attacks by 10%.", "max": 5},
+	{"id": "projspeed", "title": "Bracer", "desc": "Increases projectiles speed by 10%.", "max": 5},
+	{"id": "attract", "title": "Attractorb", "desc": "Character pickups items from further away.", "max": 5},
+	{"id": "growth", "title": "Crown", "desc": "Character gains 8% more experience.", "max": 5},
+	{"id": "armor", "title": "Armor", "desc": "Reduces incoming damage by 1.", "max": 5},
+	{"id": "recovery", "title": "Pummarola", "desc": "Character recovers 0.2 HP per second.", "max": 5},
+	{"id": "luck", "title": "Clover", "desc": "Character gets 10% luckier.", "max": 5},
 	{"id": "garlic", "title": "Garlic", "desc": "Damaging aura around you (grows each pick)", "max": 8},
 	{"id": "whip", "title": "Whip", "desc": "Melee arc lashing your facing side; both sides at Lv 2+", "max": 8},
 	{"id": "bible", "title": "King Bible", "desc": "Holy books orbit you, striking enemies they pass through", "max": 8},
@@ -211,6 +216,105 @@ const UPGRADE_POOL := [
 	{"id": "runetracer", "title": "Runetracer", "desc": "A spinning rune that bounces around the arena, striking everything it passes through", "max": 8},
 	{"id": "fire_wand", "title": "Fire Wand", "desc": "Lobs a fireball at a random enemy that detonates on impact, splashing everything nearby", "max": 8},
 ]
+
+## Per-level level-up captions, VERBATIM from each weapon's offline-wiki level table (Whip.md,
+## Knife.md, King_Bible.md, Lightning_Ring.md, Garlic.md, Fire_Wand.md, Runetracer.md, Magic_Wand.md).
+## Index [n] is the caption shown when a pick raises the weapon TO level n+1 (so index 0 == "Level 1",
+## the not-yet-owned pick). _roll_upgrades overrides each weapon card's `desc` with the entry for the
+## level it advances to, so a Whip Lv 1->2 card reads "Fires 1 more projectile." exactly as the wiki
+## does, instead of one generic line. Wiki citation superscripts (e.g. the Knife/Runetracer interval
+## footnotes) are dropped — they are reference links, not part of the displayed caption. `multishot`
+## is this slice's Magic Wand (each pick adds a bolt), so every level is the wiki's "Fires 1 more
+## projectile." Passives are omitted: VS passive items show one description at every level, already
+## wiki-exact as the static UPGRADE_POOL `desc`.
+const LEVEL_DESCRIPTIONS := {
+	"whip": [
+		"Attacks horizontally, passes through enemies.",
+		"Fires 1 more projectile.",
+		"Base Damage up by 5.",
+		"Base Area up by 10%. Base Damage up by 5.",
+		"Base Damage up by 5.",
+		"Base Area up by 10%. Base Damage up by 5.",
+		"Base Damage up by 5.",
+		"Base Damage up by 5.",
+	],
+	"knife": [
+		"Fires quickly in the faced direction.",
+		"Fires 1 more projectile.",
+		"Fires 1 more projectile. Base Damage up by 5.",
+		"Fires 1 more projectile.",
+		"Passes through 1 more enemy.",
+		"Fires 1 more projectile.",
+		"Fires 1 more projectile. Base Damage up by 5.",
+		"Passes through 1 more enemy.",
+	],
+	"bible": [
+		"Orbits around the character.",
+		"Fires 1 more projectile.",
+		"Base Area up by 25%. Base Speed up by 30%.",
+		"Effect lasts 0.5 seconds longer. Base Damage up by 10.",
+		"Fires 1 more projectile.",
+		"Base Area up by 25%. Base Speed up by 30%.",
+		"Effect lasts 0.5 seconds longer. Base Damage up by 10.",
+		"Fires 1 more projectile.",
+	],
+	"lightning": [
+		"Strikes at random enemies.",
+		"Fires 1 more projectile.",
+		"Base Area up by 100%. Base Damage up by 10.",
+		"Fires 1 more projectile.",
+		"Base Area up by 100%. Base Damage up by 20.",
+		"Fires 1 more projectile.",
+		"Base Area up by 100%. Base Damage up by 20.",
+		"Fires 1 more projectile.",
+	],
+	"garlic": [
+		"Damages nearby enemies. Reduces resistance to knockback and freeze.",
+		"Base Area up by 40%. Base Damage up by 2.",
+		"Cooldown reduced by 0.1 seconds. Base Damage up by 1.",
+		"Base Area up by 20%. Base Damage up by 1.",
+		"Cooldown reduced by 0.1 seconds. Base Damage up by 2.",
+		"Base Area up by 20%. Base Damage up by 1.",
+		"Cooldown reduced by 0.1 seconds. Base Damage up by 1.",
+		"Base Area up by 20%. Base Damage up by 2.",
+	],
+	"fire_wand": [
+		"Fires at a random enemy, deals heavy damage.",
+		"Base Damage up by 10.",
+		"Base Damage up by 10. Base Speed up by 20%.",
+		"Base Damage up by 10.",
+		"Base Damage up by 10. Base Speed up by 20%.",
+		"Base Damage up by 10.",
+		"Base Damage up by 10. Base Speed up by 20%.",
+		"Base Damage up by 10.",
+	],
+	"runetracer": [
+		"Passes through enemies, bounces around.",
+		"Base Damage up by 5. Base Speed up by 20%.",
+		"Effect lasts 0.3 seconds longer. Base Damage up by 5.",
+		"Fires 1 more projectile.",
+		"Base Damage up by 5. Base Speed up by 20%.",
+		"Effect lasts 0.3 seconds longer. Base Damage up by 5.",
+		"Fires 1 more projectile.",
+		"Effect lasts 0.5 seconds longer.",
+	],
+	"multishot": [
+		"Fires 1 more projectile.",
+		"Fires 1 more projectile.",
+		"Fires 1 more projectile.",
+		"Fires 1 more projectile.",
+	],
+}
+
+## Wiki level-up caption for `id` when advancing to the given target level (1-based), or "" if the
+## id has no per-level table (passives, consolation, evolutions). Clamps to the last row so a Limit
+## Break past max still reads sensibly. See LEVEL_DESCRIPTIONS.
+func _level_description(id: String, target_level: int) -> String:
+	var rows: Array = LEVEL_DESCRIPTIONS.get(id, [])
+	if rows.is_empty():
+		return ""
+	var idx := clampi(target_level - 1, 0, rows.size() - 1)
+	return str(rows[idx])
 
 ## The signature VS mechanic: a weapon maxed to its UPGRADE_POOL `max` PLUS its paired
 ## passive owned unlocks an evolved form with a boosted profile. Keyed off UPGRADE_POOL by
@@ -1085,6 +1189,12 @@ func _roll_upgrades() -> Array:
 				continue
 		var display: Dictionary = opt.duplicate()
 		display["level"] = lvl        # current level; the pick raises it to lvl+1
+		# Show the wiki's per-level caption for the level this pick advances TO (lvl+1), so a weapon
+		# card reads its exact wiki level-up line (e.g. Whip Lv 1->2 == "Fires 1 more projectile.")
+		# instead of one generic blurb. Passives have no per-level table and keep their static desc.
+		var level_desc := _level_description(str(opt["id"]), lvl + 1)
+		if level_desc != "":
+			display["desc"] = level_desc
 		pool.append(display)
 	pool.shuffle()
 	# Guarantee at least one weapon powerup in every hand that CAN offer one: if the shuffled pool
