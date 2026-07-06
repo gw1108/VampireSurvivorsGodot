@@ -30,3 +30,4 @@ fire_wand_interval_per_level,0.18,Fire Wand cooldown shrink per level (floored a
 gem_drop_floor_hp,15,Enemy max HP at/below which a kill has only the floor chance to drop an XP gem
 gem_drop_floor_chance,0.25,Floor chance (0-1) an XP gem drops from a kill at/below gem_drop_floor_hp
 gem_drop_ceil_hp,180,Enemy max HP at/above which a kill is guaranteed (100%) to drop an XP gem
+camera_zoom,0.8,Camera zoom factor for the whole run (less than 1 zooms out so everything reads smaller; greater than 1 zooms in)
