@@ -9,8 +9,18 @@ extends Node2D
 ## picked: invisible and inert). This is the slice's third, mechanically-distinct weapon.
 
 const BASE_RANGE := 140.0
-const RANGE_PER_LEVEL := 18.0
 const ARC_HALF_ANGLE := deg_to_rad(50.0)   # half-width of the damage wedge
+
+## Per-level level-up table (wiki Whip.md "Levels"), editable in res://data/whip_levels.csv —
+## one row per level with independently-tunable columns so a designer can retune ANY single level
+## without touching this script. Values are cumulative absolutes (each row fully describes the
+## whip at that level): projectiles (1 = facing side only, 2 = both flanks), bonus_damage (flat
+## added on top of BASE_DAMAGE), area_mult (scales the lash's reach). The wiki pattern is:
+## L1 1 proj / +0 / 100%; L2 2 proj; L3 +5; L4 +5 & 110%; L5 +5; L6 +5 & 120%; L7 +5; L8 +5
+## (max = +30 damage, 120% area, +1 projectile → base-10 whip peaks at 40 damage, matching the wiki).
+const LEVELS_CSV := "res://data/whip_levels.csv"
+static var _levels: Dictionary = {}   # int level -> {"projectiles": int, "bonus_damage": float, "area_mult": float}
+static var _levels_loaded := false
 ## Swing cooldown lives in res://data/balance.csv ("whip_base_interval") so a designer can
 ## retune fire rate without touching this script.
 static var ATTACK_INTERVAL := BalanceData.get_value("whip_base_interval", 1.2)
@@ -26,10 +36,9 @@ const VFX_ROWS := 5
 const VFX_FPS := 40.0                      # 10 frames / 40fps = 0.25s, matching the old sweep time
 const VFX_ROTATION := deg_to_rad(-135.0)
 const VFX_OFFSET_FRAC := 0.55              # how far out along the lash the VFX sits, as a fraction of range
-## Base damage + per-level growth live in res://data/balance.csv ("whip_base_damage" /
-## "whip_damage_per_level") so a designer can retune them without touching this script.
-static var BASE_DAMAGE := BalanceData.get_value("whip_base_damage", 5.0)
-static var DAMAGE_PER_LEVEL := BalanceData.get_value("whip_damage_per_level", 4.0)
+## Lv1 base damage lives in res://data/balance.csv ("whip_base_damage", wiki base 10); the flat
+## per-level bonus on top of it lives per-level in data/whip_levels.csv (see LEVELS_CSV above).
+static var BASE_DAMAGE := BalanceData.get_value("whip_base_damage", 10.0)
 
 # Evolved (Bloody Tear) profile — applied when run.whip_evolved: a longer, wider, far deadlier
 # lash that always covers both flanks. Gated on Whip already being maxed, so this is the run's
@@ -73,12 +82,15 @@ func _process(delta: float) -> void:
 ## One swing: damage every enemy inside the facing-side wedge (both sides from level 2, or
 ## always once evolved into Bloody Tear).
 func _swing(lvl: int) -> void:
+	var row := _row(lvl)
 	_swing_facing = _facing
-	_swing_both = lvl >= 2 or _is_evolved()
+	# From level 2 the whip fires a second projectile covering the opposite flank (both sides);
+	# Bloody Tear always lashes both. Driven by the per-level "projectiles" column.
+	_swing_both = int(row["projectiles"]) >= 2 or _is_evolved()
 	var r := _range(lvl)
 	var arc := _arc_half()
 	_play_vfx(r)
-	var dmg := (BASE_DAMAGE * run.damage_variance() + DAMAGE_PER_LEVEL * float(lvl)) * run.might_mult() * run.power_mult()
+	var dmg := (BASE_DAMAGE * run.damage_variance() + float(row["bonus_damage"])) * run.might_mult() * run.power_mult()
 	if _is_evolved():
 		dmg *= EVOLVED_DAMAGE_MULT
 	var hit_any := false
@@ -114,10 +126,53 @@ func _sides() -> Array:
 	return [1, -1] if _swing_both else [_swing_facing]
 
 func _range(lvl: int) -> float:
-	var r := BASE_RANGE + RANGE_PER_LEVEL * float(lvl - 1)
+	# The whip's own reach grows only via its per-level Area column (wiki: +10% at Lv4 & Lv6);
+	# run.area_mult (Candelabrador) then extends it further on top.
+	var r := BASE_RANGE * float(_row(lvl)["area_mult"])
 	if _is_evolved():
 		r += EVOLVED_RANGE_BONUS
-	return r * run.area_mult   # Candelabrador passive extends the lash's reach
+	return r * run.area_mult
+
+## The per-level tuning row for `lvl`, from data/whip_levels.csv. Levels past the table (Limit
+## Break) clamp to the highest defined level; a missing CSV reconstructs the wiki deltas so the
+## whip never breaks.
+static func _row(lvl: int) -> Dictionary:
+	_ensure_levels()
+	if _levels.has(lvl):
+		return _levels[lvl]
+	if _levels.is_empty():
+		var bonus := maxf(0.0, float(lvl - 2)) * 5.0                     # +5 from Lv3 on
+		var area := 1.0 + (0.1 if lvl >= 4 else 0.0) + (0.1 if lvl >= 6 else 0.0)
+		return {"projectiles": (1 if lvl <= 1 else 2), "bonus_damage": bonus, "area_mult": area}
+	var keys := _levels.keys()
+	keys.sort()
+	return _levels[keys[keys.size() - 1]]
+
+## Parse the per-level table once. Column-name driven (falls back to fixed positions) so the CSV
+## can carry extra columns (e.g. a human-readable description) without breaking the loader.
+static func _ensure_levels() -> void:
+	if _levels_loaded:
+		return
+	_levels_loaded = true
+	var f := FileAccess.open(LEVELS_CSV, FileAccess.READ)
+	if f == null:
+		push_warning("VSWhip: cannot open %s (err %d)" % [LEVELS_CSV, FileAccess.get_open_error()])
+		return
+	var header := f.get_csv_line()
+	var col := {}
+	for i in header.size():
+		col[header[i].strip_edges()] = i
+	while not f.eof_reached():
+		var r := f.get_csv_line()
+		if r.size() < 2 or r[0].strip_edges() == "":
+			continue
+		var lvl := r[int(col.get("level", 0))].strip_edges().to_int()
+		_levels[lvl] = {
+			"projectiles": r[int(col.get("projectiles", 1))].strip_edges().to_int(),
+			"bonus_damage": r[int(col.get("bonus_damage", 2))].strip_edges().to_float(),
+			"area_mult": r[int(col.get("area_mult", 3))].strip_edges().to_float(),
+		}
+	f.close()
 
 ## Fire the lash VFX on every side this swing covers, positioned out along the lash at
 ## VFX_OFFSET_FRAC * range. Bloody Tear tints it a deeper crimson so the evolution reads
