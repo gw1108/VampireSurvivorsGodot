@@ -92,6 +92,10 @@ func _ready() -> void:
 	add_to_group("player")
 	_sprite = Sprite2D.new()
 	_sprite.texture = load("res://art/player.png")
+	# Purely-visual avatar size knob a designer can retune in res://data/balance.csv without
+	# touching code. Scales only the sprite child (not the player node), so the HP bar, mounted
+	# weapons, and camera are untouched and the contact hitbox (RADIUS) stays fixed.
+	_sprite.scale = Vector2.ONE * BalanceData.get_value("player_scale", 1.0)
 	add_child(_sprite)
 
 func _process(delta: float) -> void:

@@ -232,7 +232,10 @@ func _ready() -> void:
 	contact_damage = cfg["damage"] * dmg_mult
 	xp_value = cfg["xp"]
 	radius = cfg.get("radius", RADIUS)
-	base_scale = cfg.get("scale", 1.0)
+	# Per-type art size, times a global visual multiplier a designer can retune in
+	# res://data/balance.csv (default 1.0 = per-type size). Folded into base_scale so the node
+	# scale, cached half-extent, and death tween all inherit it; the collision radius is separate.
+	base_scale = cfg.get("scale", 1.0) * BalanceData.get_value("enemy_scale", 1.0)
 	gem_drops = cfg.get("gems", 1)
 	knock_resist = cfg.get("knock", 1.0)
 	_base_tint = cfg.get("tint", Color(1, 1, 1))

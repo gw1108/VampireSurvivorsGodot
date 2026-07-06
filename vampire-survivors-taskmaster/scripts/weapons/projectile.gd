@@ -23,6 +23,9 @@ func _ready() -> void:
 	_sprite = Sprite2D.new()
 	_sprite.texture = load("res://art/projectile_dagger.png")
 	_sprite.rotation = dir.angle() + ART_ANGLE_OFFSET
+	# Purely-visual bolt size knob a designer can retune in res://data/balance.csv (default 1.0 =
+	# native art size). Scales only the sprite; HIT_RADIUS is a separate constant so the hitbox holds.
+	_sprite.scale = Vector2.ONE * BalanceData.get_value("projectile_scale", 1.0)
 	add_child(_sprite)
 
 func _process(delta: float) -> void:
