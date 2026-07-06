@@ -1,9 +1,9 @@
-level,amount,bonus_damage,area_mult,speed_mult,description
-1,1,0,1.0,1.0,Orbits around the character
-2,2,0,1.0,1.0,Fires 1 more projectile
-3,2,0,1.25,1.3,Base Area up by 25%. Base Speed up by 30%
-4,2,10,1.25,1.3,Effect lasts 0.5s longer. Base Damage up by 10
-5,3,10,1.25,1.3,Fires 1 more projectile
-6,3,10,1.5,1.6,Base Area up by 25%. Base Speed up by 30%
-7,3,20,1.5,1.6,Effect lasts 0.5s longer. Base Damage up by 10
-8,4,20,1.5,1.6,Fires 1 more projectile
+level,amount,bonus_damage,area_mult,speed_mult
+1,1,0,1.0,1.0
+2,2,0,1.0,1.0
+3,2,0,1.25,1.3
+4,2,10,1.25,1.3
+5,3,10,1.25,1.3
+6,3,10,1.5,1.6
+7,3,20,1.5,1.6
+8,4,20,1.5,1.6

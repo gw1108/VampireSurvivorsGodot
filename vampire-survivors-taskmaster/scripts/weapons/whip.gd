@@ -149,7 +149,7 @@ static func _row(lvl: int) -> Dictionary:
 	return _levels[keys[keys.size() - 1]]
 
 ## Parse the per-level table once. Column-name driven (falls back to fixed positions) so the CSV
-## can carry extra columns (e.g. a human-readable description) without breaking the loader.
+## can carry extra tuning columns without breaking the loader.
 static func _ensure_levels() -> void:
 	if _levels_loaded:
 		return
