@@ -313,8 +313,17 @@ func _on_card_focus(index: int) -> void:
 	_focused_id = _option_id(index)
 	_refresh_stat_rail(_run, _focused_id)
 
-## Mouse hovered card `index` — preview it without disturbing the focused card.
+## Mouse hovered card `index` — move keyboard focus onto it so exactly one card is ever lit.
+## Without this, a card focused by arrow keys keeps its "focus" panel while a mouse-hovered card
+## also shows its "hover" panel, leaving two cards highlighted at once. Grabbing focus here fires
+## focus_entered -> _on_card_focus, which re-renders the rail preview; only refresh directly when
+## the card already holds focus (so hover never leaves the rail stale).
 func _on_card_hover(index: int) -> void:
+	if index >= 0 and index < _cards.get_child_count():
+		var card := _cards.get_child(index) as Control
+		if card and not card.has_focus():
+			card.grab_focus()
+			return
 	_refresh_stat_rail(_run, _option_id(index))
 
 ## Mouse left a hovered card — fall back to previewing the keyboard-focused card.
@@ -344,8 +353,12 @@ func _make_card(index: int, opt: Dictionary) -> Button:
 	card.custom_minimum_size = Vector2(540, 160) if is_evo else Vector2(540, 120)
 	card.clip_contents = true
 	card.text = ""
+	# Highlight is driven solely by keyboard focus (the "focus" stylebox), and mouse hover grabs
+	# that focus (_on_card_hover) — so the lit card follows either input and exactly one card is
+	# ever highlighted. The "hover" panel deliberately matches "normal": if hovering lit its own
+	# panel, a mouse-hovered card and an arrow-key-focused card would both read as selected at once.
 	card.add_theme_stylebox_override("normal", _panel_style(false, is_evo))
-	card.add_theme_stylebox_override("hover", _panel_style(true, is_evo))
+	card.add_theme_stylebox_override("hover", _panel_style(false, is_evo))
 	card.add_theme_stylebox_override("pressed", _panel_style(true, is_evo))
 	card.add_theme_stylebox_override("focus", _panel_style(true, is_evo))
 	card.pressed.connect(_choose.bind(index))
