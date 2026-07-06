@@ -416,13 +416,19 @@ func _make_card(index: int, opt: Dictionary) -> Button:
 	text_col.add_child(title)
 
 	# Show the level this pick advances to (e.g. "Lv 2 → 3", or "→ 3 MAX" at the cap) so
-	# the player reads the choice as progression toward maxing a weapon/passive.
+	# the player reads the choice as progression toward maxing a weapon/passive. A brand-new
+	# pick (current level 0, not yet owned) reads as just the level it grants ("Lv 1") — there's
+	# no "before" level to step from, so the "Lv 0 → 1" transition form would be misleading.
 	if opt.has("level"):
 		var lvl := int(opt.get("level", 0))
 		var mx := int(opt.get("max", 0))
 		var next := lvl + 1
+		var maxed := next >= mx
 		var lvl_label := Label.new()
-		lvl_label.text = "Lv %d → %d  (MAX)" % [lvl, next] if next >= mx else "Lv %d → %d" % [lvl, next]
+		if lvl <= 0:
+			lvl_label.text = "Lv %d  (MAX)" % next if maxed else "Lv %d" % next
+		else:
+			lvl_label.text = "Lv %d → %d  (MAX)" % [lvl, next] if maxed else "Lv %d → %d" % [lvl, next]
 		lvl_label.add_theme_font_size_override("font_size", 13)
 		lvl_label.modulate = Color(0.9, 0.85, 0.55)
 		text_col.add_child(lvl_label)
