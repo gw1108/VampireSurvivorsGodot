@@ -1,0 +1,9 @@
+level,amount,bonus_damage,pierce,proj_interval,description
+1,1,0,1,0.10,Fires quickly in the faced direction
+2,2,0,1,0.10,Fires 1 more projectile
+3,3,5,1,0.10,Fires 1 more projectile. Base Damage up by 5
+4,4,5,1,0.08,Fires 1 more projectile. Projectile interval reduced
+5,4,5,2,0.08,Passes through 1 more enemy
+6,5,5,2,0.06,Fires 1 more projectile. Projectile interval reduced
+7,6,10,2,0.06,Fires 1 more projectile. Base Damage up by 5
+8,6,10,3,0.04,Passes through 1 more enemy. Projectile interval reduced
