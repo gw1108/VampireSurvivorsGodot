@@ -68,8 +68,10 @@ func _fire_at(t: VSEnemy) -> void:
 		p.dir = base.rotated(offset)
 		p.speed *= run.projectile_speed_mult
 		# Roll +/-50% variance on the base only; flat growth (weapon_damage above the base) is added after.
+		# spinach_mult() folds in the Spinach (Power) passive's +10%/pick Might so the wand benefits
+		# from it too — meta Might is already in weapon_damage, so we deliberately skip power_mult() here.
 		var flat: float = maxf(0.0, run.weapon_damage - BASE_DAMAGE)
-		p.damage = (BASE_DAMAGE * run.damage_variance() + flat) * run.might_mult()
+		p.damage = (BASE_DAMAGE * run.damage_variance() + flat) * run.might_mult() * run.spinach_mult()
 		if evolved:
 			p.damage *= EVOLVED_DAMAGE_MULT
 			p.pierce = EVOLVED_PIERCE
