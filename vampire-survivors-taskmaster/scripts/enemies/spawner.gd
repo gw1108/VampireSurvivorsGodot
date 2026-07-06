@@ -267,6 +267,34 @@ func spawn_reaper() -> VSEnemy:
 	AgentBridge.emit_event("spawn", {"type": "reaper", "pos": [pos.x, pos.y]})
 	return e
 
+## The general (base-trickle) spawn rules — which enemies appear, the concurrent population,
+## and the spawn interval per minute — live in res://data/mad_forest_waves.csv (one row per
+## minute: minute, spawn_interval, enemy_minimum, enemies), so a designer can retune the whole
+## Mad Forest wave table against the wiki without editing this script. The CSV is the source of
+## truth at runtime; ROSTER_SCHEDULE / DENSITY_SCHEDULE below are the transcribed fallback used
+## only if the file is missing/unreadable (keeps the run spawning). Every enemy in the schedule
+## is a Mad-Forest wiki enemy (see the "Waves" section) — no invented archetypes.
+const WAVES_CSV := "res://data/mad_forest_waves.csv"
+## Maps the CSV's enemy-name tokens to VSEnemy.Type so the "enemies" column stays human-readable.
+const NAME_TO_TYPE := {
+	"BAT": VSEnemy.Type.BAT,
+	"ZOMBIE": VSEnemy.Type.ZOMBIE,
+	"SKELETON": VSEnemy.Type.SKELETON,
+	"GHOST": VSEnemy.Type.GHOST,
+	"MUMMY": VSEnemy.Type.MUMMY,
+	"MANTIS": VSEnemy.Type.MANTIS,
+	"MANTIS_WARRIOR": VSEnemy.Type.MANTIS_WARRIOR,
+	"MUDMAN": VSEnemy.Type.MUDMAN,
+	"WEREWOLF": VSEnemy.Type.WEREWOLF,
+	"ELITE": VSEnemy.Type.ELITE,
+	"REAPER": VSEnemy.Type.REAPER,
+	"GLOW_BAT": VSEnemy.Type.GLOW_BAT,
+}
+## Loaded once from WAVES_CSV (cached across instances); each falls back to the const below.
+static var _roster_bands: Array = []
+static var _density_bands: Array = []
+static var _schedule_loaded := false
+
 ## Roster schedule modeled directly on Mad Forest's real per-minute wave table
 ## (.firecrawl/wiki-offline/Mad_Forest.htm, "Waves" section: 0:00 Pipeestrello,
 ## 1:00 Zombie, 3:00 Skeleton, 5:00 Green Mudman, 12:00 Werewolf, 16:00 Mantichana,
@@ -359,12 +387,13 @@ func _max_cap() -> int:
 	var t := clampf((frac - LATE_RAMP_START) / (1.0 - LATE_RAMP_START), 0.0, 1.0)
 	return int(lerpf(float(MAX_ENEMIES), float(MAX_ENEMIES_LATE), t))
 
-## The DENSITY_SCHEDULE row in effect for the current run time (same band lookup as
+## The density row in effect for the current run time (same band lookup as
 ## _pick_type): the last row whose minute mark has passed.
 func _density() -> Dictionary:
+	_ensure_schedule()
 	var minute := run.elapsed / 60.0
-	var row: Dictionary = DENSITY_SCHEDULE[0]
-	for band in DENSITY_SCHEDULE:
+	var row: Dictionary = _density_bands[0]
+	for band in _density_bands:
 		if minute >= band.min:
 			row = band
 		else:
@@ -372,14 +401,64 @@ func _density() -> Dictionary:
 	return row
 
 func _pick_type() -> int:
+	_ensure_schedule()
 	var minute := run.elapsed / 60.0
-	var weights: Dictionary = ROSTER_SCHEDULE[0].weights
-	for band in ROSTER_SCHEDULE:
+	var weights: Dictionary = _roster_bands[0].weights
+	for band in _roster_bands:
 		if minute >= band.min:
 			weights = band.weights
 		else:
 			break
 	return _roll_weighted(weights)
+
+## Load the per-minute spawn schedule from WAVES_CSV once (cached across instances). On any
+## failure — missing file, empty/garbled rows — fall back to the transcribed const schedules so
+## the run always spawns. Column-name driven so extra columns can be added without breaking this.
+static func _ensure_schedule() -> void:
+	if _schedule_loaded:
+		return
+	_schedule_loaded = true
+	_roster_bands = ROSTER_SCHEDULE
+	_density_bands = DENSITY_SCHEDULE
+	var f := FileAccess.open(WAVES_CSV, FileAccess.READ)
+	if f == null:
+		push_warning("VSSpawner: cannot open %s (err %d) — using built-in schedule" % [WAVES_CSV, FileAccess.get_open_error()])
+		return
+	var header := f.get_csv_line()
+	var col := {}
+	for i in header.size():
+		col[header[i].strip_edges()] = i
+	var roster: Array = []
+	var density: Array = []
+	while not f.eof_reached():
+		var r := f.get_csv_line()
+		if r.size() < 4 or r[0].strip_edges() == "":
+			continue
+		var minute := r[int(col.get("minute", 0))].strip_edges().to_float()
+		density.append({
+			"min": minute,
+			"interval": r[int(col.get("spawn_interval", 1))].strip_edges().to_float(),
+			"count": r[int(col.get("enemy_minimum", 2))].strip_edges().to_int(),
+		})
+		roster.append({"min": minute, "weights": _parse_weights(r[int(col.get("enemies", 3))].strip_edges())})
+	f.close()
+	if not roster.is_empty() and not density.is_empty():
+		_roster_bands = roster
+		_density_bands = density
+
+## Parse a CSV "enemies" cell ("BAT:0.5;ZOMBIE:0.5") into a {VSEnemy.Type: weight} dictionary.
+static func _parse_weights(cell: String) -> Dictionary:
+	var out := {}
+	for entry in cell.split(";", false):
+		var kv := entry.split(":", false)
+		if kv.size() < 2:
+			continue
+		var name := kv[0].strip_edges()
+		if not NAME_TO_TYPE.has(name):
+			push_warning("VSSpawner: unknown enemy '%s' in %s" % [name, WAVES_CSV])
+			continue
+		out[int(NAME_TO_TYPE[name])] = kv[1].strip_edges().to_float()
+	return out
 
 ## Weighted pick over a {Type: weight} dictionary; weights need not sum to 1.
 func _roll_weighted(weights: Dictionary) -> int:
