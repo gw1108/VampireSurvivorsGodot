@@ -135,6 +135,12 @@ var evolved := {}
 
 var _pending_levels := 0        # level-ups queued but not yet chosen (XP can span several)
 
+## The first two level-up hands offer WEAPONS ONLY (no passive stat items), so a fresh run
+## front-loads weapon variety before passives dilute the pool. Counts level-ups actually
+## resolved (picked or skipped); rerolls don't advance it, so a rerolled first/second hand
+## stays weapons-only. Read in _roll_upgrades.
+var _levelups_resolved := 0
+
 ## Carries the sub-integer remainder when xp_gain_mult scales a gem's XP, so the Growth
 ## passive isn't lost to rounding on the many 1-XP gems — fractions bank until they make a
 ## whole point. Reset only at run start (nothing to carry between runs).
@@ -1047,8 +1053,13 @@ func _roll_upgrades() -> Array:
 			else:
 				owned_passives += 1
 	# Fill the remaining slots with normal not-yet-maxed upgrades.
+	# The first two resolved level-ups offer weapons only — passive stat items are withheld so a
+	# fresh run leads with weapon choices (see _levelups_resolved).
+	var weapons_only := _levelups_resolved < 2
 	var pool := []
 	for opt in UPGRADE_POOL:
+		if weapons_only and not WEAPON_IDS.has(opt["id"]):
+			continue
 		# Clover is unlock-gated (VS-style): it only joins the pool once the player has found
 		# their first Little Clover, persisted in MetaSave so the unlock carries across runs.
 		if opt["id"] == "luck" and not MetaSave.is_unlocked(CLOVER_UNLOCK_ID):
@@ -1115,6 +1126,7 @@ func _upgrade_max(id: String) -> int:
 
 func _on_upgrade_picked(id: String) -> void:
 	_apply_upgrade(id)
+	_levelups_resolved += 1
 	_pending_levels -= 1
 	if _pending_levels > 0:
 		_open_level_up()
@@ -1140,6 +1152,7 @@ func _on_upgrade_skipped() -> void:
 	AgentBridge.emit_event("upgrade_skip", {"level": level})
 	var need := _xp_to_next(level)
 	xp = mini(xp + int(ceil(need * SKIP_XP_FRACTION)), need - 1)
+	_levelups_resolved += 1
 	_pending_levels -= 1
 	if _pending_levels > 0:
 		_open_level_up()
