@@ -1079,6 +1079,15 @@ func _roll_upgrades() -> Array:
 		display["level"] = lvl        # current level; the pick raises it to lvl+1
 		pool.append(display)
 	pool.shuffle()
+	# Guarantee at least one weapon powerup in every hand that CAN offer one: if the shuffled pool
+	# holds a weapon (new or upgradable) but no weapon already leads the hand (an evolution card
+	# counts), move one weapon to the front so the fill loop always includes it. The rest stays
+	# shuffled, so WHICH weapon and which passives fill the other slots is still random.
+	if not _options_have_weapon(options):
+		for i in pool.size():
+			if WEAPON_IDS.has(pool[i]["id"]):
+				pool.insert(0, pool.pop_at(i))
+				break
 	# Luck's fourth level-up option (Luck.md > Mechanics): a Luck-scaled chance to widen the hand
 	# from 3 to 4 REAL cards. The extra slot is only granted when a genuine upgrade can fill it —
 	# it is never padded with consolation below, so stacking Luck feels like more real choices, not
@@ -1106,6 +1115,15 @@ func _roll_upgrades() -> Array:
 		options.append(pad[pi % pad.size()].duplicate())
 		pi += 1
 	return options.slice(0, max_real)
+
+## True when the hand already contains a weapon powerup — either an evolution card (itself a
+## weapon upgrade) or a base weapon pick (id in WEAPON_IDS). Used to decide whether _roll_upgrades
+## must force a weapon into an otherwise all-passive hand.
+func _options_have_weapon(opts: Array) -> bool:
+	for o in opts:
+		if bool(o.get("evolution", false)) or WEAPON_IDS.has(o.get("id", "")):
+			return true
+	return false
 
 ## An evolution is offerable when its weapon is at max level, its paired passive is owned
 ## (level >= 1, VS-style: the passive need only be present), and it hasn't been taken yet.
