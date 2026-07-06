@@ -205,7 +205,7 @@ func _refresh_stat_rail(run: VSRun, preview_id := "") -> void:
 
 ## Map an upgrade option id to the rail line(s) it would change, keyed by the exact label the
 ## rail renders, valued with the "after" string in that line's own format. Mirrors _apply_upgrade
-## in run.gd (+1 damage, x0.85 fire interval, x1.12 speed, ...) — keep the two in sync. Weapons/
+## in run.gd (+1 damage, -8% cooldown/level via haste_mult, x1.12 speed, ...) — keep the two in sync. Weapons/
 ## passives also bump their ITEMS "Lv N" line. Returns {} for ids with no rail impact.
 func _compute_preview(run: VSRun, id: String) -> Dictionary:
 	var out := {}
@@ -213,7 +213,11 @@ func _compute_preview(run: VSRun, id: String) -> Dictionary:
 		"damage":
 			out["Damage"] = "%.0f" % (run.weapon_damage + 1.0)
 		"firerate":
-			var ni := maxf(0.12, run.weapon_fire_interval * 0.85)
+			# Empty Tome: additive -8% cooldown/level via haste_mult (max -40%). Project the next
+			# level's haste_mult onto the wand's base interval — mirrors VSRun.haste_mult().
+			var next_level := int(run.upgrade_levels.get("firerate", 0)) + 1
+			var reduction: float = minf(VSRun.HASTE_REDUCTION_MAX, VSRun.HASTE_REDUCTION_PER_PICK * float(next_level))
+			var ni := run.weapon_fire_interval * run.meta_haste_mult * (1.0 - reduction)
 			out["Fire Rate"] = "%.2f/s" % (1.0 / ni if ni > 0.0 else 0.0)
 		"speed":
 			out["Move Speed"] = "%d%%" % int(round(run.player_speed_mult * 1.12 * 100.0))

@@ -35,7 +35,9 @@ func _process(delta: float) -> void:
 		var t := _nearest_enemy()
 		if t != null:
 			_fire_at(t)
-			var interval := run.weapon_fire_interval
+			# Empty Tome (haste_mult) reaches the wand here, same as every other weapon — its base
+			# interval is no longer mutated in place on each pick (see VSRun.haste_mult).
+			var interval := run.weapon_fire_interval * run.haste_mult()
 			if run.projectile_evolved:
 				interval *= EVOLVED_CD_MULT
 			_cd = interval

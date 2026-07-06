@@ -192,7 +192,7 @@ const WEAPON_IDS := ["multishot", "garlic", "whip", "bible", "lightning", "knife
 ## which it stops appearing in the roll.
 const UPGRADE_POOL := [
 	{"id": "damage", "title": "Spinach", "desc": "Raises inflicted damage by 10%", "max": 5},
-	{"id": "firerate", "title": "Empty Tome", "desc": "Reduces weapon cooldown, attacks come faster", "max": 5},
+	{"id": "firerate", "title": "Empty Tome", "desc": "Reduces weapon cooldown by 8%", "max": 5},
 	{"id": "speed", "title": "Wings", "desc": "Character moves 10% faster", "max": 5},
 	{"id": "health", "title": "Hollow Heart", "desc": "Augments max health by 20%", "max": 5},
 	{"id": "multishot", "title": "Multishot", "desc": "+1 projectile", "max": 4},
@@ -289,7 +289,9 @@ func _build_world() -> void:
 	_cam = Camera2D.new()
 	_cam.position_smoothing_enabled = true
 	# Zoom < 1 zooms the camera out, so the player and everything else read ~20% smaller.
-	_cam.zoom = Vector2(0.8, 0.8)
+	# Editable via data/balance.csv (camera_zoom); defaults to 0.8.
+	var cam_zoom := BalanceData.get_value("camera_zoom", 0.8)
+	_cam.zoom = Vector2(cam_zoom, cam_zoom)
 	player.add_child(_cam)
 	_cam.make_current()
 
@@ -439,11 +441,15 @@ func spinach_mult() -> float:
 func power_mult() -> float:
 	return spinach_mult() * meta_power_mult
 
-## Global fire-rate multiplier from Haste level-up picks: mirrors power_mult() but shrinks every
-## other weapon's own attack interval. Same independent-constant fix as power_mult() above.
-const HASTE_MULT_PER_PICK := 0.2   # +20% attack speed per Haste pick, max 5 picks => +100%
+## Global cooldown multiplier from Empty Tome level-up picks: EVERY weapon (the Magic Wand
+## included, via weapon.gd) multiplies its base attack interval by this. Empty Tome is -8%
+## Cooldown per level, additive, capped at -40% (5 levels) — see the wiki Empty_Tome.md. Additive
+## (not compounding) so five picks land exactly on the wiki's -40%, not pow(0.92,5).
+const HASTE_REDUCTION_PER_PICK := 0.08   # -8% cooldown per Empty Tome pick
+const HASTE_REDUCTION_MAX := 0.40        # cap at -40% total (5 picks)
 func haste_mult() -> float:
-	return meta_haste_mult / (1.0 + HASTE_MULT_PER_PICK * float(upgrade_levels.get("firerate", 0)))
+	var reduction := minf(HASTE_REDUCTION_MAX, HASTE_REDUCTION_PER_PICK * float(upgrade_levels.get("firerate", 0)))
+	return meta_haste_mult * (1.0 - reduction)
 
 ## Read permanent PowerUps bought in the shop and fold them into this run's starting stats.
 ## Called once at run start so every run reflects the between-run meta-progression. Uses the
@@ -462,9 +468,8 @@ func _apply_meta_powerups() -> void:
 		player.health = player.max_health
 	var haste := int(levels.get("haste", 0))
 	if haste > 0:
-		# Same split for Cooldown: the wand reads weapon_fire_interval directly; other weapons read
-		# haste_mult(). pow(0.95, haste) is the same -5%/level ratio the shop card promises.
-		weapon_fire_interval *= pow(0.95, haste)
+		# Meta Cooldown folds into meta_haste_mult, which haste_mult() applies to EVERY weapon
+		# (the wand now reads haste_mult() too — see weapon.gd), so a single fold here reaches all.
 		meta_haste_mult *= pow(0.95, haste)
 	var boots := int(levels.get("boots", 0))
 	if boots > 0:
@@ -1205,7 +1210,9 @@ func _apply_upgrade(id: String) -> void:
 			# the wand included, via spinach_mult() — reads it, so no flat weapon_damage bump here.
 			pass
 		"firerate":
-			weapon_fire_interval = maxf(0.12, weapon_fire_interval * 0.85)
+			# Empty Tome: cooldown reduction lives entirely in haste_mult() (additive -8%/level,
+			# read by every weapon incl. the wand). upgrade_levels drives it, so nothing to do here.
+			pass
 		"speed":
 			player_speed_mult *= 1.10
 		"health":

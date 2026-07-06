@@ -48,9 +48,9 @@ func _park_zombie(run: VSRun, at: Vector2) -> VSEnemy:
 	e.position = at
 	return e
 
-# One Lv1 lash out-damages the Magic Wand's per-hit damage stat enough to one-shot a 6hp zombie,
-# so Antonio genuinely plays as a whip character from the first second — the Magic Wand (which he
-# doesn't even start with; see test_antonio_does_not_start_with_the_magic_wand below) is a poke by comparison.
+# A Lv1 lash out-damages the Magic Wand's per-hit damage stat by a wide margin, so Antonio
+# genuinely plays as a whip character from the first second — the Magic Wand (which he doesn't
+# even start with; see test_antonio_does_not_start_with_the_magic_wand below) is a poke by comparison.
 func test_whip_lash_outclears_the_base_projectile() -> void:
 	var run := _state_run(1, 1)
 	var e := _park_zombie(run, Vector2(100, 0))   # inside range (140) and the +x facing wedge
@@ -58,12 +58,15 @@ func test_whip_lash_outclears_the_base_projectile() -> void:
 	whip.run = run
 	add_child(whip)
 	auto_free(whip)
-	whip._swing(1)
-	assert_float(e.health).is_less_equal(0.0)     # 9 dmg kills the 6hp zombie in a single lash
-	# The whip's per-hit damage dwarfs the Magic Wand's (weapon_damage 2), which cannot one-shot
-	# even a starter zombie — the whip is the early-clear tool, not the wand.
-	var whip_dmg := (VSWhip.BASE_DAMAGE + VSWhip.DAMAGE_PER_LEVEL) * run.might_mult()
-	assert_float(whip_dmg).is_greater(run.weapon_damage)
+	# Lash damage now rolls +/-50% base variance per swing (VSRun.damage_variance), so sum many
+	# swings to average out the noise, then confirm the whip's per-lash output dwarfs the wand's.
+	var total := 0.0
+	for i in 200:
+		e.health = 1000.0
+		whip._swing(1)
+		total += 1000.0 - e.health
+	var avg_lash := total / 200.0
+	assert_float(avg_lash).is_greater(run.weapon_damage)   # ~10 dmg/lash vs the wand's weapon_damage (2)
 	assert_float(run.weapon_damage).is_less(6.0)
 
 # Antonio's only starting weapon is the Whip (see test_antonio_starts_with_the_whip above) — the
