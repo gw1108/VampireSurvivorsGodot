@@ -107,6 +107,18 @@ const TYPES := {
 	Type.GLOW_BAT: {"tex": "res://art/enemy_bat.png",      "speed": 68.0, "health": 60.0,  "damage": 12.0, "xp": 5, "scale": 1.5, "radius": 16.0, "gems": 3, "knock": 0.3, "outline": Color(0.30, 0.60, 1.0)},
 }
 
+## Per-type visual-scale CSV overrides. Each enemy's base art size (its TYPES `scale`, default 1.0)
+## can be retuned per archetype in res://data/balance.csv without touching code, keyed here; the
+## global `enemy_scale` still multiplies on top. Only archetypes with a non-default size are listed —
+## the rest sit at 1.0 and gain nothing from a row. The TYPES `scale` is the fallback default, so a
+## missing/blank row leaves the hardcoded size unchanged.
+const SCALE_KEYS := {
+	Type.MANTIS_WARRIOR: "enemy_mantis_warrior_scale",
+	Type.ELITE:          "enemy_elite_scale",
+	Type.REAPER:         "enemy_reaper_scale",
+	Type.GLOW_BAT:       "enemy_glow_bat_scale",
+}
+
 ## Knockback: a weapon hit shoves the enemy directly away from the hit source with an
 ## impulse (px/s) that decays fast, so a strike reads as a real shove that buys the player
 ## a sliver of breathing room without launching enemies across the arena. `knock` per-type
@@ -232,10 +244,13 @@ func _ready() -> void:
 	contact_damage = cfg["damage"] * dmg_mult
 	xp_value = cfg["xp"]
 	radius = cfg.get("radius", RADIUS)
-	# Per-type art size, times a global visual multiplier a designer can retune in
-	# res://data/balance.csv (default 1.0 = per-type size). Folded into base_scale so the node
-	# scale, cached half-extent, and death tween all inherit it; the collision radius is separate.
-	base_scale = cfg.get("scale", 1.0) * BalanceData.get_value("enemy_scale", 1.0)
+	# Per-type art size (editable per archetype via an enemy_<name>_scale row in
+	# res://data/balance.csv, falling back to the hardcoded TYPES `scale`), times a global
+	# visual multiplier a designer can retune (default 1.0 = per-type size). Folded into
+	# base_scale so the node scale, cached half-extent, and death tween all inherit it;
+	# the collision radius is separate.
+	var type_scale: float = BalanceData.get_value(SCALE_KEYS.get(type, ""), cfg.get("scale", 1.0))
+	base_scale = type_scale * BalanceData.get_value("enemy_scale", 1.0)
 	gem_drops = cfg.get("gems", 1)
 	knock_resist = cfg.get("knock", 1.0)
 	_base_tint = cfg.get("tint", Color(1, 1, 1))
