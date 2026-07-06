@@ -5,8 +5,7 @@ magic_wand_damage_per_level,1,Magic Wand damage added per Power upgrade pick
 garlic_base_damage,0,Garlic base damage before any levels
 garlic_damage_per_level,1,Garlic damage added per level
 whip_base_damage,10,Whip base damage at Lv1 (wiki base 10); per-level bonus_damage/projectiles/area live in data/whip_levels.csv
-king_bible_base_damage,6,King Bible base damage before any levels
-king_bible_damage_per_level,3,King Bible damage added per level
+king_bible_base_damage,10,King Bible base damage at Lv1 (wiki base 10); per-level bonus_damage/amount/area/speed live in data/king_bible_levels.csv
 lightning_base_damage,10,Lightning Ring base damage before any levels
 lightning_damage_per_level,5,Lightning Ring damage added per level
 knife_base_damage,6.5,Knife base damage before any levels

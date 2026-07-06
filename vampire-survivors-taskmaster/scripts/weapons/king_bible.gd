@@ -13,17 +13,25 @@ extends Node2D
 # enemies slip through the gaps, and the orbit spins briskly so it reads as active area
 # denial. Damage tracks the wiki (base ~10 scaled, ~30 at max level).
 const BASE_ORBIT_RADIUS := 88.0
-const RADIUS_PER_LEVEL := 6.0
-const ANGULAR_SPEED := 3.6          # rad/s the books orbit the player (~0.57 rev/s)
+const ANGULAR_SPEED := 3.6          # rad/s the books orbit the player at Lv1 (~0.57 rev/s), scaled by the per-level speed_mult
 const BOOK_HIT_RADIUS := 27.0       # how close a book must pass to strike an enemy
 ## Min seconds between a book's hits (avoids per-frame drain) lives in res://data/balance.csv
 ## ("king_bible_tick_interval") so a designer can retune fire rate without touching this script.
 static var TICK_INTERVAL := BalanceData.get_value("king_bible_tick_interval", 0.35)
-## Base damage + per-level growth live in res://data/balance.csv ("king_bible_base_damage" /
-## "king_bible_damage_per_level") so a designer can retune them without touching this script.
-static var BASE_DAMAGE := BalanceData.get_value("king_bible_base_damage", 6.0)
-static var DAMAGE_PER_LEVEL := BalanceData.get_value("king_bible_damage_per_level", 3.0)
-const MAX_BOOKS := 5
+
+## Per-level level-up table (wiki King_Bible.md "Levels"), editable in res://data/king_bible_levels.csv —
+## one row per level with independently-tunable columns so a designer can retune ANY single level without
+## touching this script. Values are cumulative absolutes (each row fully describes the Bible at that level):
+## amount (books orbiting), bonus_damage (flat added on top of BASE_DAMAGE), area_mult (scales orbit radius),
+## speed_mult (scales ANGULAR_SPEED). The wiki pattern is: L2/L5/L8 +1 book; L3/L6 +25% area & +30% speed;
+## L4/L7 +10 damage (max = 4 books, +20 damage, 150% area, 160% speed → base-10 Bible peaks at 30 damage).
+const LEVELS_CSV := "res://data/king_bible_levels.csv"
+static var _levels: Dictionary = {}   # int level -> {"amount": int, "bonus_damage": float, "area_mult": float, "speed_mult": float}
+static var _levels_loaded := false
+## Lv1 base damage lives in res://data/balance.csv ("king_bible_base_damage", wiki base 10); the flat
+## per-level bonus on top of it lives per-level in data/king_bible_levels.csv (see LEVELS_CSV above).
+static var BASE_DAMAGE := BalanceData.get_value("king_bible_base_damage", 10.0)
+const MAX_BOOKS := 4
 const BOOK_SCALE := 0.5             # 64px source -> ~32px book, legible beside enemies
 const BOOK_TEX := "res://art/up_bible.png"
 
@@ -46,7 +54,7 @@ void fragment() {
 # Evolved (Unholy Vespers) profile — applied when run.bible_evolved: a full ring of extra
 # books orbiting faster, striking more often, harder, and with a wider reach. Gated on the
 # weapon already being maxed, so this is the run's payoff for maxing Bible + owning Power.
-const EVOLVED_EXTRA_BOOKS := 2      # 5 -> 7 books, a near-solid wall
+const EVOLVED_EXTRA_BOOKS := 2      # 4 -> 6 books, a near-solid wall
 const EVOLVED_DAMAGE_MULT := 2.2
 const EVOLVED_ANGULAR_MULT := 1.35
 const EVOLVED_TICK_MULT := 0.6      # shorter cooldown between a book's hits
@@ -74,7 +82,7 @@ func _process(delta: float) -> void:
 	# weapons gate on phase; they still show where they'll resume from.
 	if run.phase != "playing":
 		return
-	var ang_speed := ANGULAR_SPEED
+	var ang_speed := ANGULAR_SPEED * float(_row(lvl)["speed_mult"])
 	if _is_evolved():
 		ang_speed *= EVOLVED_ANGULAR_MULT
 	_angle = fmod(_angle + ang_speed * delta, TAU)
@@ -88,15 +96,18 @@ func _process(delta: float) -> void:
 func _is_evolved() -> bool:
 	return run != null and run.bible_evolved
 
-## Books grow in number with level so a maxed Bible walls the player in orbiting damage.
-## Evolving fills the ring to its evolved cap regardless of level (evolution needs max level).
+## Books grow in number with level (per-level "amount" column: 1,2,2,2,3,3,3,4) so a maxed Bible
+## walls the player in orbiting damage. Evolving fills the ring to its evolved cap regardless of
+## level (evolution needs max level).
 func _book_count(lvl: int) -> int:
 	if _is_evolved():
 		return MAX_BOOKS + EVOLVED_EXTRA_BOOKS
-	return clampi(1 + lvl / 2, 1, MAX_BOOKS)
+	return clampi(int(_row(lvl)["amount"]), 1, MAX_BOOKS)
 
 func _orbit_radius(lvl: int) -> float:
-	return (BASE_ORBIT_RADIUS + RADIUS_PER_LEVEL * float(lvl - 1)) * run.area_mult   # Candelabrador widens the orbit
+	# The ring widens only via the per-level Area column (wiki: +25% at Lv3 & Lv6); run.area_mult
+	# (Candelabrador) then extends it further on top.
+	return BASE_ORBIT_RADIUS * float(_row(lvl)["area_mult"]) * run.area_mult
 
 ## Place each book evenly around the ring at the current orbit angle and spin it so the
 ## sprite tumbles as it travels (purely cosmetic).
@@ -110,7 +121,7 @@ func _position_books(count: int, lvl: int) -> void:
 ## Damage every enemy currently touching a book. Per-book world position is checked so
 ## hits track the orbit; the shared cooldown keeps a lingering enemy from draining per frame.
 func _strike(count: int, lvl: int) -> void:
-	var dmg := (BASE_DAMAGE * run.damage_variance() + DAMAGE_PER_LEVEL * float(lvl)) * run.might_mult() * run.power_mult()
+	var dmg := (BASE_DAMAGE * run.damage_variance() + float(_row(lvl)["bonus_damage"])) * run.might_mult() * run.power_mult()
 	var reach := BOOK_HIT_RADIUS
 	if _is_evolved():
 		dmg *= EVOLVED_DAMAGE_MULT
@@ -154,3 +165,47 @@ func _get_book_material() -> ShaderMaterial:
 		_book_material.shader = sh
 		_book_material.set_shader_parameter("tint", BOOK_TINT)
 	return _book_material
+
+## The per-level tuning row for `lvl`, from data/king_bible_levels.csv. Levels past the table (Limit
+## Break) clamp to the highest defined level; a missing CSV reconstructs the wiki deltas so the Bible
+## never breaks.
+static func _row(lvl: int) -> Dictionary:
+	_ensure_levels()
+	if _levels.has(lvl):
+		return _levels[lvl]
+	if _levels.is_empty():
+		var amount := 1 + (1 if lvl >= 2 else 0) + (1 if lvl >= 5 else 0) + (1 if lvl >= 8 else 0)
+		var bonus := (10.0 if lvl >= 4 else 0.0) + (10.0 if lvl >= 7 else 0.0)
+		var area := 1.0 + (0.25 if lvl >= 3 else 0.0) + (0.25 if lvl >= 6 else 0.0)
+		var speed := 1.0 + (0.3 if lvl >= 3 else 0.0) + (0.3 if lvl >= 6 else 0.0)
+		return {"amount": amount, "bonus_damage": bonus, "area_mult": area, "speed_mult": speed}
+	var keys := _levels.keys()
+	keys.sort()
+	return _levels[keys[keys.size() - 1]]
+
+## Parse the per-level table once. Column-name driven (falls back to fixed positions) so the CSV
+## can carry extra columns (e.g. a human-readable description) without breaking the loader.
+static func _ensure_levels() -> void:
+	if _levels_loaded:
+		return
+	_levels_loaded = true
+	var f := FileAccess.open(LEVELS_CSV, FileAccess.READ)
+	if f == null:
+		push_warning("VSKingBible: cannot open %s (err %d)" % [LEVELS_CSV, FileAccess.get_open_error()])
+		return
+	var header := f.get_csv_line()
+	var col := {}
+	for i in header.size():
+		col[header[i].strip_edges()] = i
+	while not f.eof_reached():
+		var r := f.get_csv_line()
+		if r.size() < 2 or r[0].strip_edges() == "":
+			continue
+		var lvl := r[int(col.get("level", 0))].strip_edges().to_int()
+		_levels[lvl] = {
+			"amount": r[int(col.get("amount", 1))].strip_edges().to_int(),
+			"bonus_damage": r[int(col.get("bonus_damage", 2))].strip_edges().to_float(),
+			"area_mult": r[int(col.get("area_mult", 3))].strip_edges().to_float(),
+			"speed_mult": r[int(col.get("speed_mult", 4))].strip_edges().to_float(),
+		}
+	f.close()

@@ -25,7 +25,7 @@ func _park_enemy_on_ring(run: VSRun, lvl: int) -> VSEnemy:
 	e.target = null                     # no target -> never chases/drifts
 	add_child(e)                        # _ready applies stats + joins "enemies"
 	auto_free(e)
-	var r := VSKingBible.BASE_ORBIT_RADIUS + VSKingBible.RADIUS_PER_LEVEL * float(lvl - 1)
+	var r := VSKingBible.BASE_ORBIT_RADIUS * float(VSKingBible._row(lvl)["area_mult"]) * run.area_mult
 	e.position = Vector2(r, 0.0)
 	return e
 
