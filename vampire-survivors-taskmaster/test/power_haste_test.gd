@@ -17,7 +17,7 @@ func test_power_pick_raises_power_mult_and_haste_pick_lowers_haste_mult() -> voi
 	var run := VSRun.new()
 	auto_free(run)
 	run._apply_upgrade("damage")
-	assert_float(run.power_mult()).is_equal_approx(1.2, 0.001)   # 1.0 + POWER_MULT_PER_PICK (0.2) * 1 pick
+	assert_float(run.power_mult()).is_equal_approx(1.1, 0.001)   # 1.0 + POWER_MULT_PER_PICK (0.1) * 1 pick (Spinach +10%)
 	run._apply_upgrade("firerate")
 	assert_float(run.haste_mult()).is_equal_approx(0.8333, 0.001)   # 1 / (1.0 + HASTE_MULT_PER_PICK (0.2) * 1 pick)
 

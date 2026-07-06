@@ -191,18 +191,18 @@ const WEAPON_IDS := ["multishot", "garlic", "whip", "bible", "lightning", "knife
 ## level each upgrade reaches — weapons cap at 8 (VS convention), passives lower — after
 ## which it stops appearing in the roll.
 const UPGRADE_POOL := [
-	{"id": "damage", "title": "Power", "desc": "+1 weapon damage", "max": 5},
-	{"id": "firerate", "title": "Haste", "desc": "+15% fire rate", "max": 5},
-	{"id": "speed", "title": "Swift Boots", "desc": "+12% move speed", "max": 5},
-	{"id": "health", "title": "Vitality", "desc": "+20 max HP, heal 20", "max": 5},
+	{"id": "damage", "title": "Spinach", "desc": "Raises inflicted damage by 10%", "max": 5},
+	{"id": "firerate", "title": "Empty Tome", "desc": "Reduces weapon cooldown, attacks come faster", "max": 5},
+	{"id": "speed", "title": "Wings", "desc": "Character moves 10% faster", "max": 5},
+	{"id": "health", "title": "Hollow Heart", "desc": "Augments max health by 20%", "max": 5},
 	{"id": "multishot", "title": "Multishot", "desc": "+1 projectile", "max": 4},
-	{"id": "area", "title": "Candelabrador", "desc": "+10% weapon area (aura/whip/bible/lightning reach)", "max": 5},
-	{"id": "projspeed", "title": "Bracer", "desc": "+15% projectile speed", "max": 5},
-	{"id": "attract", "title": "Attractorb", "desc": "+30% pickup range (gems, coins, food fly in from farther)", "max": 4},
-	{"id": "growth", "title": "Growth", "desc": "+8% XP gained (levels come faster)", "max": 5},
-	{"id": "armor", "title": "Armor", "desc": "-1 damage taken per hit (min 1 always lands)", "max": 3},
-	{"id": "recovery", "title": "Pummarola", "desc": "+0.2 HP recovered per second", "max": 5},
-	{"id": "luck", "title": "Clover", "desc": "+10% Luck", "max": 5},
+	{"id": "area", "title": "Candelabrador", "desc": "Augments area of attacks by 10%", "max": 5},
+	{"id": "projspeed", "title": "Bracer", "desc": "Increases projectile speed by 10%", "max": 5},
+	{"id": "attract", "title": "Attractorb", "desc": "Pick up items from further away", "max": 5},
+	{"id": "growth", "title": "Crown", "desc": "Character gains 8% more experience", "max": 5},
+	{"id": "armor", "title": "Armor", "desc": "Reduces incoming damage by 1 (min 1 always lands)", "max": 5},
+	{"id": "recovery", "title": "Pummarola", "desc": "Character recovers 0.2 HP per second", "max": 5},
+	{"id": "luck", "title": "Clover", "desc": "Character gets 10% luckier", "max": 5},
 	{"id": "garlic", "title": "Garlic", "desc": "Damaging aura around you (grows each pick)", "max": 8},
 	{"id": "whip", "title": "Whip", "desc": "Melee arc lashing your facing side; both sides at Lv 2+", "max": 8},
 	{"id": "bible", "title": "King Bible", "desc": "Holy books orbit you, striking enemies they pass through", "max": 8},
@@ -216,8 +216,8 @@ const UPGRADE_POOL := [
 ## passive owned unlocks an evolved form with a boosted profile. Keyed off UPGRADE_POOL by
 ## `weapon` (must be at max level) and `passive` (must be owned, level >= 1). Each evolution
 ## id is applied once via _apply_upgrade and remembered in `evolved` so it stops re-rolling.
-## Faithful to VS pairings where the passive exists in our pool: Bible+Power, Whip+Vitality
-## (Hollow Heart), Garlic+Swift Boots. Add rows to grow the evolution roster.
+## Faithful to VS pairings where the passive exists in our pool: Bible+Spinach, Whip+Hollow Heart,
+## Garlic+Wings. Add rows to grow the evolution roster.
 const EVOLUTIONS := [
 	{"id": "unholy_vespers", "title": "Unholy Vespers", "desc": "King Bible EVOLVED — more books, faster orbit, far deadlier sweeps", "weapon": "bible", "passive": "damage"},
 	{"id": "bloody_tear", "title": "Bloody Tear", "desc": "Whip EVOLVED — a wider, longer, far deadlier lash on both flanks", "weapon": "whip", "passive": "health"},
@@ -420,21 +420,24 @@ func _init_character() -> void:
 func might_mult() -> float:
 	return 1.0 + 0.10 * float(clampi(level / 10, 0, 5))
 
-## Global damage multiplier from Power level-up picks, so every OTHER owned weapon (whip,
-## garlic, bible, lightning, knife, runetracer, fire wand) gets the build-wide bonus their card
-## text promises, not just the Magic Wand (which reads weapon_damage directly instead). A flat
-## +20%/pick on its own independent constant, NOT derived from weapon_damage's ratio — deriving
-## it from the wand's own (small-base, flat +1/pick) curve made Power ~3-4x more DPS-efficient
-## per pick than a weapon's own card once a build owns 2-3 weapons (playtest-tuning found via
-## analysis, no Godot binary in this pass's env to play it live — see ws-01kwn3dwqxkrqqp3drjrp3wdgh).
-const POWER_MULT_PER_PICK := 0.2   # +20% weapon damage per Power pick, max 5 picks => +100%
+## The Spinach (Power) passive: "Raises inflicted damage by 10%" per pick — a flat +10% Might
+## multiplier, max 5 picks => +50%, matching the offline wiki (Passive_Items.md / Spinach.md).
+## Applied build-wide so EVERY owned weapon hits harder, including the Magic Wand (which reads
+## weapon_damage directly but folds this in via spinach_mult(), see VSWeapon._fire_at), not just
+## a flat +1 to the wand as the old card text implied.
+const POWER_MULT_PER_PICK := 0.1   # +10% Might per Spinach pick, max 5 picks => +50%
 ## Meta "Might" shop upgrade's build-wide slice: +10% weapon damage per level for every non-wand
 ## weapon (max 5 levels => +50%), stacked into power_mult via meta_power_mult. The wand's slice is
 ## its own flat +2/level on weapon_damage (see _apply_meta_powerups) — an independent constant, not
 ## derived from the wand's small-base flat curve, for the same DPS-balance reason as POWER_MULT_PER_PICK.
 const META_MIGHT_MULT_PER_LEVEL := 0.10
+## Spinach-only multiplier (the +10%/pick Might from Power picks), WITHOUT the meta Might slice.
+## The Magic Wand uses this directly since its meta Might is already folded into weapon_damage as a
+## flat +2/level — using the full power_mult() would double-count meta Might on the wand.
+func spinach_mult() -> float:
+	return 1.0 + POWER_MULT_PER_PICK * float(upgrade_levels.get("damage", 0))
 func power_mult() -> float:
-	return (1.0 + POWER_MULT_PER_PICK * float(upgrade_levels.get("damage", 0))) * meta_power_mult
+	return spinach_mult() * meta_power_mult
 
 ## Global fire-rate multiplier from Haste level-up picks: mirrors power_mult() but shrinks every
 ## other weapon's own attack interval. Same independent-constant fix as power_mult() above.
@@ -1198,11 +1201,13 @@ func _apply_upgrade(id: String) -> void:
 	upgrade_levels[id] = int(upgrade_levels.get(id, 0)) + 1
 	match id:
 		"damage":
-			weapon_damage += BalanceData.get_value("magic_wand_damage_per_level", 1.0)
+			# Spinach: pure +10% Might multiplier (see spinach_mult / power_mult). Every weapon —
+			# the wand included, via spinach_mult() — reads it, so no flat weapon_damage bump here.
+			pass
 		"firerate":
 			weapon_fire_interval = maxf(0.12, weapon_fire_interval * 0.85)
 		"speed":
-			player_speed_mult *= 1.12
+			player_speed_mult *= 1.10
 		"health":
 			if player:
 				player.max_health += 20.0
@@ -1212,7 +1217,7 @@ func _apply_upgrade(id: String) -> void:
 		"area":
 			area_mult *= 1.10
 		"projspeed":
-			projectile_speed_mult *= 1.15
+			projectile_speed_mult *= 1.10
 		"attract":
 			pickup_range_mult *= 1.30
 		"growth":
