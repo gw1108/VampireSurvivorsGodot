@@ -585,6 +585,50 @@ const AREA_PER_PICK := 0.10         # Candelabrador: +10% Area per pick, max 5 =
 const PROJ_SPEED_PER_PICK := 0.10   # Bracer: +10% projectile speed per pick, max 5 => +50%
 const GROWTH_PER_PICK := 0.08       # Crown: +8% Growth per pick, max 5 => +40%
 
+## Attractorb's per-level Magnet total (res://data/passive_attract.csv, "level,pickup_range_mult").
+## Unlike the four additive passives above, each level is an absolute multiplier of a different size
+## (wiki Attractorb.md "Levels": 1.5x / 1.995x / 2.49375x / 2.9925x / 3.980025x, max +300%), so a
+## designer can retune any single level without touching this script. Loaded once and cached.
+const ATTRACT_CSV := "res://data/passive_attract.csv"
+static var _attract_levels: Dictionary = {}   # int level -> float pickup_range_mult total
+static var _attract_loaded := false
+
+## The Attractorb pickup-range multiplier at `level` from the CSV. Level 0 (unowned) is 1.0; levels
+## past the table (Limit Break) clamp to the highest defined level. A missing/unreadable CSV falls
+## back to the wiki totals so the passive never breaks.
+static func _attract_range_mult(level: int) -> float:
+	if level <= 0:
+		return 1.0
+	_ensure_attract_levels()
+	if _attract_levels.has(level):
+		return float(_attract_levels[level])
+	if _attract_levels.is_empty():
+		var fallback := [1.5, 1.995, 2.49375, 2.9925, 3.980025]
+		return fallback[mini(level, fallback.size()) - 1]
+	var keys := _attract_levels.keys()
+	keys.sort()
+	return float(_attract_levels[keys[keys.size() - 1]])
+
+static func _ensure_attract_levels() -> void:
+	if _attract_loaded:
+		return
+	_attract_loaded = true
+	var f := FileAccess.open(ATTRACT_CSV, FileAccess.READ)
+	if f == null:
+		push_warning("VSRun: cannot open %s (err %d)" % [ATTRACT_CSV, FileAccess.get_open_error()])
+		return
+	var header := f.get_csv_line()
+	var col := {}
+	for i in header.size():
+		col[header[i].strip_edges()] = i
+	while not f.eof_reached():
+		var r := f.get_csv_line()
+		if r.size() < 2 or r[0].strip_edges() == "":
+			continue
+		var lvl := r[int(col.get("level", 0))].strip_edges().to_int()
+		_attract_levels[lvl] = r[int(col.get("pickup_range_mult", 1))].strip_edges().to_float()
+	f.close()
+
 ## Read permanent PowerUps bought in the shop and fold them into this run's starting stats.
 ## Called once at run start so every run reflects the between-run meta-progression. Uses the
 ## POWERUPS catalog's ids; unknown/zero levels are simply no-ops.
@@ -1375,7 +1419,10 @@ func _apply_upgrade(id: String) -> void:
 			# Bracer: additive +10%/pick (max 5 => +50%), not compounding.
 			projectile_speed_mult = 1.0 + PROJ_SPEED_PER_PICK * float(upgrade_levels["projspeed"])
 		"attract":
-			pickup_range_mult *= 1.30
+			# Attractorb: each level sets the Magnet total to a wiki-specific value (varying per-level
+			# bonus, not a flat compounding step), read from data/passive_attract.csv:
+			# L1 1.5x, L2 1.995x, L3 2.49375x, L4 2.9925x, L5 3.980025x (max +300%).
+			pickup_range_mult = _attract_range_mult(int(upgrade_levels["attract"]))
 		"growth":
 			# Crown: additive +8%/pick (max 5 => +40%), not compounding.
 			xp_gain_mult = 1.0 + GROWTH_PER_PICK * float(upgrade_levels["growth"])
