@@ -208,7 +208,7 @@ const UPGRADE_POOL := [
 	{"id": "firerate", "title": "Empty Tome", "desc": "Reduces weapons cooldown by 8%.", "max": 5},
 	{"id": "speed", "title": "Wings", "desc": "Character moves 10% faster.", "max": 5},
 	{"id": "health", "title": "Hollow Heart", "desc": "Augments max health by 20%.", "max": 5},
-	{"id": "multishot", "title": "Multishot", "desc": "Levels the Magic Wand: more bolts, damage, pierce, and faster fire.", "max": 8},
+	{"id": "multishot", "title": "Magic Wand", "desc": "Fires at the nearest enemy.", "max": 8},
 	{"id": "area", "title": "Candelabrador", "desc": "Augments area of attacks by 10%.", "max": 5},
 	{"id": "projspeed", "title": "Bracer", "desc": "Increases projectiles speed by 10%.", "max": 5},
 	{"id": "attract", "title": "Attractorb", "desc": "Character pickups items from further away.", "max": 5},
