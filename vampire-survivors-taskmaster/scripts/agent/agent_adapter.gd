@@ -151,6 +151,14 @@ func _on_command(cmd: Dictionary) -> void:
 			# dump a catch-up burst (e.g. ~48 elites) that would skew a late-game population/FPS check.
 			if game._spawner != null and is_instance_valid(game._spawner):
 				game._spawner.resync_timers()
+		"force_level_up":
+			# Skip the XP grind: award exactly enough XP to trigger one level-up so the harness
+			# can pop the upgrade picker on demand and screenshot the choice cards (per-level
+			# caption render/clip check). collect_xp only banks XP while phase == "playing", so
+			# this is a no-op if the picker is already open — send it once per resumed run.
+			# Debug-only escape hatch; inert in real builds (agent gate only — agent_bridge.gd).
+			if game.phase == "playing":
+				game.collect_xp(game._xp_to_next(game.level))
 		"force_low_health":
 			# The low-health warning vignette (hud.gd _refresh_lowhp) only shows once HP drops below
 			# LOWHP_THRESHOLD (30%) — hard to reach on demand in an automated playtest without dying.
