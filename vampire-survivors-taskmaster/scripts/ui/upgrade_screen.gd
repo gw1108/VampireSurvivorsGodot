@@ -287,7 +287,10 @@ func _add_rail_line(name: String, value: String, after := "") -> void:
 		name_lbl.modulate = Color(0.55, 1.0, 0.55)
 	row.add_child(name_lbl)
 	var val_lbl := Label.new()
-	val_lbl.text = "%s → %s" % [value, after] if changed else value
+	# ASCII "->" not "→": the default embedded font lacks U+2192, so the arrow rendered as a
+	# missing-glyph tofu box on the cards + rail (caught in a screenshot pass). Keep both label
+	# formats (here and the card's "Lv N -> M") on plain ASCII so the progression reads cleanly.
+	val_lbl.text = "%s -> %s" % [value, after] if changed else value
 	val_lbl.add_theme_font_size_override("font_size", 13)
 	val_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	val_lbl.modulate = Color(0.55, 1.0, 0.55) if changed else Color(0.85, 0.92, 1.0)
@@ -432,7 +435,7 @@ func _make_card(index: int, opt: Dictionary) -> Button:
 		if lvl <= 0:
 			lvl_label.text = "Lv %d  (MAX)" % next if maxed else "Lv %d" % next
 		else:
-			lvl_label.text = "Lv %d → %d  (MAX)" % [lvl, next] if maxed else "Lv %d → %d" % [lvl, next]
+			lvl_label.text = "Lv %d -> %d  (MAX)" % [lvl, next] if maxed else "Lv %d -> %d" % [lvl, next]
 		lvl_label.add_theme_font_size_override("font_size", 13)
 		lvl_label.modulate = Color(0.9, 0.85, 0.55)
 		text_col.add_child(lvl_label)
