@@ -27,8 +27,15 @@ const MAX_ENEMIES_LATE := 300   # cap the final-third ramp climbs toward (GDD: 3
 const COLLIDER_SAFE_CAP := 300  # validated packed-density ceiling (~78fps at the ~274-body crush)
 const LATE_RAMP_START := 0.367  # fraction of RUN_DURATION where the cap begins to climb (~11:00)
 const SPAWN_RING := 520.0
-const ELITE_INTERVAL := 35.0   # seconds between mini-boss spawns
-const ELITE_FIRST := 35.0      # delay before the first elite appears
+# Chest-dropping mini-boss cadence. Mad Forest's real "Bosses & Treasure" column
+# (.firecrawl/wiki-offline/Mad_Forest.md "Waves") spawns a treasure boss at MINUTE marks —
+# roughly one per minute from 1:00 on (Glowing Bat 1:00/3:00, Mantichana 5:00, Giant variants
+# thereafter), each dropping a chest. So the mini-boss fires on the wiki's per-minute boss beat
+# rather than the old invented flat-35s spike (which is not in the Waves/Bosses table and flooded
+# the run with ~48 chests vs the wiki's ~21 boss/treasure beats). The armored-skeleton ELITE sprite
+# stands in for the generic beefy boss; the exact per-minute boss roster is a proposed CSV follow-up.
+const ELITE_INTERVAL := 60.0   # seconds between mini-boss beats (~1 boss per minute, wiki cadence)
+const ELITE_FIRST := 60.0      # first mini-boss at 1:00 — the wiki's first boss beat (Glowing Bat @1:00)
 const WAVE_INTERVAL := 60.0    # seconds between minute-milestone wave surges
 const WAVE_BASE := 8           # enemies in the first (1:00) surge
 const WAVE_GROWTH := 6         # extra enemies per subsequent minute mark
@@ -144,8 +151,10 @@ func _spawn_one(cap: int) -> void:
 	run.add_child(e)
 	AgentBridge.emit_event("spawn", {"type": "enemy", "pos": [pos.x, pos.y]})
 
-## Spawn a single elite/mini-boss on the ring. Bypasses the enemy cap so the
-## boss always shows up, and tags its event so tooling can tell it apart.
+## Spawn a single elite/mini-boss on the ring at a wiki boss beat (a minute mark, see
+## ELITE_INTERVAL). Bypasses the enemy cap so the boss always shows up, and tags its event so
+## tooling can tell it apart. Its kill drops a Treasure Chest (VSRun._maybe_drop_chest), the
+## faithful "Bosses & Treasure" payout.
 func _spawn_elite() -> void:
 	var ang := randf() * TAU
 	var pos := run.player.position + Vector2(cos(ang), sin(ang)) * SPAWN_RING
