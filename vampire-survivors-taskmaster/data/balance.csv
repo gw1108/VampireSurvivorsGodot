@@ -9,8 +9,7 @@ lightning_base_damage,15,Lightning Ring base damage at Lv1 (wiki base 15); per-l
 knife_base_damage,6.5,Knife base damage before any levels
 runetracer_base_damage,10,Runetracer base damage before any levels
 runetracer_damage_per_level,3,Runetracer damage added per level
-fire_wand_base_damage,20,Fire Wand base damage before any levels
-fire_wand_damage_per_level,6,Fire Wand damage added per level
+fire_wand_base_damage,20,Fire Wand base damage before any levels (per-level growth lives in data/fire_wand_levels.csv)
 whip_base_interval,1.2,Whip cooldown between swings (seconds; does not scale per level)
 king_bible_tick_interval,0.35,King Bible min seconds between a book's hits (does not scale per level)
 lightning_base_interval,4.5,Lightning Ring base cooldown between volleys before any levels
