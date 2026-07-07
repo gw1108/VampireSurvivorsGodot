@@ -315,6 +315,12 @@ const NAME_TO_TYPE := {
 	"ELITE": VSEnemy.Type.ELITE,
 	"REAPER": VSEnemy.Type.REAPER,
 	"GLOW_BAT": VSEnemy.Type.GLOW_BAT,
+	"SILVER_BAT": VSEnemy.Type.SILVER_BAT,
+	"GIANT_MUMMY": VSEnemy.Type.GIANT_MUMMY,
+	"GIANT_WEREWOLF": VSEnemy.Type.GIANT_WEREWOLF,
+	"GIANT_MANTICHANA": VSEnemy.Type.GIANT_MANTICHANA,
+	"VENUS": VSEnemy.Type.VENUS,
+	"GIANT_BLUE_VENUS": VSEnemy.Type.GIANT_BLUE_VENUS,
 }
 ## Loaded once from WAVES_CSV (cached across instances); each falls back to the const below.
 static var _roster_bands: Array = []
@@ -328,29 +334,31 @@ static var _schedule_loaded := false
 const BOSS_CSV := "res://data/mad_forest_bosses.csv"
 ## Transcribed verbatim from Mad Forest's "Bosses & Treasure" column (0:00-29:00; the 30:00 Reaper
 ## is the finale, spawned separately by VSRun). Each entry is {time: seconds, types: [mapped
-## VSEnemy.Type ...]}. Empty minutes (0/2/4/6/13/17/19/26/28) have no entry. Names are role-mapped
-## to existing art: bats (Glowing/Silver/Giant) -> GLOW_BAT, Mantichana/Venus -> MANTIS_WARRIOR,
-## Giant Werewolf -> WEREWOLF, Giant Mummy -> MUMMY (see the CSV's art_note column).
+## VSEnemy.Type ...]}. Empty minutes (0/2/4/6/13/17/19/26/28) have no entry. The generic bats stay
+## role-mapped (Glowing/Giant Bat -> GLOW_BAT), but every NAMED boss now has its own distinct art
+## type: Silver Bat -> SILVER_BAT, Mantichana -> MANTIS_WARRIOR, Giant Mantichana -> GIANT_MANTICHANA,
+## Giant Werewolf -> GIANT_WEREWOLF, Giant Mummy -> GIANT_MUMMY, Venus -> VENUS, Giant Blue Venus ->
+## GIANT_BLUE_VENUS (see the CSV's art_note column).
 const BOSS_SCHEDULE := [
 	{"time": 60.0,   "types": [VSEnemy.Type.GLOW_BAT]},                              # 1:00 Glowing Bat
 	{"time": 180.0,  "types": [VSEnemy.Type.GLOW_BAT]},                              # 3:00 Glowing Bat
 	{"time": 300.0,  "types": [VSEnemy.Type.MANTIS_WARRIOR]},                        # 5:00 Mantichana
 	{"time": 420.0,  "types": [VSEnemy.Type.GLOW_BAT]},                              # 7:00 Glowing Bat
 	{"time": 480.0,  "types": [VSEnemy.Type.GLOW_BAT]},                              # 8:00 Giant Bat
-	{"time": 540.0,  "types": [VSEnemy.Type.GLOW_BAT]},                              # 9:00 Silver Bat
-	{"time": 600.0,  "types": [VSEnemy.Type.MANTIS_WARRIOR]},                        # 10:00 Giant Mantichana
+	{"time": 540.0,  "types": [VSEnemy.Type.SILVER_BAT]},                            # 9:00 Silver Bat
+	{"time": 600.0,  "types": [VSEnemy.Type.GIANT_MANTICHANA]},                      # 10:00 Giant Mantichana
 	{"time": 660.0,  "types": [VSEnemy.Type.GLOW_BAT]},                              # 11:00 Glowing Bat
 	{"time": 720.0,  "types": [VSEnemy.Type.GLOW_BAT]},                              # 12:00 Glowing Bat
-	{"time": 840.0,  "types": [VSEnemy.Type.GLOW_BAT]},                              # 14:00 Silver Bat
-	{"time": 900.0,  "types": [VSEnemy.Type.WEREWOLF]},                              # 15:00 Giant Werewolf
+	{"time": 840.0,  "types": [VSEnemy.Type.SILVER_BAT]},                            # 14:00 Silver Bat
+	{"time": 900.0,  "types": [VSEnemy.Type.GIANT_WEREWOLF]},                        # 15:00 Giant Werewolf
 	{"time": 960.0,  "types": [VSEnemy.Type.GLOW_BAT]},                              # 16:00 Glowing Bat
-	{"time": 1080.0, "types": [VSEnemy.Type.GLOW_BAT]},                              # 18:00 Silver Bat
-	{"time": 1200.0, "types": [VSEnemy.Type.MUMMY]},                                 # 20:00 Giant Mummy
-	{"time": 1260.0, "types": [VSEnemy.Type.MANTIS_WARRIOR, VSEnemy.Type.GLOW_BAT]}, # 21:00 Venus + Glowing Bat
+	{"time": 1080.0, "types": [VSEnemy.Type.SILVER_BAT]},                            # 18:00 Silver Bat
+	{"time": 1200.0, "types": [VSEnemy.Type.GIANT_MUMMY]},                           # 20:00 Giant Mummy
+	{"time": 1260.0, "types": [VSEnemy.Type.VENUS, VSEnemy.Type.GLOW_BAT]},          # 21:00 Venus + Glowing Bat
 	{"time": 1320.0, "types": [VSEnemy.Type.GLOW_BAT]},                              # 22:00 Glowing Bat
-	{"time": 1380.0, "types": [VSEnemy.Type.GLOW_BAT]},                              # 23:00 Silver Bat
-	{"time": 1440.0, "types": [VSEnemy.Type.MANTIS_WARRIOR]},                        # 24:00 Venus
-	{"time": 1500.0, "types": [VSEnemy.Type.MANTIS_WARRIOR]},                        # 25:00 Giant Blue Venus
+	{"time": 1380.0, "types": [VSEnemy.Type.SILVER_BAT]},                            # 23:00 Silver Bat
+	{"time": 1440.0, "types": [VSEnemy.Type.VENUS]},                                 # 24:00 Venus
+	{"time": 1500.0, "types": [VSEnemy.Type.GIANT_BLUE_VENUS]},                      # 25:00 Giant Blue Venus
 	{"time": 1620.0, "types": [VSEnemy.Type.GLOW_BAT]},                              # 27:00 Glowing Bat
 	{"time": 1740.0, "types": [VSEnemy.Type.GLOW_BAT]},                              # 29:00 Glowing Bat
 ]
