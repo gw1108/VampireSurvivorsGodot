@@ -352,7 +352,7 @@ func _make_card(index: int, opt: Dictionary) -> Button:
 	# Wide + tall enough for the longest base weapon/passive descriptions to fully show: the
 	# desc Label autowraps, and at 96px tall the wrapped second line was being clipped (e.g.
 	# Runetracer/Fire Wand read "...bounces around the" cut off mid-sentence). 540x120 fits every
-	# base description in <=2 lines. Evolution cards add a "★ EVOLVED! ★" banner above the title AND
+	# base description in <=2 lines. Evolution cards add a "** EVOLVED! **" banner above the title AND
 	# carry the longest blurbs (NO FUTURE, Hellfire wrap to 3 lines), which overflow 120px and clip
 	# their last line under clip_contents — so they get a taller variant. A Button can't auto-size to
 	# its children, so this is a fixed height sized to the tallest evolution content (banner + title +
@@ -412,7 +412,10 @@ func _make_card(index: int, opt: Dictionary) -> Button:
 	# signature moment is unmistakable (the gold panel tint reinforces it at a glance).
 	if is_evo:
 		var evo_label := Label.new()
-		evo_label.text = "★ EVOLVED! ★"
+		# ASCII "**" not "★": the default embedded font lacks U+2605 BLACK STAR (confirmed via
+		# Font.has_char), so it rendered as a tofu missing-glyph box in the Web build — same class
+		# of bug as the U+2192 arrow fixed on the level/rail labels. (U+2014 em-dash IS present.)
+		evo_label.text = "** EVOLVED! **"
 		evo_label.add_theme_font_size_override("font_size", 15)
 		evo_label.modulate = Color(1.0, 0.85, 0.25)
 		text_col.add_child(evo_label)
