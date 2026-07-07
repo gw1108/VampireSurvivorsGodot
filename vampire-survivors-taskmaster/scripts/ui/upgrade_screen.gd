@@ -229,7 +229,9 @@ func _compute_preview(run: VSRun, id: String) -> Dictionary:
 				hp = minf(mhp, run.player.health + 20.0)
 			out["HP"] = "%d/%d" % [int(ceil(hp)), int(round(mhp))]
 		"multishot":
-			out["Shots"] = "%d" % (run.weapon_count + 1)
+			# Leveling the wand doesn't always add a bolt (data/magic_wand_levels.csv), so read the
+			# next level's actual amount rather than assuming +1.
+			out["Shots"] = "%d" % int(VSWeapon.wand_level_stats(run.weapon_level + 1)["amount"])
 		"area":
 			out["Area"] = "%d%%" % int(round(run.area_mult * 1.10 * 100.0))
 		"projspeed":

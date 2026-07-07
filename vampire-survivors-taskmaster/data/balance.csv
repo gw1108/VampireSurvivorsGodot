@@ -1,7 +1,6 @@
 id,value,description
 player_move_speed,210,Base player movement speed in px/sec (before Swift Boots / Moonwalker multipliers)
-magic_wand_base_damage,2,Magic Wand starting damage before any Power picks
-magic_wand_damage_per_level,1,Magic Wand damage added per Power upgrade pick
+magic_wand_base_damage,10,Magic Wand base damage at Lv1 (wiki base 10); per-level bonus_damage/amount/pierce/cooldown live in data/magic_wand_levels.csv
 garlic_base_damage,5,Garlic base damage at Lv1 (wiki base 5); per-level bonus_damage/area/cooldown live in data/garlic_levels.csv
 whip_base_damage,10,Whip base damage at Lv1 (wiki base 10); per-level bonus_damage/projectiles/area live in data/whip_levels.csv
 king_bible_base_damage,10,King Bible base damage at Lv1 (wiki base 10); per-level bonus_damage/amount/area/speed live in data/king_bible_levels.csv
