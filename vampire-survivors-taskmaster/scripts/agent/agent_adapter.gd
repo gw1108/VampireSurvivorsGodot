@@ -119,9 +119,10 @@ func _on_command(cmd: Dictionary) -> void:
 			# inert in real builds (this whole channel only exists behind the agent gate — see agent_bridge.gd).
 			game.luck_bonus = float(cmd.get("value", 300.0))
 		"force_fire_wand":
-			# The Fire Wand needs several level-up picks (level 6 = 3 fireballs/volley, per
-			# VSFireWand._amount) to lob multiple simultaneous fireballs — too many XP levels to
-			# reach reliably in an automated playtest. Debug-only escape hatch so the harness can
+			# The Fire Wand is inert until picked (level 0); it lobs a full volley of 3 fireballs
+			# from level 1 on, but higher levels ramp its damage/projectile speed per
+			# data/fire_wand_levels.csv — too many XP levels to reach reliably in an automated
+			# playtest. Debug-only escape hatch so the harness can
 			# set the level directly and verify the multi-fireball VFX; inert in real builds (this
 			# whole channel only exists behind the agent gate — see agent_bridge.gd).
 			game.fire_wand_level = int(cmd.get("value", 6))

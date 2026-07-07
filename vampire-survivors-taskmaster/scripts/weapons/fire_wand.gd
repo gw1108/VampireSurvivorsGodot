@@ -10,19 +10,26 @@ extends Node2D
 ## run.fire_wand_level (0 = not yet picked: inert). The slice's eighth and final weapon, completing
 ## the GDD's designed roster.
 
-## Base damage + per-level growth live in res://data/balance.csv ("fire_wand_base_damage" /
-## "fire_wand_damage_per_level") so a designer can retune them without touching this script.
-## Lv1 = 20, Lv8 = 62 — the roster's heaviest single hit.
+## Lv1 base damage lives in res://data/balance.csv ("fire_wand_base_damage", wiki base 20); the flat
+## per-level bonus on top of it lives per-level in data/fire_wand_levels.csv (see LEVELS_CSV below).
 static var BASE_DAMAGE := BalanceData.get_value("fire_wand_base_damage", 20.0)
-static var DAMAGE_PER_LEVEL := BalanceData.get_value("fire_wand_damage_per_level", 6.0)
 ## Base cooldown + per-level tighten live in res://data/balance.csv ("fire_wand_base_interval" /
 ## "fire_wand_interval_per_level") so a designer can retune fire rate without touching this script.
 static var BASE_INTERVAL := BalanceData.get_value("fire_wand_base_interval", 3.0)
 static var INTERVAL_PER_LEVEL := BalanceData.get_value("fire_wand_interval_per_level", 0.18)
 const MIN_INTERVAL := 1.4
-const BASE_AMOUNT := 1                # fireballs per volley at Lv1…
-const MAX_AMOUNT := 3                 # …growing by one every three levels, capped at the wiki Amount 3
-const BASE_SPEED := 300.0             # px/sec — a lobbed bomb, slower than a bolt
+
+## Per-level level-up table (wiki Fire_Wand.md "Levels"), editable in res://data/fire_wand_levels.csv —
+## one row per level with independently-tunable columns so a designer can retune ANY single level without
+## touching this script. Values are cumulative absolutes (each row fully describes the wand at that level):
+## bonus_damage (flat added on top of BASE_DAMAGE), speed_mult (scales projectile travel speed, relative to
+## Lv1). The wiki pattern is: L2..L8 +10 damage each; L3/L5/L7 +20% speed (max = +70 damage → base-20 wand
+## peaks at 90 damage, 160% speed). Amount is a constant 3 (wiki base 3, no per-level amount growth).
+const LEVELS_CSV := "res://data/fire_wand_levels.csv"
+static var _levels: Dictionary = {}   # int level -> {"bonus_damage": float, "speed_mult": float}
+static var _levels_loaded := false
+const AMOUNT := 3                    # fireballs per volley (wiki Amount, constant at every level)
+const BASE_SPEED := 300.0             # px/sec at Lv1 — a lobbed bomb, slower than a bolt; scaled by the per-level speed_mult
 const BASE_LIFE := 2.2               # seconds a fireball flies before self-detonating if it hits nothing
 const BLAST_RADIUS := 58.0           # AoE splash around the detonation point
 
@@ -54,11 +61,6 @@ func _process(delta: float) -> void:
 func _interval(lvl: int) -> float:
 	return maxf(MIN_INTERVAL, BASE_INTERVAL - INTERVAL_PER_LEVEL * float(lvl - 1)) * run.haste_mult()
 
-## Fireballs per volley: base one, plus one for every three levels, capped at the wiki Amount 3
-## so the arena never fills with a free wall of explosions.
-func _amount(lvl: int) -> int:
-	return clampi(BASE_AMOUNT + lvl / 3, BASE_AMOUNT, MAX_AMOUNT)
-
 ## One volley: pick up to `amount` DISTINCT random enemies and lob a fireball at each. Aim is
 ## locked at launch (the target may die mid-flight), so the ball flies to where the enemy was and
 ## detonates there — chaotic, unlike the Magic Wand's homing-nearest snipe. With no enemies on
@@ -74,8 +76,10 @@ func _fire(lvl: int) -> void:
 		return
 	enemies.shuffle()
 	var evolved: bool = run.fire_wand_evolved
-	var dmg_base := BASE_DAMAGE * run.damage_variance() + DAMAGE_PER_LEVEL * float(lvl - 1)
-	var speed := BASE_SPEED * run.projectile_speed_mult   # Bracer passive speeds the lob up
+	var row := _row(lvl)
+	var dmg_base := BASE_DAMAGE * run.damage_variance() + float(row["bonus_damage"])
+	# Per-level speed_mult scales the lob; Bracer (run.projectile_speed_mult) then speeds it further.
+	var speed := BASE_SPEED * float(row["speed_mult"]) * run.projectile_speed_mult
 	var blast := BLAST_RADIUS * run.area_mult             # Candelabrador passive widens the blast
 	var life := BASE_LIFE
 	if evolved:                                           # Hellfire: harder, wider, longer-lived, piercing
@@ -83,7 +87,7 @@ func _fire(lvl: int) -> void:
 		blast *= HELLFIRE_BLAST_MULT
 		life *= HELLFIRE_LIFE_MULT
 	var dmg := dmg_base * run.might_mult() * run.power_mult()
-	var count := mini(_amount(lvl), enemies.size())
+	var count := mini(AMOUNT, enemies.size())
 	for i in count:
 		var target: VSEnemy = enemies[i]
 		var dir := (target.position - global_position)
@@ -99,6 +103,47 @@ func _fire(lvl: int) -> void:
 		b.run = run
 		run.add_child(b)
 	AgentBridge.emit_event("sfx_played", {"name": "fire_wand"})
+
+
+## The per-level tuning row for `lvl`, from data/fire_wand_levels.csv. Levels past the table (Limit
+## Break) clamp to the highest defined level; a missing CSV reconstructs the wiki deltas so the wand
+## never breaks.
+static func _row(lvl: int) -> Dictionary:
+	_ensure_levels()
+	if _levels.has(lvl):
+		return _levels[lvl]
+	if _levels.is_empty():
+		var bonus := maxf(0.0, float(lvl - 1)) * 10.0                      # +10 from Lv2 on
+		var speed := 1.0 + 0.2 * float((clampi(lvl, 1, 8) - 1) / 2)        # +20% at Lv3, Lv5, Lv7
+		return {"bonus_damage": bonus, "speed_mult": speed}
+	var keys := _levels.keys()
+	keys.sort()
+	return _levels[keys[keys.size() - 1]]
+
+## Parse the per-level table once. Column-name driven (falls back to fixed positions) so the CSV
+## can carry extra tuning columns without breaking the loader.
+static func _ensure_levels() -> void:
+	if _levels_loaded:
+		return
+	_levels_loaded = true
+	var f := FileAccess.open(LEVELS_CSV, FileAccess.READ)
+	if f == null:
+		push_warning("VSFireWand: cannot open %s (err %d)" % [LEVELS_CSV, FileAccess.get_open_error()])
+		return
+	var header := f.get_csv_line()
+	var col := {}
+	for i in header.size():
+		col[header[i].strip_edges()] = i
+	while not f.eof_reached():
+		var r := f.get_csv_line()
+		if r.size() < 2 or r[0].strip_edges() == "":
+			continue
+		var lvl := r[int(col.get("level", 0))].strip_edges().to_int()
+		_levels[lvl] = {
+			"bonus_damage": r[int(col.get("bonus_damage", 1))].strip_edges().to_float(),
+			"speed_mult": r[int(col.get("speed_mult", 2))].strip_edges().to_float(),
+		}
+	f.close()
 
 
 ## The flying fireball. Lives in world space as a child of the run (not the player) so it travels
