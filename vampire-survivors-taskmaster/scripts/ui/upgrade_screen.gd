@@ -185,7 +185,10 @@ func _refresh_stat_rail(run: VSRun, preview_id := "") -> void:
 	_add_rail_line("XP Gain", "%d%%" % int(round(run.xp_gain_mult * 100.0)), pv.get("XP Gain", ""))
 	_add_rail_line("Armor", "%d" % run.armor, pv.get("Armor", ""))
 	_add_rail_line("Luck", "%d%%" % int(round(run.total_luck())), pv.get("Luck", ""))
-	_add_rail_line("Might", "%d%%" % int(round(run.might_mult() * 100.0)))
+	# Might = the full build-wide damage multiplier every weapon applies: Antonio's level Might
+	# (might_mult) times the Power/Spinach + meta-Might slice (power_mult). Spinach picks raise THIS
+	# line, not the wand's base Damage, so its "before -> after" preview lands here.
+	_add_rail_line("Might", "%d%%" % int(round(run.might_mult() * run.power_mult() * 100.0)), pv.get("Might", ""))
 	# Owned inventory, in UPGRADE_POOL order so the list stays stable as picks come in.
 	var owned := 0
 	for opt in VSRun.UPGRADE_POOL:
@@ -205,13 +208,17 @@ func _refresh_stat_rail(run: VSRun, preview_id := "") -> void:
 
 ## Map an upgrade option id to the rail line(s) it would change, keyed by the exact label the
 ## rail renders, valued with the "after" string in that line's own format. Mirrors _apply_upgrade
-## in run.gd (+1 damage, -8% cooldown/level via haste_mult, x1.12 speed, ...) — keep the two in sync. Weapons/
+## in run.gd (+10% Might/Spinach, -8% cooldown/level via haste_mult, x1.12 speed, ...) — keep the two in sync. Weapons/
 ## passives also bump their ITEMS "Lv N" line. Returns {} for ids with no rail impact.
 func _compute_preview(run: VSRun, id: String) -> Dictionary:
 	var out := {}
 	match id:
 		"damage":
-			out["Damage"] = "%.0f" % (run.weapon_damage + 1.0)
+			# Spinach is a +10% Might multiplier now (power_mult / spinach_mult), NOT a flat +1 to the
+			# wand's base Damage — so preview it on the Might line: one more pick adds POWER_MULT_PER_PICK
+			# to the Spinach factor. Mirrors VSRun.spinach_mult() / power_mult().
+			var next_might := run.might_mult() * (run.spinach_mult() + VSRun.POWER_MULT_PER_PICK) * run.meta_power_mult
+			out["Might"] = "%d%%" % int(round(next_might * 100.0))
 		"firerate":
 			# Empty Tome: additive -8% cooldown/level via haste_mult (max -40%). Project the next
 			# level's haste_mult onto the wand's base interval — mirrors VSRun.haste_mult().
