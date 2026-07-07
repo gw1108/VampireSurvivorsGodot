@@ -208,7 +208,7 @@ func _refresh_stat_rail(run: VSRun, preview_id := "") -> void:
 
 ## Map an upgrade option id to the rail line(s) it would change, keyed by the exact label the
 ## rail renders, valued with the "after" string in that line's own format. Mirrors _apply_upgrade
-## in run.gd (+10% Might/Spinach, -8% cooldown/level via haste_mult, x1.12 speed, ...) — keep the two in sync. Weapons/
+## in run.gd (+10% Might/Spinach, -8% cooldown/level via haste_mult, additive +10%/pick speed/area/proj, ...) — keep the two in sync. Weapons/
 ## passives also bump their ITEMS "Lv N" line. Returns {} for ids with no rail impact.
 func _compute_preview(run: VSRun, id: String) -> Dictionary:
 	var out := {}
@@ -227,7 +227,9 @@ func _compute_preview(run: VSRun, id: String) -> Dictionary:
 			var ni := run.weapon_fire_interval * run.meta_haste_mult * (1.0 - reduction)
 			out["Fire Rate"] = "%.2f/s" % (1.0 / ni if ni > 0.0 else 0.0)
 		"speed":
-			out["Move Speed"] = "%d%%" % int(round(run.player_speed_mult * 1.12 * 100.0))
+			# Wings adds an additive +10% slice on top of the meta Boots baseline (VSRun.MOVE_SPEED_PER_PICK).
+			var next_speed := int(run.upgrade_levels.get("speed", 0)) + 1
+			out["Move Speed"] = "%d%%" % int(round(run.meta_speed_mult * (1.0 + VSRun.MOVE_SPEED_PER_PICK * float(next_speed)) * 100.0))
 		"health":
 			var mhp := 0.0
 			var hp := 0.0
@@ -240,13 +242,16 @@ func _compute_preview(run: VSRun, id: String) -> Dictionary:
 			# next level's actual amount rather than assuming +1.
 			out["Shots"] = "%d" % int(VSWeapon.wand_level_stats(run.weapon_level + 1)["amount"])
 		"area":
-			out["Area"] = "%d%%" % int(round(run.area_mult * 1.10 * 100.0))
+			var next_area := int(run.upgrade_levels.get("area", 0)) + 1
+			out["Area"] = "%d%%" % int(round((1.0 + VSRun.AREA_PER_PICK * float(next_area)) * 100.0))
 		"projspeed":
-			out["Proj Speed"] = "%d%%" % int(round(run.projectile_speed_mult * 1.15 * 100.0))
+			var next_proj := int(run.upgrade_levels.get("projspeed", 0)) + 1
+			out["Proj Speed"] = "%d%%" % int(round((1.0 + VSRun.PROJ_SPEED_PER_PICK * float(next_proj)) * 100.0))
 		"attract":
 			out["Pickup"] = "%d%%" % int(round(run.pickup_range_mult * 1.30 * 100.0))
 		"growth":
-			out["XP Gain"] = "%d%%" % int(round(run.xp_gain_mult * 1.08 * 100.0))
+			var next_growth := int(run.upgrade_levels.get("growth", 0)) + 1
+			out["XP Gain"] = "%d%%" % int(round((1.0 + VSRun.GROWTH_PER_PICK * float(next_growth)) * 100.0))
 		"armor":
 			out["Armor"] = "%d" % (run.armor + 1)
 		"luck":

@@ -110,6 +110,10 @@ var weapon_fire_interval := 1.2
 ## so a fresh VSRun (no _apply_meta_powerups) behaves exactly as before.
 var meta_power_mult := 1.0   # >=1.0 damage bonus for non-wand weapons from meta Might
 var meta_haste_mult := 1.0   # <=1.0 cooldown reduction for non-wand weapons from meta Cooldown
+## Meta Boots (Move Speed shop upgrade) baseline, folded once at run start. Kept apart from the
+## Wings picks so player_speed_mult can be recomputed as meta baseline * additive Wings total each
+## pick, instead of compounding. 1.0 = neutral.
+var meta_speed_mult := 1.0
 var weapon_level := 0            # 0 = Magic Wand not yet chosen; each Multishot pick levels it (drives data/magic_wand_levels.csv)
 var weapon_count := 0            # HUD mirror: the wand's current bolts-per-volley at weapon_level (synced by _sync_wand_display)
 var area_mult := 1.0             # Candelabrador: scales AoE weapon reach/radius (garlic, whip, bible, lightning)
@@ -572,6 +576,15 @@ func haste_mult() -> float:
 	var reduction := minf(HASTE_REDUCTION_MAX, HASTE_REDUCTION_PER_PICK * float(upgrade_levels.get("firerate", 0)))
 	return meta_haste_mult * (1.0 - reduction)
 
+## Additive per-pick steps for the four percentage passives, mirroring Spinach/Empty Tome/Clover:
+## each pick adds a FIXED slice of the base, so 5 picks land exactly on the wiki's documented max
+## (Wings/Candelabrador/Bracer +10%/pick -> +50%, Crown +8%/pick -> +40%) instead of compounding
+## past it (1.1^5 = +61%). Applied in _apply_upgrade by recomputing the mult from upgrade_levels.
+const MOVE_SPEED_PER_PICK := 0.10   # Wings: +10% Move Speed per pick, max 5 => +50%
+const AREA_PER_PICK := 0.10         # Candelabrador: +10% Area per pick, max 5 => +50%
+const PROJ_SPEED_PER_PICK := 0.10   # Bracer: +10% projectile speed per pick, max 5 => +50%
+const GROWTH_PER_PICK := 0.08       # Crown: +8% Growth per pick, max 5 => +40%
+
 ## Read permanent PowerUps bought in the shop and fold them into this run's starting stats.
 ## Called once at run start so every run reflects the between-run meta-progression. Uses the
 ## POWERUPS catalog's ids; unknown/zero levels are simply no-ops.
@@ -593,7 +606,10 @@ func _apply_meta_powerups() -> void:
 		meta_haste_mult *= pow(0.95, haste)
 	var boots := int(levels.get("boots", 0))
 	if boots > 0:
-		player_speed_mult *= pow(1.05, boots)
+		# Meta Boots is the multiplicative baseline; Wings picks stack additively on top of it in
+		# _apply_upgrade (player_speed_mult = meta_speed_mult * additive Wings total).
+		meta_speed_mult *= pow(1.05, boots)
+		player_speed_mult = meta_speed_mult * (1.0 + MOVE_SPEED_PER_PICK * float(upgrade_levels.get("speed", 0)))
 	var reroll := int(levels.get("reroll", 0))
 	if reroll > 0:
 		rerolls_left += reroll
@@ -1340,7 +1356,9 @@ func _apply_upgrade(id: String) -> void:
 			# read by every weapon incl. the wand). upgrade_levels drives it, so nothing to do here.
 			pass
 		"speed":
-			player_speed_mult *= 1.10
+			# Wings: additive +10%/pick on top of the meta Boots baseline (max 5 picks => +50%),
+			# NOT compounding. upgrade_levels["speed"] already counts this pick.
+			player_speed_mult = meta_speed_mult * (1.0 + MOVE_SPEED_PER_PICK * float(upgrade_levels["speed"]))
 		"health":
 			if player:
 				player.max_health += 20.0
@@ -1351,13 +1369,16 @@ func _apply_upgrade(id: String) -> void:
 			weapon_level += 1
 			_sync_wand_display()
 		"area":
-			area_mult *= 1.10
+			# Candelabrador: additive +10%/pick (max 5 => +50%), not compounding.
+			area_mult = 1.0 + AREA_PER_PICK * float(upgrade_levels["area"])
 		"projspeed":
-			projectile_speed_mult *= 1.10
+			# Bracer: additive +10%/pick (max 5 => +50%), not compounding.
+			projectile_speed_mult = 1.0 + PROJ_SPEED_PER_PICK * float(upgrade_levels["projspeed"])
 		"attract":
 			pickup_range_mult *= 1.30
 		"growth":
-			xp_gain_mult *= 1.08
+			# Crown: additive +8%/pick (max 5 => +40%), not compounding.
+			xp_gain_mult = 1.0 + GROWTH_PER_PICK * float(upgrade_levels["growth"])
 		"armor":
 			armor += 1
 		"recovery":
