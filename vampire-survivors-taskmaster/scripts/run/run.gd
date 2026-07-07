@@ -95,11 +95,14 @@ var arena_half := Vector2(900, 700)   # world half-extent around origin
 # Run-level stats mutated by level-up upgrades. Weapon/projectile/player read these so
 # a single pickup meaningfully changes how the run plays.
 var player_speed_mult := 1.0
-## Magic Wand's current damage. Starting value + per-Power-pick growth live in
-## res://data/balance.csv ("magic_wand_base_damage" / "magic_wand_damage_per_level") so a
-## designer can retune them without touching this script.
-var weapon_damage := BalanceData.get_value("magic_wand_base_damage", 2.0)
-var weapon_fire_interval := 0.6
+## HUD / upgrade-rail mirror of the Magic Wand's current-level base stats. The wand itself reads its
+## own per-level table (data/magic_wand_levels.csv via VSWeapon) for firing; _sync_wand_display keeps
+## these in step for the build readout. weapon_damage = VSWeapon.BASE_DAMAGE + the level's bonus_damage
+## (Lv1 base lives in res://data/balance.csv "magic_wand_base_damage", wiki 10); weapon_fire_interval =
+## the level's cooldown (wiki base 1.2s). No longer accumulates Power/Might — that reaches the wand via
+## power_mult() like every other weapon.
+var weapon_damage := BalanceData.get_value("magic_wand_base_damage", 10.0)
+var weapon_fire_interval := 1.2
 ## Meta-PowerUp contributions to the build-wide multipliers, so the shop's generically-worded
 ## "Might" / "Cooldown" upgrades reach EVERY weapon, not just the Magic Wand (which reads
 ## weapon_damage / weapon_fire_interval directly). Set once at run start in _apply_meta_powerups;
@@ -107,7 +110,8 @@ var weapon_fire_interval := 0.6
 ## so a fresh VSRun (no _apply_meta_powerups) behaves exactly as before.
 var meta_power_mult := 1.0   # >=1.0 damage bonus for non-wand weapons from meta Might
 var meta_haste_mult := 1.0   # <=1.0 cooldown reduction for non-wand weapons from meta Cooldown
-var weapon_count := 0            # 0 = Magic Wand not yet chosen; each Multishot pick grows it
+var weapon_level := 0            # 0 = Magic Wand not yet chosen; each Multishot pick levels it (drives data/magic_wand_levels.csv)
+var weapon_count := 0            # HUD mirror: the wand's current bolts-per-volley at weapon_level (synced by _sync_wand_display)
 var area_mult := 1.0             # Candelabrador: scales AoE weapon reach/radius (garlic, whip, bible, lightning)
 var projectile_speed_mult := 1.0  # Bracer: scales how fast thrown/fired projectiles travel
 var pickup_range_mult := 1.0     # Attractorb: scales the magnet radius of gems/coins/food so pickups fly in from farther
@@ -171,7 +175,7 @@ var rerolls_left := 3
 ## Discrete level per upgrade id (0 = never picked). Incremented on each pick and used
 ## to (a) cap upgrades at their `max` so the pool shrinks as things top out — no infinite
 ## single-stat stacking — and (b) show "Lv N → N+1" on the cards. Kept in lock-step with
-## the per-weapon counters (garlic_level, whip_level, weapon_count, …) since every pick
+## the per-weapon counters (garlic_level, whip_level, weapon_level, …) since every pick
 ## flows through _apply_upgrade.
 var upgrade_levels := {}
 
@@ -183,7 +187,7 @@ const MAX_WEAPONS := 6
 const MAX_PASSIVES := 6
 
 ## The eight auto-firing weapons in UPGRADE_POOL; every other pool id is a passive stat item.
-## `multishot` is Antonio's Magic Wand (each pick adds a bolt). Used to bucket a pool entry as
+## `multishot` is Antonio's Magic Wand (each pick levels it via data/magic_wand_levels.csv). Used to bucket a pool entry as
 ## weapon-vs-passive when enforcing the inventory cap above.
 const WEAPON_IDS := ["multishot", "garlic", "whip", "bible", "lightning", "knife", "runetracer", "fire_wand"]
 
@@ -200,7 +204,7 @@ const UPGRADE_POOL := [
 	{"id": "firerate", "title": "Empty Tome", "desc": "Reduces weapons cooldown by 8%.", "max": 5},
 	{"id": "speed", "title": "Wings", "desc": "Character moves 10% faster.", "max": 5},
 	{"id": "health", "title": "Hollow Heart", "desc": "Augments max health by 20%.", "max": 5},
-	{"id": "multishot", "title": "Multishot", "desc": "Weapons fire more projectiles.", "max": 4},
+	{"id": "multishot", "title": "Multishot", "desc": "Levels the Magic Wand: more bolts, damage, pierce, and faster fire.", "max": 8},
 	{"id": "area", "title": "Candelabrador", "desc": "Augments area of attacks by 10%.", "max": 5},
 	{"id": "projspeed", "title": "Bracer", "desc": "Increases projectiles speed by 10%.", "max": 5},
 	{"id": "attract", "title": "Attractorb", "desc": "Character pickups items from further away.", "max": 5},
@@ -299,10 +303,14 @@ const LEVEL_DESCRIPTIONS := {
 		"Effect lasts 0.5 seconds longer.",
 	],
 	"multishot": [
+		"Fires at the nearest enemy.",
 		"Fires 1 more projectile.",
+		"Cooldown reduced by 0.2 seconds.",
 		"Fires 1 more projectile.",
+		"Base Damage up by 10.",
 		"Fires 1 more projectile.",
-		"Fires 1 more projectile.",
+		"Passes through 1 more enemy.",
+		"Base Damage up by 10.",
 	],
 }
 
@@ -487,7 +495,7 @@ func _build_world() -> void:
 	_init_character()
 
 	# Apply persisted PowerUps to this run's starting stats. Runs after the player exists
-	# (armor bumps max_health) but before any firing, so weapon_damage/interval land first.
+	# (armor bumps max_health) but before any firing so the meta multipliers land first.
 	_apply_meta_powerups()
 
 	adapter = preload("res://scripts/agent/agent_adapter.gd").new()
@@ -528,22 +536,31 @@ func might_mult() -> float:
 
 ## The Spinach (Power) passive: "Raises inflicted damage by 10%" per pick — a flat +10% Might
 ## multiplier, max 5 picks => +50%, matching the offline wiki (Passive_Items.md / Spinach.md).
-## Applied build-wide so EVERY owned weapon hits harder, including the Magic Wand (which reads
-## weapon_damage directly but folds this in via spinach_mult(), see VSWeapon._fire_at), not just
-## a flat +1 to the wand as the old card text implied.
+## Applied build-wide via power_mult() so EVERY owned weapon hits harder, the Magic Wand included.
 const POWER_MULT_PER_PICK := 0.1   # +10% Might per Spinach pick, max 5 picks => +50%
-## Meta "Might" shop upgrade's build-wide slice: +10% weapon damage per level for every non-wand
-## weapon (max 5 levels => +50%), stacked into power_mult via meta_power_mult. The wand's slice is
-## its own flat +2/level on weapon_damage (see _apply_meta_powerups) — an independent constant, not
-## derived from the wand's small-base flat curve, for the same DPS-balance reason as POWER_MULT_PER_PICK.
+## Meta "Might" shop upgrade's build-wide slice: +10% weapon damage per level (max 5 levels => +50%),
+## stacked into power_mult via meta_power_mult so it reaches EVERY weapon, the wand included.
 const META_MIGHT_MULT_PER_LEVEL := 0.10
 ## Spinach-only multiplier (the +10%/pick Might from Power picks), WITHOUT the meta Might slice.
-## The Magic Wand uses this directly since its meta Might is already folded into weapon_damage as a
-## flat +2/level — using the full power_mult() would double-count meta Might on the wand.
+## Folded into power_mult() below.
 func spinach_mult() -> float:
 	return 1.0 + POWER_MULT_PER_PICK * float(upgrade_levels.get("damage", 0))
+## Build-wide damage multiplier every weapon (the Magic Wand included, see VSWeapon._fire_at) applies
+## alongside might_mult(): Spinach picks (spinach_mult) times the meta Might slice (meta_power_mult).
 func power_mult() -> float:
 	return spinach_mult() * meta_power_mult
+
+## Mirror the Magic Wand's current-level stats (data/magic_wand_levels.csv, keyed by weapon_level)
+## into the display vars the HUD / upgrade rail read (weapon_count = bolts, weapon_damage = base +
+## bonus, weapon_fire_interval = cooldown). The wand (VSWeapon) reads the CSV directly for firing;
+## this keeps the build readout honest without the old Power-entangled weapon_damage accumulation.
+func _sync_wand_display() -> void:
+	if weapon_level <= 0:
+		return
+	var row := VSWeapon.wand_level_stats(weapon_level)
+	weapon_count = int(row["amount"])
+	weapon_damage = VSWeapon.BASE_DAMAGE + float(row["bonus_damage"])
+	weapon_fire_interval = float(row["cooldown"])
 
 ## Global cooldown multiplier from Empty Tome level-up picks: EVERY weapon (the Magic Wand
 ## included, via weapon.gd) multiplies its base attack interval by this. Empty Tome is -8%
@@ -562,9 +579,8 @@ func _apply_meta_powerups() -> void:
 	var levels := MetaSave.load_powerups()
 	var might := int(levels.get("might", 0))
 	if might > 0:
-		# Magic Wand reads weapon_damage directly; every OTHER weapon reads power_mult(), so fold
-		# the shop's generically-worded Might into both — otherwise 7 of 8 weapons ignore it.
-		weapon_damage += 2.0 * might
+		# Every weapon (the Magic Wand now included, via power_mult) reads the meta Might slice
+		# through meta_power_mult, so a single fold here reaches all of them.
 		meta_power_mult *= 1.0 + META_MIGHT_MULT_PER_LEVEL * might
 	var armor := int(levels.get("armor", 0))
 	if armor > 0 and player:
@@ -1317,7 +1333,7 @@ func _apply_upgrade(id: String) -> void:
 	match id:
 		"damage":
 			# Spinach: pure +10% Might multiplier (see spinach_mult / power_mult). Every weapon —
-			# the wand included, via spinach_mult() — reads it, so no flat weapon_damage bump here.
+			# the wand included, via power_mult() — reads it, so no flat weapon_damage bump here.
 			pass
 		"firerate":
 			# Empty Tome: cooldown reduction lives entirely in haste_mult() (additive -8%/level,
@@ -1330,7 +1346,10 @@ func _apply_upgrade(id: String) -> void:
 				player.max_health += 20.0
 				player.health = minf(player.max_health, player.health + 20.0)
 		"multishot":
-			weapon_count += 1
+			# The Magic Wand's level-up card: level the wand (data/magic_wand_levels.csv drives its
+			# amount / bonus damage / pierce / cooldown), then mirror the new stats into the HUD.
+			weapon_level += 1
+			_sync_wand_display()
 		"area":
 			area_mult *= 1.10
 		"projspeed":

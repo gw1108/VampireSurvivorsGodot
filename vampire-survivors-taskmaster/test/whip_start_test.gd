@@ -48,26 +48,25 @@ func _park_zombie(run: VSRun, at: Vector2) -> VSEnemy:
 	e.position = at
 	return e
 
-# A Lv1 lash out-damages the Magic Wand's per-hit damage stat by a wide margin, so Antonio
-# genuinely plays as a whip character from the first second — the Magic Wand (which he doesn't
-# even start with; see test_antonio_does_not_start_with_the_magic_wand below) is a poke by comparison.
-func test_whip_lash_outclears_the_base_projectile() -> void:
+# A Lv1 lash lands solid per-swing damage (wiki whip base 10), so Antonio genuinely plays as a
+# whip character from the first second — the Magic Wand, which he doesn't even start with (see
+# test_antonio_does_not_start_with_the_magic_wand below), never fires until a Multishot pick.
+func test_whip_lash_lands_solid_damage() -> void:
 	var run := _state_run(1, 1)
 	var e := _park_zombie(run, Vector2(100, 0))   # inside range (140) and the +x facing wedge
 	var whip := VSWhip.new()
 	whip.run = run
 	add_child(whip)
 	auto_free(whip)
-	# Lash damage now rolls +/-50% base variance per swing (VSRun.damage_variance), so sum many
-	# swings to average out the noise, then confirm the whip's per-lash output dwarfs the wand's.
+	# Lash damage rolls +/-50% base variance per swing (VSRun.damage_variance), so sum many swings
+	# to average out the noise, then confirm each lash lands substantial damage (~10, wiki base).
 	var total := 0.0
 	for i in 200:
 		e.health = 1000.0
 		whip._swing(1)
 		total += 1000.0 - e.health
 	var avg_lash := total / 200.0
-	assert_float(avg_lash).is_greater(run.weapon_damage)   # ~10 dmg/lash vs the wand's weapon_damage (2)
-	assert_float(run.weapon_damage).is_less(6.0)
+	assert_float(avg_lash).is_greater(5.0)
 
 # Antonio's only starting weapon is the Whip (see test_antonio_starts_with_the_whip above) — the
 # Magic Wand (VSWeapon) must stay silent/inert until a "Multishot" pick grants it, or he'd fire
