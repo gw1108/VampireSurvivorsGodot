@@ -10,21 +10,26 @@ extends Node2D
 ## enabled/scaled by run.runetracer_level (0 = not yet picked: inert). The slice's seventh,
 ## mechanically-distinct weapon (per the GDD's designed 8-weapon set).
 
-## Base damage + per-level growth live in res://data/balance.csv ("runetracer_base_damage" /
-## "runetracer_damage_per_level") so a designer can retune them without touching this script.
-## Lv1 = 10, Lv8 = 31 — a steady bouncing chip.
+## Lv1 base damage lives in res://data/balance.csv ("runetracer_base_damage", wiki base 10); the flat
+## per-level bonus on top of it lives per-level in data/runetracer_levels.csv (see LEVELS_CSV below).
 static var BASE_DAMAGE := BalanceData.get_value("runetracer_base_damage", 10.0)
-static var DAMAGE_PER_LEVEL := BalanceData.get_value("runetracer_damage_per_level", 3.0)
 ## Base cooldown + per-level tighten live in res://data/balance.csv ("runetracer_base_interval" /
 ## "runetracer_interval_per_level") so a designer can retune fire rate without touching this script.
+## (The wiki level table only governs amount/damage/speed/duration — cadence stays a balance knob.)
 static var BASE_INTERVAL := BalanceData.get_value("runetracer_base_interval", 3.0)
 static var INTERVAL_PER_LEVEL := BalanceData.get_value("runetracer_interval_per_level", 0.15)
 const MIN_INTERVAL := 1.4
-const BASE_AMOUNT := 1                # runes per volley (wiki Amount 1)…
-const MAX_AMOUNT := 3                 # …growing by one every three levels, capped here
-const BASE_SPEED := 260.0             # px/sec — a brisk carom, not a bullet
-const BASE_LIFE := 4.0               # seconds a rune bounces before dissipating…
-const LIFE_PER_LEVEL := 0.4          # …lasting longer as it levels so late runes cover more ground
+const BASE_SPEED := 260.0             # px/sec at 100% speed_mult — a brisk carom, not a bullet
+
+## Per-level level-up table (wiki Runetracer.md "Levels"), editable in res://data/runetracer_levels.csv —
+## one row per level with independently-tunable columns so a designer can retune ANY single level
+## without touching this script. Values are cumulative absolutes (each row fully describes the rune at
+## that level): amount (runes per volley, wiki 1→3), bonus_damage (flat added on top of BASE_DAMAGE,
+## +5 on L2/L3/L5/L6 → +20 total for wiki max 30), speed_mult (scales BASE_SPEED, wiki 100%→140% via
+## +20% on L2/L5), duration (bounce lifetime in seconds, wiki 2.25→3.35 via +0.3 on L3/L6, +0.5 on L8).
+const LEVELS_CSV := "res://data/runetracer_levels.csv"
+static var _levels: Dictionary = {}   # int level -> {"amount": int, "bonus_damage": float, "speed_mult": float, "duration": float}
+static var _levels_loaded := false
 
 # NO FUTURE (evolved): the same bouncing rune, but MORE of them, caroming faster and longer,
 # each a bigger, harder-hitting hazard — set once run.runetracer_evolved flips (see run.gd).
@@ -56,21 +61,24 @@ func _process(delta: float) -> void:
 func _interval(lvl: int) -> float:
 	return maxf(MIN_INTERVAL, BASE_INTERVAL - INTERVAL_PER_LEVEL * float(lvl - 1)) * run.haste_mult()
 
-## Runes per volley: base one, plus one for every three levels, capped so the arena never fills
-## with a free lattice of bouncing runes. NO FUTURE (evolved) throws extra runes and lifts the cap.
+## Runes per volley: the per-level table's amount (wiki 1→3), plus the evolution's fan bonus (which
+## also lifts the cap so a maxed NO FUTURE saturates the arena).
 func _amount(lvl: int) -> int:
 	var evolved: bool = run != null and run.runetracer_evolved
-	var bonus := EVO_BONUS_AMOUNT if evolved else 0
-	var cap := EVO_MAX_AMOUNT if evolved else MAX_AMOUNT
-	return clampi(BASE_AMOUNT + lvl / 3 + bonus, BASE_AMOUNT, cap)
+	var amount := int(_row(lvl)["amount"])
+	if evolved:
+		amount = mini(amount + EVO_BONUS_AMOUNT, EVO_MAX_AMOUNT)
+	return amount
 
 ## One volley: launch `amount` runes from the player in evenly-spread directions so multiple runes
 ## fan out to different corners of the arena rather than overlapping.
 func _fire(lvl: int) -> void:
 	var evolved: bool = run.runetracer_evolved
-	var dmg := (BASE_DAMAGE * run.damage_variance() + DAMAGE_PER_LEVEL * float(lvl - 1)) * run.might_mult() * run.power_mult()
-	var speed := BASE_SPEED * run.projectile_speed_mult   # Bracer passive speeds the carom up
-	var life := BASE_LIFE + LIFE_PER_LEVEL * float(lvl - 1)
+	var row := _row(lvl)
+	var dmg := (BASE_DAMAGE * run.damage_variance() + float(row["bonus_damage"])) * run.might_mult() * run.power_mult()
+	# speed_mult is the wiki per-level Speed (100%→140%); Bracer passive speeds the carom up on top.
+	var speed := BASE_SPEED * float(row["speed_mult"]) * run.projectile_speed_mult
+	var life := float(row["duration"])
 	if evolved:
 		dmg *= EVO_DAMAGE_MULT
 		speed *= EVO_SPEED_MULT
@@ -90,6 +98,54 @@ func _fire(lvl: int) -> void:
 			b.radius = EVO_RADIUS
 		run.add_child(b)
 	AgentBridge.emit_event("sfx_played", {"name": "runetracer"})
+
+
+## The per-level tuning row for `lvl`, from data/runetracer_levels.csv. Levels past the table (Limit
+## Break) clamp to the highest defined level; a missing CSV reconstructs the wiki deltas so the rune
+## never breaks.
+static func _row(lvl: int) -> Dictionary:
+	_ensure_levels()
+	if _levels.has(lvl):
+		return _levels[lvl]
+	if _levels.is_empty():
+		# Reconstruct the wiki deltas: +1 amount on L4/L7, +5 damage on L2/L3/L5/L6,
+		# +20% speed on L2/L5, duration 2.25 +0.3 on L3/L6 +0.5 on L8.
+		var amount := 1 + (1 if lvl >= 4 else 0) + (1 if lvl >= 7 else 0)
+		var bonus := (5.0 if lvl >= 2 else 0.0) + (5.0 if lvl >= 3 else 0.0) + (5.0 if lvl >= 5 else 0.0) + (5.0 if lvl >= 6 else 0.0)
+		var speed_mult := 1.0 + (0.2 if lvl >= 2 else 0.0) + (0.2 if lvl >= 5 else 0.0)
+		var duration := 2.25 + (0.3 if lvl >= 3 else 0.0) + (0.3 if lvl >= 6 else 0.0) + (0.5 if lvl >= 8 else 0.0)
+		return {"amount": amount, "bonus_damage": bonus, "speed_mult": speed_mult, "duration": duration}
+	var keys := _levels.keys()
+	keys.sort()
+	return _levels[keys[keys.size() - 1]]
+
+
+## Parse the per-level table once. Column-name driven (falls back to fixed positions) so the CSV
+## can carry extra tuning columns without breaking the loader.
+static func _ensure_levels() -> void:
+	if _levels_loaded:
+		return
+	_levels_loaded = true
+	var f := FileAccess.open(LEVELS_CSV, FileAccess.READ)
+	if f == null:
+		push_warning("VSRunetracer: cannot open %s (err %d)" % [LEVELS_CSV, FileAccess.get_open_error()])
+		return
+	var header := f.get_csv_line()
+	var col := {}
+	for i in header.size():
+		col[header[i].strip_edges()] = i
+	while not f.eof_reached():
+		var r := f.get_csv_line()
+		if r.size() < 2 or r[0].strip_edges() == "":
+			continue
+		var lvl := r[int(col.get("level", 0))].strip_edges().to_int()
+		_levels[lvl] = {
+			"amount": r[int(col.get("amount", 1))].strip_edges().to_int(),
+			"bonus_damage": r[int(col.get("bonus_damage", 2))].strip_edges().to_float(),
+			"speed_mult": r[int(col.get("speed_mult", 3))].strip_edges().to_float(),
+			"duration": r[int(col.get("duration", 4))].strip_edges().to_float(),
+		}
+	f.close()
 
 
 ## The bouncing rune projectile. Lives in world space as a child of the run (not the player) so it
