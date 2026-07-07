@@ -27,15 +27,17 @@ const MAX_ENEMIES_LATE := 300   # cap the final-third ramp climbs toward (GDD: 3
 const COLLIDER_SAFE_CAP := 300  # validated packed-density ceiling (~78fps at the ~274-body crush)
 const LATE_RAMP_START := 0.367  # fraction of RUN_DURATION where the cap begins to climb (~11:00)
 const SPAWN_RING := 520.0
-# Chest-dropping mini-boss cadence. Mad Forest's real "Bosses & Treasure" column
-# (.firecrawl/wiki-offline/Mad_Forest.md "Waves") spawns a treasure boss at MINUTE marks —
-# roughly one per minute from 1:00 on (Glowing Bat 1:00/3:00, Mantichana 5:00, Giant variants
-# thereafter), each dropping a chest. So the mini-boss fires on the wiki's per-minute boss beat
-# rather than the old invented flat-35s spike (which is not in the Waves/Bosses table and flooded
-# the run with ~48 chests vs the wiki's ~21 boss/treasure beats). The armored-skeleton ELITE sprite
-# stands in for the generic beefy boss; the exact per-minute boss roster is a proposed CSV follow-up.
-const ELITE_INTERVAL := 60.0   # seconds between mini-boss beats (~1 boss per minute, wiki cadence)
-const ELITE_FIRST := 60.0      # first mini-boss at 1:00 — the wiki's first boss beat (Glowing Bat @1:00)
+# Chest-dropping treasure-boss cadence. Mad Forest's real "Bosses & Treasure" column
+# (.firecrawl/wiki-offline/Mad_Forest.md "Waves") names a SPECIFIC boss enemy at specific minute
+# marks (Glowing Bat 1:00/3:00, Mantichana 5:00, Giant Bat 8:00, Giant Mantichana 10:00, Giant
+# Werewolf 15:00, Giant Mummy 20:00, Giant Blue Venus 25:00, ...) with empty minutes between
+# (2/4/6/13/17/19/26/28), each named boss dropping a chest. That whole per-minute roster is now
+# data-driven in res://data/mad_forest_bosses.csv (one row per minute) so the boss cadence is
+# designer-editable and exactly wiki-faithful, replacing the old flat-60s generic ELITE spike.
+# Each scheduled boss spawns as its mapped art type but is flagged VSEnemy.is_boss, which floors
+# its HP/gem burst to the ELITE tier and drops a chest — so it reads as a real treasure boss no
+# matter which enemy art it borrows (bats -> GLOW_BAT, Mantichana/Venus -> MANTIS_WARRIOR, etc;
+# the CSV's art_note column tracks which named bosses still want distinct art).
 const WAVE_INTERVAL := 60.0    # seconds between minute-milestone wave surges
 const WAVE_BASE := 8           # enemies in the first (1:00) surge
 const WAVE_GROWTH := 6         # extra enemies per subsequent minute mark
@@ -69,10 +71,10 @@ const GLOW_BAT_TIMES := [30.0, 180.0]
 
 var run: VSRun
 var _accum := 0.0
-var _next_elite := ELITE_FIRST
 var _next_wave := WAVE_INTERVAL
 var _next_surge := SURGE_FIRST
 var _glow_bat_idx := 0
+var _boss_idx := 0
 
 func _ready() -> void:
 	# Enforce the perf gate at load. COLLIDER_SAFE_CAP is the validated packed-density ceiling: a real
@@ -93,9 +95,15 @@ func resync_timers() -> void:
 	if run == null:
 		return
 	var t := run.elapsed
-	_next_elite = t + ELITE_INTERVAL
 	_next_wave = (floorf(t / WAVE_INTERVAL) + 1.0) * WAVE_INTERVAL
 	_next_surge = t + SURGE_INTERVAL
+	# Skip the boss index past every beat already due, so a forward time-jump does not dump the
+	# whole passed boss roster in a single catch-up frame (the same crescendo the wave/surge
+	# resync above suppresses). Future beats still fire on their marks.
+	_ensure_bosses()
+	_boss_idx = 0
+	while _boss_idx < _boss_schedule.size() and _boss_schedule[_boss_idx].time <= t:
+		_boss_idx += 1
 
 func _process(delta: float) -> void:
 	if run == null or run.phase != "playing" or run.player == null:
@@ -112,9 +120,16 @@ func _process(delta: float) -> void:
 	while _accum >= 1.0:
 		_accum -= 1.0
 		_spawn_one(soft_cap)
-	if run.elapsed >= _next_elite:
-		_next_elite += ELITE_INTERVAL
-		_spawn_elite()
+	# Scheduled treasure bosses fire on the wiki's per-minute boss beats (res://data/mad_forest_bosses.csv,
+	# transcribed into BOSS_SCHEDULE). The index walks the schedule so each beat fires exactly once; a
+	# debug time-jump past a mark still spawns it (resync_timers pushes the index forward to avoid a
+	# catch-up burst). Empty minutes have no schedule entry, so they stay a genuine lull.
+	_ensure_bosses()
+	while _boss_idx < _boss_schedule.size() and run.elapsed >= _boss_schedule[_boss_idx].time:
+		var beat: Dictionary = _boss_schedule[_boss_idx]
+		_boss_idx += 1
+		for boss_type in beat.types:
+			_spawn_boss(int(boss_type))
 	# One-off glow-bat mini-boss events at their scheduled marks (0:30, 3:00). The index walks
 	# the schedule so each fires exactly once; a debug time-jump past a mark still spawns it.
 	while _glow_bat_idx < GLOW_BAT_TIMES.size() and run.elapsed >= GLOW_BAT_TIMES[_glow_bat_idx]:
@@ -151,24 +166,26 @@ func _spawn_one(cap: int) -> void:
 	run.add_child(e)
 	AgentBridge.emit_event("spawn", {"type": "enemy", "pos": [pos.x, pos.y]})
 
-## Spawn a single elite/mini-boss on the ring at a wiki boss beat (a minute mark, see
-## ELITE_INTERVAL). Bypasses the enemy cap so the boss always shows up, and tags its event so
-## tooling can tell it apart. Its kill drops a Treasure Chest (VSRun._maybe_drop_chest), the
-## faithful "Bosses & Treasure" payout.
-func _spawn_elite() -> void:
+## Spawn a single scheduled treasure boss on the ring at a wiki boss beat (see BOSS_SCHEDULE /
+## res://data/mad_forest_bosses.csv). `boss_type` is the mapped VSEnemy.Type art the named boss
+## borrows; is_boss floors its HP/gem burst to the ELITE tier and its kill drops a Treasure Chest
+## (VSRun._maybe_drop_chest), the faithful "Bosses & Treasure" payout. Bypasses the enemy cap so
+## the boss always shows up, and tags its event so tooling can tell it apart.
+func _spawn_boss(boss_type: int) -> void:
 	var ang := randf() * TAU
 	var pos := run.player.position + Vector2(cos(ang), sin(ang)) * SPAWN_RING
 	pos.x = clampf(pos.x, -run.arena_half.x, run.arena_half.x)
 	pos.y = clampf(pos.y, -run.arena_half.y, run.arena_half.y)
 	var e := VSEnemy.new()
-	e.type = VSEnemy.Type.ELITE
+	e.type = boss_type
+	e.is_boss = true
 	e.position = pos
 	e.run = run
 	e.target = run.player
 	run.add_child(e)
-	AgentBridge.emit_event("spawn", {"type": "elite", "pos": [pos.x, pos.y]})
+	AgentBridge.emit_event("spawn", {"type": "boss", "boss_type": boss_type, "pos": [pos.x, pos.y]})
 
-## Summon a single Mad Forest "glow bat" mini-boss on the ring. Modeled on _spawn_elite (bypasses
+## Summon a single Mad Forest "glow bat" mini-boss on the ring. Modeled on _spawn_boss (bypasses
 ## the enemy cap, tags its event) but injects the GLOW_BAT — bat art, extra HP, pulsing blue
 ## outline — and drops NO chest (that stays an elite reward), so it reads as a beefy special bat
 ## rather than the death-reaper the operator (rightly) did not want appearing early.
@@ -255,7 +272,7 @@ func _spawn_wall(dir: Vector2, count: int) -> void:
 		e.target = run.player
 		run.add_child(e)
 
-## Summon the finale Reaper on the spawn ring. Modeled on _spawn_elite (bypasses the
+## Summon the finale Reaper on the spawn ring. Modeled on _spawn_boss (bypasses the
 ## enemy cap, tags its event) but injects the single, near-unkillable REAPER that VSRun
 ## triggers at the survival time limit for the run's climactic last stand. Returns the
 ## node so the run can hand it to the HUD for the boss health bar.
@@ -303,6 +320,43 @@ const NAME_TO_TYPE := {
 static var _roster_bands: Array = []
 static var _density_bands: Array = []
 static var _schedule_loaded := false
+
+## The per-minute treasure-boss roster lives in res://data/mad_forest_bosses.csv (one row per
+## minute: minute, boss_name, enemy_type, art_note), so the whole boss cadence is designer-editable
+## and exactly wiki-faithful. The CSV is the source of truth at runtime; BOSS_SCHEDULE below is the
+## transcribed fallback used only if the file is missing/unreadable (keeps bosses spawning).
+const BOSS_CSV := "res://data/mad_forest_bosses.csv"
+## Transcribed verbatim from Mad Forest's "Bosses & Treasure" column (0:00-29:00; the 30:00 Reaper
+## is the finale, spawned separately by VSRun). Each entry is {time: seconds, types: [mapped
+## VSEnemy.Type ...]}. Empty minutes (0/2/4/6/13/17/19/26/28) have no entry. Names are role-mapped
+## to existing art: bats (Glowing/Silver/Giant) -> GLOW_BAT, Mantichana/Venus -> MANTIS_WARRIOR,
+## Giant Werewolf -> WEREWOLF, Giant Mummy -> MUMMY (see the CSV's art_note column).
+const BOSS_SCHEDULE := [
+	{"time": 60.0,   "types": [VSEnemy.Type.GLOW_BAT]},                              # 1:00 Glowing Bat
+	{"time": 180.0,  "types": [VSEnemy.Type.GLOW_BAT]},                              # 3:00 Glowing Bat
+	{"time": 300.0,  "types": [VSEnemy.Type.MANTIS_WARRIOR]},                        # 5:00 Mantichana
+	{"time": 420.0,  "types": [VSEnemy.Type.GLOW_BAT]},                              # 7:00 Glowing Bat
+	{"time": 480.0,  "types": [VSEnemy.Type.GLOW_BAT]},                              # 8:00 Giant Bat
+	{"time": 540.0,  "types": [VSEnemy.Type.GLOW_BAT]},                              # 9:00 Silver Bat
+	{"time": 600.0,  "types": [VSEnemy.Type.MANTIS_WARRIOR]},                        # 10:00 Giant Mantichana
+	{"time": 660.0,  "types": [VSEnemy.Type.GLOW_BAT]},                              # 11:00 Glowing Bat
+	{"time": 720.0,  "types": [VSEnemy.Type.GLOW_BAT]},                              # 12:00 Glowing Bat
+	{"time": 840.0,  "types": [VSEnemy.Type.GLOW_BAT]},                              # 14:00 Silver Bat
+	{"time": 900.0,  "types": [VSEnemy.Type.WEREWOLF]},                              # 15:00 Giant Werewolf
+	{"time": 960.0,  "types": [VSEnemy.Type.GLOW_BAT]},                              # 16:00 Glowing Bat
+	{"time": 1080.0, "types": [VSEnemy.Type.GLOW_BAT]},                              # 18:00 Silver Bat
+	{"time": 1200.0, "types": [VSEnemy.Type.MUMMY]},                                 # 20:00 Giant Mummy
+	{"time": 1260.0, "types": [VSEnemy.Type.MANTIS_WARRIOR, VSEnemy.Type.GLOW_BAT]}, # 21:00 Venus + Glowing Bat
+	{"time": 1320.0, "types": [VSEnemy.Type.GLOW_BAT]},                              # 22:00 Glowing Bat
+	{"time": 1380.0, "types": [VSEnemy.Type.GLOW_BAT]},                              # 23:00 Silver Bat
+	{"time": 1440.0, "types": [VSEnemy.Type.MANTIS_WARRIOR]},                        # 24:00 Venus
+	{"time": 1500.0, "types": [VSEnemy.Type.MANTIS_WARRIOR]},                        # 25:00 Giant Blue Venus
+	{"time": 1620.0, "types": [VSEnemy.Type.GLOW_BAT]},                              # 27:00 Glowing Bat
+	{"time": 1740.0, "types": [VSEnemy.Type.GLOW_BAT]},                              # 29:00 Glowing Bat
+]
+## Loaded once from BOSS_CSV (cached across instances); falls back to BOSS_SCHEDULE above.
+static var _boss_schedule: Array = []
+static var _bosses_loaded := false
 
 ## Roster schedule modeled directly on Mad Forest's real per-minute wave table
 ## (.firecrawl/wiki-offline/Mad_Forest.htm, "Waves" section: 0:00 Pipeestrello,
@@ -454,6 +508,47 @@ static func _ensure_schedule() -> void:
 	if not roster.is_empty() and not density.is_empty():
 		_roster_bands = roster
 		_density_bands = density
+
+## Load the per-minute treasure-boss schedule from BOSS_CSV once (cached across instances). On any
+## failure — missing file, empty/garbled rows — fall back to the transcribed BOSS_SCHEDULE so bosses
+## always spawn. Rows with an empty enemy_type are the wiki's empty minutes and are skipped; the
+## enemy_type cell may name several bosses for one minute, separated by ';' (e.g. 21:00).
+static func _ensure_bosses() -> void:
+	if _bosses_loaded:
+		return
+	_bosses_loaded = true
+	_boss_schedule = BOSS_SCHEDULE
+	var f := FileAccess.open(BOSS_CSV, FileAccess.READ)
+	if f == null:
+		push_warning("VSSpawner: cannot open %s (err %d) — using built-in boss schedule" % [BOSS_CSV, FileAccess.get_open_error()])
+		return
+	var header := f.get_csv_line()
+	var col := {}
+	for i in header.size():
+		col[header[i].strip_edges()] = i
+	var minute_col := int(col.get("minute", 0))
+	var type_col := int(col.get("enemy_type", 2))
+	var schedule: Array = []
+	while not f.eof_reached():
+		var r := f.get_csv_line()
+		if r.size() <= maxi(minute_col, type_col) or r[minute_col].strip_edges() == "":
+			continue
+		var cell := r[type_col].strip_edges()
+		if cell == "":
+			continue   # an empty minute in the wiki's "Bosses & Treasure" column — no boss this beat
+		var types: Array = []
+		for token in cell.split(";", false):
+			var name := token.strip_edges()
+			if not NAME_TO_TYPE.has(name):
+				push_warning("VSSpawner: unknown boss '%s' in %s" % [name, BOSS_CSV])
+				continue
+			types.append(int(NAME_TO_TYPE[name]))
+		if types.is_empty():
+			continue
+		schedule.append({"time": r[minute_col].strip_edges().to_float() * 60.0, "types": types})
+	f.close()
+	if not schedule.is_empty():
+		_boss_schedule = schedule
 
 ## Parse a CSV "enemies" cell ("BAT:0.5;ZOMBIE:0.5") into a {VSEnemy.Type: weight} dictionary.
 static func _parse_weights(cell: String) -> Dictionary:

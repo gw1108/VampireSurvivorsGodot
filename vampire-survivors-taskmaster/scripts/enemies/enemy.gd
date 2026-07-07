@@ -146,6 +146,11 @@ var base_scale := 1.0
 ## How many gems this enemy scatters on death. Elites drop a burst so the big
 ## payout reads as a jackpot instead of one lone gem.
 var gem_drops := 1
+## Set by the spawner when this enemy is a scheduled treasure boss (the wiki's per-minute
+## "Bosses & Treasure" beat, see res://data/mad_forest_bosses.csv). A boss drops a chest,
+## shakes the camera, and gets its HP/gem burst floored to the ELITE tier so it reads as a
+## real boss no matter which enemy art it borrows.
+var is_boss := false
 ## Per-type knockback resistance (1.0 = full shove, 0 = immovable); read from TYPES.
 var knock_resist := 1.0
 ## Resting sprite tint (default white = untinted). MANTIS_WARRIOR wears a cool
@@ -252,6 +257,15 @@ func _ready() -> void:
 	var type_scale: float = BalanceData.get_value(SCALE_KEYS.get(type, ""), cfg.get("scale", 1.0))
 	base_scale = type_scale * BalanceData.get_value("enemy_scale", 1.0)
 	gem_drops = cfg.get("gems", 1)
+	# Scheduled treasure bosses (spawner sets is_boss) read as real bosses regardless of the
+	# art type they borrow: floor their HP and gem burst to the ELITE tier and force a health
+	# bar, so a Glowing-Bat- or Mummy-skinned boss is as tanky and rewarding as the armored
+	# elite it replaces on the wiki's per-minute boss beat (res://data/mad_forest_bosses.csv).
+	if is_boss:
+		health = maxf(health, TYPES[Type.ELITE]["health"] * hp_mult)
+		max_health = health
+		_show_health_bar = max_health >= HEALTH_BAR_MIN_MAX_HEALTH
+		gem_drops = maxi(gem_drops, int(TYPES[Type.ELITE]["gems"]))
 	knock_resist = cfg.get("knock", 1.0)
 	_base_tint = cfg.get("tint", Color(1, 1, 1))
 	scale = Vector2(base_scale, base_scale)
@@ -526,7 +540,7 @@ func hit(amount: float, from: Vector2) -> void:
 func _die() -> void:
 	_dying = true
 	if run:
-		var big := type == Type.ELITE or type == Type.REAPER
+		var big := type == Type.ELITE or type == Type.REAPER or is_boss
 		run.add_kill(position, xp_value, gem_drops, big, max_health)
 		if big:
 			run.add_camera_shake(0.8)   # elite/reaper pop lands harder than a player hit
