@@ -15,7 +15,7 @@ signal skipped            ## player waved off the level-up (VSRun resumes with n
 ## Per-upgrade icon, mapped by option id. Weapon/passive sprites from
 ## SourceArt/extracted_clean (copied into res://art) so each choice reads at a glance:
 ## strength=Power, dusty tome=cooldown/Haste, boots=Swift, heart=Vitality,
-## duplicator ring=Multishot, garlic bulb=Garlic aura, whip=Whip arc. Ids without an entry just render text.
+## magic wand=Magic Wand, garlic bulb=Garlic aura, whip=Whip arc. Ids without an entry just render text.
 const ICONS := {
 	"damage": "res://art/up_damage.png",
 	"firerate": "res://art/up_firerate.png",
