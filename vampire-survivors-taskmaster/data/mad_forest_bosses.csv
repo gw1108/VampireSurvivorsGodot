@@ -1,0 +1,31 @@
+minute,boss_name,enemy_type,art_note
+0,,,
+1,Glowing Bat,GLOW_BAT,
+2,,,
+3,Glowing Bat,GLOW_BAT,
+4,,,
+5,Mantichana,MANTIS_WARRIOR,needs Mantichana art (role-mapped to mantis warrior)
+6,,,
+7,Glowing Bat,GLOW_BAT,
+8,Giant Bat,GLOW_BAT,GLOW_BAT already models the wiki's 1.5x Giant Bat
+9,Silver Bat,GLOW_BAT,needs Silver Bat art (role-mapped to glow bat)
+10,Giant Mantichana,MANTIS_WARRIOR,needs Giant Mantichana art (role-mapped to mantis warrior)
+11,Glowing Bat,GLOW_BAT,
+12,Glowing Bat,GLOW_BAT,
+13,,,
+14,Silver Bat,GLOW_BAT,needs Silver Bat art (role-mapped to glow bat)
+15,Giant Werewolf,WEREWOLF,needs Giant Werewolf art (role-mapped to werewolf)
+16,Glowing Bat,GLOW_BAT,
+17,,,
+18,Silver Bat,GLOW_BAT,needs Silver Bat art (role-mapped to glow bat)
+19,,,
+20,Giant Mummy,MUMMY,needs Giant Mummy art (role-mapped to mummy)
+21,Venus;Glowing Bat,MANTIS_WARRIOR;GLOW_BAT,Venus needs art (role-mapped to mantis warrior)
+22,Glowing Bat,GLOW_BAT,
+23,Silver Bat,GLOW_BAT,needs Silver Bat art (role-mapped to glow bat)
+24,Venus,MANTIS_WARRIOR,needs Venus art (role-mapped to mantis warrior)
+25,Giant Blue Venus,MANTIS_WARRIOR,needs Giant Blue Venus art (role-mapped to mantis warrior)
+26,,,
+27,Glowing Bat,GLOW_BAT,
+28,,,
+29,Glowing Bat,GLOW_BAT,
