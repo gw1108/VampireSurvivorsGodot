@@ -76,7 +76,14 @@ const DESPAWN_RADIUS := 1000.0
 ## blue outline shader (the "glowing" bit). It is NOT the death-reaper — the wiki's Mad Forest has
 ## no Death enemy until the finale — so it drops gems (not a chest) and pops without a boss camera
 ## shake. Appended to the enum so every existing Type ordinal stays put.
-enum Type { BAT, ZOMBIE, SKELETON, GHOST, MUMMY, MANTIS, MANTIS_WARRIOR, MUDMAN, WEREWOLF, ELITE, REAPER, GLOW_BAT }
+## The final six are the wiki's NAMED Mad Forest treasure bosses (res://data/mad_forest_bosses.csv),
+## each given a distinct look so it reads as a real boss rather than a re-skinned trash mob:
+## SILVER_BAT is the pale, steel-rimmed cousin of the blue GLOW_BAT (9:00/14:00/18:00/23:00 beats);
+## GIANT_MUMMY / GIANT_WEREWOLF / GIANT_MANTICHANA are up-scaled, tinted versions of their base art
+## (the wiki's 20:00 / 15:00 / 10:00 "Giant" bosses); VENUS is a carnivorous-flower boss on its own
+## piranha-plant sprite (21:00/24:00), and GIANT_BLUE_VENUS is the biggest, blue-glowing plant — the
+## 25:00 hyper-mode unlock boss. All are appended so existing Type ordinals stay put.
+enum Type { BAT, ZOMBIE, SKELETON, GHOST, MUMMY, MANTIS, MANTIS_WARRIOR, MUDMAN, WEREWOLF, ELITE, REAPER, GLOW_BAT, SILVER_BAT, GIANT_MUMMY, GIANT_WEREWOLF, GIANT_MANTICHANA, VENUS, GIANT_BLUE_VENUS }
 
 ## Canvas_item outline shader + transparent-margin (texels) for "glowing" variants (see
 ## _make_glow_texture / the GLOW_BAT type). Margin gives the outward rim room so it is never
@@ -105,6 +112,18 @@ const TYPES := {
 	# compressed economy (base bat 3, ELITE 140) that lands at ~60 — clearly "extra health",
 	# still killable with an early weapon. Semi-KB-resistant like the real Giant Bat.
 	Type.GLOW_BAT: {"tex": "res://art/enemy_bat.png",      "speed": 68.0, "health": 60.0,  "damage": 12.0, "xp": 5, "scale": 1.5, "radius": 16.0, "gems": 3, "knock": 0.3, "outline": Color(0.30, 0.60, 1.0)},
+	# Named treasure bosses (spawned by _spawn_boss with is_boss=true, which floors HP/gems to the
+	# ELITE tier — the stats below set only the art size, speed, damage and resting look). Each reads
+	# distinctly from the trash mob it borrows: SILVER_BAT wears a pale steel tint + near-white rim so
+	# it never reads as the blue GLOW_BAT; the three "Giant" bosses up-scale their base sprite with a
+	# subtle cast; VENUS uses its own piranha-plant art; GIANT_BLUE_VENUS is the biggest, blue-glowing
+	# 25:00 hyper-mode boss.
+	Type.SILVER_BAT:       {"tex": "res://art/enemy_bat.png",           "speed": 74.0, "health": 70.0,  "damage": 13.0, "xp": 6,  "scale": 1.7, "radius": 17.0, "gems": 4, "knock": 0.28, "tint": Color(0.82, 0.86, 0.95), "outline": Color(0.90, 0.94, 1.0)},
+	Type.GIANT_MUMMY:      {"tex": "res://art/enemy_mummy.png",         "speed": 32.0, "health": 24.0,  "damage": 17.0, "xp": 8,  "scale": 2.2, "radius": 24.0, "gems": 4, "knock": 0.18, "tint": Color(1.0, 0.94, 0.78)},
+	Type.GIANT_WEREWOLF:   {"tex": "res://art/enemy_werewolf.png",      "speed": 98.0, "health": 26.0,  "damage": 18.0, "xp": 8,  "scale": 2.0, "radius": 21.0, "gems": 4, "knock": 0.35, "tint": Color(0.88, 0.84, 0.96)},
+	Type.GIANT_MANTICHANA: {"tex": "res://art/enemy_mantis_warrior.png","speed": 88.0, "health": 55.0,  "damage": 18.0, "xp": 10, "scale": 2.0, "radius": 21.0, "gems": 5, "knock": 0.32, "tint": Color(0.78, 0.86, 0.66)},
+	Type.VENUS:            {"tex": "res://art/enemy_venus.png",         "speed": 58.0, "health": 45.0,  "damage": 16.0, "xp": 10, "scale": 1.4, "radius": 17.0, "gems": 5, "knock": 0.4,  "tint": Color(1.0, 0.9, 0.95)},
+	Type.GIANT_BLUE_VENUS: {"tex": "res://art/enemy_venus.png",         "speed": 64.0, "health": 90.0,  "damage": 20.0, "xp": 12, "scale": 2.1, "radius": 24.0, "gems": 6, "knock": 0.2,  "tint": Color(0.55, 0.72, 1.25), "outline": Color(0.32, 0.62, 1.0)},
 }
 
 ## Per-type visual-scale CSV overrides. Each enemy's base art size (its TYPES `scale`, default 1.0)
