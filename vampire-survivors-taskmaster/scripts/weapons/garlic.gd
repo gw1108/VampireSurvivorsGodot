@@ -7,11 +7,17 @@ extends Node2D
 ## and inert). This is the slice's second, mechanically-distinct weapon so level-up
 ## "weapon choices" become real, not just stat buffs.
 
-const BASE_RADIUS := 74.0
-const RADIUS_PER_LEVEL := 20.0
-## Seconds between damage pulses lives in res://data/balance.csv ("garlic_tick_interval")
-## so a designer can retune fire rate without touching this script.
-static var TICK_INTERVAL := BalanceData.get_value("garlic_tick_interval", 0.5)
+const BASE_RADIUS := 74.0         # Lv1 aura radius; per-level Area growth lives in the CSV below
+## Per-level level-up table (wiki Garlic.md "Levels"), editable in res://data/garlic_levels.csv —
+## one row per level with independently-tunable columns so a designer can retune ANY single level
+## without touching this script. Values are cumulative absolutes (each row fully describes the
+## Garlic at that level): bonus_damage (flat added on top of BASE_DAMAGE), area_mult (scales the
+## aura's reach), cooldown (seconds between damage pulses). The wiki pattern is:
+## L1 +0 / 100% / 1.3s; L2 +2 & 140%; L3 +1 & 1.2s; L4 +1 & 160%; L5 +2 & 1.1s; L6 +1 & 180%;
+## L7 +1 & 1.0s; L8 +2 & 200% (max = +10 damage, 200% area, 1.0s → base-5 Garlic peaks at 15 damage).
+const LEVELS_CSV := "res://data/garlic_levels.csv"
+static var _levels: Dictionary = {}   # int level -> {"bonus_damage": float, "area_mult": float, "cooldown": float}
+static var _levels_loaded := false
 const FLASH_TIME := 0.18          # aura brightens briefly on each pulse
 
 ## Aura VFX: SourceArt/sheets/Poof.png, a puff that blooms into a solid ring then cracks
@@ -33,10 +39,9 @@ const VFX_PULSE_FPS := 28.0       # 5 frames over ~FLASH_TIME
 const BASE_TINT := Color(0.65, 1.0, 0.55)     # base Garlic reads green
 const EVOLVED_TINT := Color(0.85, 0.55, 1.0)  # Soul Eater burns violet
 
-## Base damage + per-level growth live in res://data/balance.csv ("garlic_base_damage" /
-## "garlic_damage_per_level") so a designer can retune them without touching this script.
-static var BASE_DAMAGE := BalanceData.get_value("garlic_base_damage", 0.0)
-static var DAMAGE_PER_LEVEL := BalanceData.get_value("garlic_damage_per_level", 1.0)
+## Lv1 base damage lives in res://data/balance.csv ("garlic_base_damage", wiki base 5); the flat
+## per-level bonus on top of it lives per-level in data/garlic_levels.csv (see LEVELS_CSV above).
+static var BASE_DAMAGE := BalanceData.get_value("garlic_base_damage", 5.0)
 
 # Evolved (Soul Eater) profile — applied when run.garlic_evolved: a wider, far deadlier
 # devouring aura. Gated on Garlic already being maxed, so this is the run's payoff for
@@ -80,7 +85,7 @@ func _process(delta: float) -> void:
 	_cd -= delta
 	if _cd <= 0.0:
 		_pulse(lvl)
-		_cd = TICK_INTERVAL * run.haste_mult()
+		_cd = float(_row(lvl)["cooldown"]) * run.haste_mult()
 		_flash = FLASH_TIME
 		_vfx.play(&"pulse")
 
@@ -91,7 +96,7 @@ func _is_evolved() -> bool:
 ## Damage every enemy currently inside the aura. Damage scales with garlic level.
 func _pulse(lvl: int) -> void:
 	var r := _radius(lvl)
-	var dmg := (BASE_DAMAGE * run.damage_variance() + DAMAGE_PER_LEVEL * float(lvl)) * run.might_mult() * run.power_mult()
+	var dmg := (BASE_DAMAGE * run.damage_variance() + float(_row(lvl)["bonus_damage"])) * run.might_mult() * run.power_mult()
 	if _is_evolved():
 		dmg *= EVOLVED_DAMAGE_MULT
 	var hit_any := false
@@ -104,10 +109,59 @@ func _pulse(lvl: int) -> void:
 		AgentBridge.emit_event("sfx_played", {"name": "garlic"})
 
 func _radius(lvl: int) -> float:
-	var r := BASE_RADIUS + RADIUS_PER_LEVEL * float(lvl - 1)
+	# The Garlic's own reach grows only via its per-level Area column (wiki: 100% -> 200%);
+	# run.area_mult (Candelabrador) then extends it further on top.
+	var r := BASE_RADIUS * float(_row(lvl)["area_mult"])
 	if _is_evolved():
 		r += EVOLVED_RADIUS_BONUS
 	return r * run.area_mult   # Candelabrador passive widens the aura
+
+## The per-level tuning row for `lvl`, from data/garlic_levels.csv. Levels past the table (Limit
+## Break) clamp to the highest defined level; a missing CSV reconstructs the wiki deltas so the
+## Garlic never breaks.
+static func _row(lvl: int) -> Dictionary:
+	_ensure_levels()
+	if _levels.has(lvl):
+		return _levels[lvl]
+	if _levels.is_empty():
+		return _fallback_row(lvl)
+	var keys := _levels.keys()
+	keys.sort()
+	return _levels[keys[keys.size() - 1]]
+
+## Wiki Garlic.md deltas reconstructed as cumulative absolutes, used only if the CSV is missing.
+static func _fallback_row(lvl: int) -> Dictionary:
+	var bonus_by := [0.0, 0.0, 2.0, 3.0, 4.0, 6.0, 7.0, 8.0, 10.0]
+	var area_by := [1.0, 1.0, 1.4, 1.4, 1.6, 1.6, 1.8, 1.8, 2.0]
+	var cd_by := [1.3, 1.3, 1.3, 1.2, 1.2, 1.1, 1.1, 1.0, 1.0]
+	var i := clampi(lvl, 1, 8)
+	return {"bonus_damage": bonus_by[i], "area_mult": area_by[i], "cooldown": cd_by[i]}
+
+## Parse the per-level table once. Column-name driven (falls back to fixed positions) so the CSV
+## can carry extra tuning columns without breaking the loader.
+static func _ensure_levels() -> void:
+	if _levels_loaded:
+		return
+	_levels_loaded = true
+	var f := FileAccess.open(LEVELS_CSV, FileAccess.READ)
+	if f == null:
+		push_warning("VSGarlic: cannot open %s (err %d)" % [LEVELS_CSV, FileAccess.get_open_error()])
+		return
+	var header := f.get_csv_line()
+	var col := {}
+	for i in header.size():
+		col[header[i].strip_edges()] = i
+	while not f.eof_reached():
+		var r := f.get_csv_line()
+		if r.size() < 2 or r[0].strip_edges() == "":
+			continue
+		var lvl := r[int(col.get("level", 0))].strip_edges().to_int()
+		_levels[lvl] = {
+			"bonus_damage": r[int(col.get("bonus_damage", 1))].strip_edges().to_float(),
+			"area_mult": r[int(col.get("area_mult", 2))].strip_edges().to_float(),
+			"cooldown": r[int(col.get("cooldown", 3))].strip_edges().to_float(),
+		}
+	f.close()
 
 ## Builds the two aura animations from garlic_aura.png's 3x3 grid (read left->right
 ## top->bottom): "idle" is the single solid-ring frame; "pulse" cracks that ring apart

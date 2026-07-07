@@ -2,8 +2,7 @@ id,value,description
 player_move_speed,210,Base player movement speed in px/sec (before Swift Boots / Moonwalker multipliers)
 magic_wand_base_damage,2,Magic Wand starting damage before any Power picks
 magic_wand_damage_per_level,1,Magic Wand damage added per Power upgrade pick
-garlic_base_damage,0,Garlic base damage before any levels
-garlic_damage_per_level,1,Garlic damage added per level
+garlic_base_damage,5,Garlic base damage at Lv1 (wiki base 5); per-level bonus_damage/area/cooldown live in data/garlic_levels.csv
 whip_base_damage,10,Whip base damage at Lv1 (wiki base 10); per-level bonus_damage/projectiles/area live in data/whip_levels.csv
 king_bible_base_damage,10,King Bible base damage at Lv1 (wiki base 10); per-level bonus_damage/amount/area/speed live in data/king_bible_levels.csv
 lightning_base_damage,15,Lightning Ring base damage at Lv1 (wiki base 15); per-level bonus_damage/amount/area live in data/lightning_levels.csv
@@ -14,7 +13,6 @@ fire_wand_base_damage,20,Fire Wand base damage before any levels
 fire_wand_damage_per_level,6,Fire Wand damage added per level
 whip_base_interval,1.2,Whip cooldown between swings (seconds; does not scale per level)
 king_bible_tick_interval,0.35,King Bible min seconds between a book's hits (does not scale per level)
-garlic_tick_interval,0.5,Garlic seconds between damage pulses (does not scale per level)
 lightning_base_interval,4.5,Lightning Ring base cooldown between volleys before any levels
 lightning_interval_per_level,0.3,Lightning Ring cooldown shrink per level (floored at MIN_INTERVAL)
 knife_base_interval,1.0,Knife base cooldown between throws before any levels
