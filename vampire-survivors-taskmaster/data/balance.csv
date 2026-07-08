@@ -26,6 +26,7 @@ gem_drop_ceil_hp,180,Enemy max HP at/above which a kill is guaranteed (100%) to 
 camera_zoom,0.8,Camera zoom factor for the whole run (less than 1 zooms out so everything reads smaller; greater than 1 zooms in)
 player_scale,1.0,Scale multiplier for the player avatar; scales both the sprite and the contact hitbox radius by the same factor (1 = native art size / tuned baseline hitbox)
 enemy_scale,1.0,Global scale multiplier applied on top of each enemy type's own scale (1 = per-type size); scales both the sprite and the collision radius by the same factor
+enemy_attack_interval,0.3333,Seconds between successive contact-damage ticks an enemy deals while touching the player (attack speed). Lower = faster = more DPS; 0.3333 is the original 0.5s cadence sped up 50% (so enemies do ~50% more contact damage over time)
 enemy_mantis_warrior_scale,1.4,Mantis Warrior base scale before the global enemy_scale multiplier; scales both the sprite and the collision radius (1.4 = the tuned baseline hitbox)
 enemy_elite_scale,2.0,Elite mini-boss base scale before the global enemy_scale multiplier; scales both the sprite and the collision radius (2.0 = the tuned baseline hitbox)
 enemy_reaper_scale,2.6,Reaper finale base scale before the global enemy_scale multiplier; scales both the sprite and the collision radius (2.6 = the tuned baseline hitbox)
