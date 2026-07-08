@@ -188,6 +188,10 @@ var _hitstop := 0.0
 var run: VSRun
 var target: VSPlayer
 var _contact_cd := 0.0
+## Seconds between successive contact-damage ticks while touching the player (attack speed).
+## Read from res://data/balance.csv (enemy_attack_interval) in _ready so a designer can retune
+## the horde's contact DPS without touching code; falls back to the tuned baseline if absent.
+var attack_interval := 0.3333
 var _flash_time := 0.0
 var _dying := false
 ## Tracks whether an Orologion freeze was active last frame, so the REAPER can fire its
@@ -294,6 +298,7 @@ func _ready() -> void:
 		max_health = health
 		_show_health_bar = max_health >= HEALTH_BAR_MIN_MAX_HEALTH
 		gem_drops = maxi(gem_drops, int(TYPES[Type.ELITE]["gems"]))
+	attack_interval = BalanceData.get_value("enemy_attack_interval", attack_interval)
 	knock_resist = cfg.get("knock", 1.0)
 	_base_tint = cfg.get("tint", Color(1, 1, 1))
 	scale = Vector2(base_scale, base_scale)
@@ -444,7 +449,7 @@ func _process(delta: float) -> void:
 	_contact_cd -= delta
 	if contact and _contact_cd <= 0.0 and target.alive:
 		target.take_damage(contact_damage)
-		_contact_cd = 0.5
+		_contact_cd = attack_interval
 
 ## Positional correction that separates this enemy's body from every neighbour it currently
 ## overlaps: for each other enemy whose centre is nearer than the combined radii, add a shove
