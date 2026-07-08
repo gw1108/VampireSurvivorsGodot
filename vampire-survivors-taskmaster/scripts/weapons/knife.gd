@@ -23,8 +23,10 @@ static var BASE_DAMAGE := BalanceData.get_value("knife_base_damage", 6.5)
 ## intra-volley "proj_interval" column below (which spaces knives WITHIN one throw) tightens with
 ## level, on L4/6/8.
 static var BASE_INTERVAL := BalanceData.get_value("knife_base_interval", 1.0)
-const KNIFE_SPEED := 540.0            # faster than the aimed wand's bolt — the Knife's signature
-const KNIFE_LIFE := 1.1
+## Movement/lifetime tuning live in res://data/balance.csv so a designer can retune the throw
+## without touching this script (defaults = the wiki-tuned baselines).
+static var KNIFE_SPEED := BalanceData.get_value("knife_speed", 540.0)   # faster than the aimed wand's bolt — the Knife's signature
+static var KNIFE_LIFE := BalanceData.get_value("knife_life", 1.1)
 
 ## Per-level level-up table (wiki Knife.md "Levels"), editable in res://data/knife_levels.csv —
 ## one row per level with independently-tunable columns so a designer can retune ANY single level
