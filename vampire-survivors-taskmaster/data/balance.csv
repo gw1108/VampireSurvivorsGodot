@@ -21,7 +21,7 @@ fire_wand_base_interval,3.0,Fire Wand base cooldown between volleys before any l
 fire_wand_interval_per_level,0.18,Fire Wand cooldown shrink per level (floored at fire_wand_min_interval)
 fire_wand_min_interval,1.4,Fire Wand cooldown floor — the volley cadence never drops below this many seconds no matter how many levels shrink it
 gem_drop_floor_hp,15,Enemy max HP at/below which a kill has only the floor chance to drop an XP gem
-gem_drop_floor_chance,0.25,Floor chance (0-1) an XP gem drops from a kill at/below gem_drop_floor_hp
+gem_drop_floor_chance,0.3,Floor chance (0-1) an XP gem drops from a kill at/below gem_drop_floor_hp
 gem_drop_ceil_hp,180,Enemy max HP at/above which a kill is guaranteed (100%) to drop an XP gem
 camera_zoom,0.8,Camera zoom factor for the whole run (less than 1 zooms out so everything reads smaller; greater than 1 zooms in)
 player_scale,1.0,Scale multiplier for the player avatar; scales both the sprite and the contact hitbox radius by the same factor (1 = native art size / tuned baseline hitbox)
