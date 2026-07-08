@@ -8,7 +8,7 @@ extends Node2D
 ## your back). Mounted on the player, enabled/scaled by the run's whip_level (0 = not yet
 ## picked: invisible and inert). This is the slice's third, mechanically-distinct weapon.
 
-const BASE_RANGE := 140.0
+static var BASE_RANGE := BalanceData.get_value("whip_base_range", 140.0)   # reach of the melee arc at Lv1 (before per-level area_mult)
 const ARC_HALF_ANGLE := deg_to_rad(50.0)   # half-width of the damage wedge
 
 ## Per-level level-up table (wiki Whip.md "Levels"), editable in res://data/whip_levels.csv —

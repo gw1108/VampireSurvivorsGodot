@@ -9,7 +9,7 @@ extends Node2D
 ## Inert until run.weapon_level > 0 (the "Multishot" pick levels the wand and grants its first shot;
 ## Antonio does not start with it — his starting weapon is the Whip, see VSRun._init_character).
 
-const RANGE := 620.0
+static var RANGE := BalanceData.get_value("magic_wand_range", 620.0)   # aim-acquire radius: nearest enemy within this is targeted
 const SPREAD := 0.14            # radians between extra multishot projectiles
 
 ## Lv1 base damage lives in res://data/balance.csv ("magic_wand_base_damage", wiki base 10); the flat

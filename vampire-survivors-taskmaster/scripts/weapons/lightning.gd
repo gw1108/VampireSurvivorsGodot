@@ -9,7 +9,7 @@ extends Node2D
 ## run.lightning_level (0 = not yet picked: no strikes, inert). The slice's fifth,
 ## mechanically-distinct weapon.
 
-const RANGE := 620.0                 # a strike may reach any enemy within this of the player
+static var RANGE := BalanceData.get_value("lightning_range", 620.0)   # a strike may reach any enemy within this of the player
 
 ## Lv1 base damage lives in res://data/balance.csv ("lightning_base_damage", wiki base 15); the flat
 ## per-level bonus on top of it lives per-level in data/lightning_levels.csv (see LEVELS_CSV below).
@@ -31,7 +31,7 @@ const MAX_STRIKES := 6              # per-volley cap for the base ring (wiki Amo
 const EVO_BONUS_STRIKES := 3        # Thunder Loop rains extra bolts on top of the level count…
 const EVO_MAX_STRIKES := 10         # …raising the per-volley cap so a maxed evolved ring saturates
 const EVO_SPLASH_MULT := 1.6        # Thunder Loop's blast is wider than the base ring's
-const STRIKE_RADIUS := 46.0          # AoE splash around each bolt's impact (before the per-level area_mult)
+static var STRIKE_RADIUS := BalanceData.get_value("lightning_strike_radius", 46.0)  # AoE splash around each bolt's impact (before the per-level area_mult)
 ## Base cooldown + per-level shrink live in res://data/balance.csv ("lightning_base_interval" /
 ## "lightning_interval_per_level") so a designer can retune fire rate without touching this script.
 static var BASE_INTERVAL := BalanceData.get_value("lightning_base_interval", 4.5)

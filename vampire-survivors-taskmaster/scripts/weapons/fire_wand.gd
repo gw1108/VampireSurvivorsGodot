@@ -29,9 +29,10 @@ const LEVELS_CSV := "res://data/fire_wand_levels.csv"
 static var _levels: Dictionary = {}   # int level -> {"bonus_damage": float, "speed_mult": float}
 static var _levels_loaded := false
 const AMOUNT := 3                    # fireballs per volley (wiki Amount, constant at every level)
-const BASE_SPEED := 300.0             # px/sec at Lv1 — a lobbed bomb, slower than a bolt; scaled by the per-level speed_mult
-const BASE_LIFE := 2.2               # seconds a fireball flies before self-detonating if it hits nothing
-const BLAST_RADIUS := 58.0           # AoE splash around the detonation point
+## Movement/lifetime/blast tuning live in res://data/balance.csv (defaults = the wiki-tuned baselines).
+static var BASE_SPEED := BalanceData.get_value("fire_wand_base_speed", 300.0)   # px/sec at Lv1 — a lobbed bomb, slower than a bolt; scaled by the per-level speed_mult
+static var BASE_LIFE := BalanceData.get_value("fire_wand_base_life", 2.2)       # seconds a fireball flies before self-detonating if it hits nothing
+static var BLAST_RADIUS := BalanceData.get_value("fire_wand_blast_radius", 58.0)  # AoE splash around the detonation point
 
 ## Hellfire (Fire Wand + Might/Spinach EVOLVED): the fireball stops detonating and instead PIERCES,
 ## tearing straight through the horde and searing everything in its widened swath as it flies. Faithful

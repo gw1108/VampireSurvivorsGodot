@@ -43,5 +43,15 @@ crit_chance_per_luck,0.005,Added crit chance per +1% Luck bonus (~+5% crit per L
 crit_chance_max,0.75,Maximum crit chance so crits stay a spike, not the norm
 crit_multiplier,2.0,Damage multiplier applied on a critical hit
 damage_variance,0.5,Per-hit base-damage variance (+/- fraction) rolled before per-level growth and Might multipliers (Damage.md)
+knife_speed,540,Knife projectile travel speed in px/sec (faster than the aimed wand's bolt; scaled by the Bracer projectile-speed passive)
+knife_life,1.1,Knife projectile lifetime in seconds before it despawns if it hits nothing
+runetracer_base_speed,260,Runetracer projectile travel speed in px/sec at 100% speed_mult (a brisk carom; scaled by the per-level speed_mult and projectile-speed passive)
+fire_wand_base_speed,300,Fire Wand fireball travel speed in px/sec at Lv1 (a lobbed bomb; scaled by the per-level speed_mult and projectile-speed passive)
+fire_wand_base_life,2.2,Fire Wand fireball lifetime in seconds before it self-detonates if it hits nothing
+fire_wand_blast_radius,58,Fire Wand detonation AoE splash radius in px before the Candelabrador area_mult
+lightning_range,620,Lightning Ring strike reach in px — a bolt may hit any enemy within this of the player
+lightning_strike_radius,46,Lightning Ring per-bolt AoE splash radius in px around each impact before the per-level area_mult
+magic_wand_range,620,Magic Wand aim-acquire radius in px — the nearest enemy within this is targeted
+whip_base_range,140,Whip melee arc reach in px at Lv1 before the per-level area_mult
 max_weapons,6,Inventory cap on owned weapons — the level-up roll stops offering a 7th weapon (GDD 6 weapons + 6 passives)
 max_passives,6,Inventory cap on owned passive items — the level-up roll stops offering a 7th passive (GDD 6 weapons + 6 passives)
