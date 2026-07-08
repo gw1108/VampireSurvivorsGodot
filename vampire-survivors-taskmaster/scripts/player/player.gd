@@ -9,6 +9,10 @@ signal damaged(amount: float)
 ## Base move speed lives in res://data/balance.csv (id "player_move_speed") so a designer
 ## can retune it without touching this script.
 static var SPEED := BalanceData.get_value("player_move_speed", 210.0)
+## Tuned baseline contact radius (the value the game was balanced against, at player_scale 1.0).
+## The live hitbox is the instance `radius` below, which scales with the CSV's player_scale so the
+## solid body tracks the art. Kept as a const so callers without the player instance can still read
+## the baseline (VSPlayer.RADIUS), exactly as VSEnemy.RADIUS is the enemy's fallback.
 const RADIUS := 14.0
 
 ## Hit feedback: on taking damage the avatar flashes red for a sliver of a second so a hit
@@ -60,6 +64,10 @@ const IDLE_SWAY_AMP := 1.2
 var max_health := 100.0
 var health := 100.0
 var alive := true
+## Live contact radius, set in _ready to RADIUS * player_scale so the solid body tracks the sprite a
+## designer sizes via the CSV. Enemy contact tests this (enemy.gd), so growing/shrinking the art in
+## balance.csv grows/shrinks the hitbox by the same factor. Defaults to the tuned RADIUS baseline.
+var radius := RADIUS
 ## Debug god-mode: when set, take_damage ignores all incoming contact damage so the agent
 ## harness can survive a swarm long enough to observe late-game visuals (crits, VFX, evolutions).
 ## Only ever set via the agent gate's force_invulnerable command — inert in real builds.
@@ -92,10 +100,13 @@ func _ready() -> void:
 	add_to_group("player")
 	_sprite = Sprite2D.new()
 	_sprite.texture = load("res://art/player.png")
-	# Purely-visual avatar size knob a designer can retune in res://data/balance.csv without
-	# touching code. Scales only the sprite child (not the player node), so the HP bar, mounted
-	# weapons, and camera are untouched and the contact hitbox (RADIUS) stays fixed.
-	_sprite.scale = Vector2.ONE * BalanceData.get_value("player_scale", 1.0)
+	# Avatar size knob a designer can retune in res://data/balance.csv. Scales the sprite child (not
+	# the player node, so the HP bar, mounted weapons, and camera stay put) AND the contact hitbox by
+	# the same factor, so the solid body stays matched to the art. At the default 1.0 the radius is
+	# exactly the tuned RADIUS baseline — this only moves the hitbox when the CSV row is edited.
+	var avatar_scale := BalanceData.get_value("player_scale", 1.0)
+	_sprite.scale = Vector2.ONE * avatar_scale
+	radius = RADIUS * avatar_scale
 	add_child(_sprite)
 
 func _process(delta: float) -> void:

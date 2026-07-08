@@ -428,7 +428,7 @@ func _process(delta: float) -> void:
 	# at the player's edge instead of visually marching inside the avatar sprite. Checked
 	# against the post-move (pre-clamp) distance so a horde pressed against this rim still
 	# chips the player on every contact tick, not just on the approach frame.
-	var min_dist := radius + VSPlayer.RADIUS
+	var min_dist := radius + target.radius
 	var from_player := position - target.position
 	var d_after := from_player.length()
 	var contact := d_after < min_dist
