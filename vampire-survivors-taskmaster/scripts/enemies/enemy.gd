@@ -142,6 +142,33 @@ const SCALE_KEYS := {
 	Type.GLOW_BAT:       "enemy_glow_bat_scale",
 }
 
+## Per-type move-speed CSV overrides. Each enemy's base march speed (its TYPES `speed`) can be
+## retuned per archetype in res://data/balance.csv via an enemy_<name>_speed row, keyed here, and
+## the global `enemy_move_speed_mult` multiplies on top of every one. The TYPES `speed` is the
+## fallback default, so a missing/blank row leaves the hardcoded speed unchanged. Every archetype
+## is listed so the whole roster is editable without touching code (wiki gives fliers/ghosts the
+## quickest pace, mummies/mudmen the slowest — the seeded defaults keep that relative ordering).
+const SPEED_KEYS := {
+	Type.BAT:              "enemy_bat_speed",
+	Type.ZOMBIE:           "enemy_zombie_speed",
+	Type.SKELETON:         "enemy_skeleton_speed",
+	Type.GHOST:            "enemy_ghost_speed",
+	Type.MUMMY:            "enemy_mummy_speed",
+	Type.MANTIS:           "enemy_mantis_speed",
+	Type.MANTIS_WARRIOR:   "enemy_mantis_warrior_speed",
+	Type.MUDMAN:           "enemy_mudman_speed",
+	Type.WEREWOLF:         "enemy_werewolf_speed",
+	Type.ELITE:            "enemy_elite_speed",
+	Type.REAPER:           "enemy_reaper_speed",
+	Type.GLOW_BAT:         "enemy_glow_bat_speed",
+	Type.SILVER_BAT:       "enemy_silver_bat_speed",
+	Type.GIANT_MUMMY:      "enemy_giant_mummy_speed",
+	Type.GIANT_WEREWOLF:   "enemy_giant_werewolf_speed",
+	Type.GIANT_MANTICHANA: "enemy_giant_mantichana_speed",
+	Type.VENUS:            "enemy_venus_speed",
+	Type.GIANT_BLUE_VENUS: "enemy_giant_blue_venus_speed",
+}
+
 ## Knockback: a weapon hit shoves the enemy directly away from the hit source with an
 ## impulse (px/s) that decays fast, so a strike reads as a real shove that buys the player
 ## a sliver of breathing room without launching enemies across the arena. `knock` per-type
@@ -257,7 +284,11 @@ func _ensure_grid() -> void:
 func _ready() -> void:
 	add_to_group("enemies")
 	var cfg: Dictionary = TYPES.get(type, TYPES[Type.BAT])
-	speed = cfg["speed"]
+	# Per-type march speed (editable per archetype via an enemy_<name>_speed row in
+	# res://data/balance.csv, falling back to the hardcoded TYPES `speed`), times a global
+	# enemy_move_speed_mult a designer can retune to speed up or slow down the whole horde at once.
+	var type_speed: float = BalanceData.get_value(SPEED_KEYS.get(type, ""), cfg["speed"])
+	speed = type_speed * BalanceData.get_value("enemy_move_speed_mult", 1.0)
 	# Escalating-threat ramp: enemies spawned later in the run are tougher, so the
 	# player's growing level-up power doesn't trivialize every wave — the run keeps
 	# a real sense of mounting danger (see GOAL: escalating waves). HP ramps steeply,
