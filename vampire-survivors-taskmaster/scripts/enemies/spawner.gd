@@ -26,7 +26,10 @@ const MAX_ENEMIES_LATE := 300   # cap the final-third ramp climbs toward (GDD: 3
 # ~274 bodies, so COLLIDER_SAFE_CAP=300 is a VALIDATED ceiling, not an aspiration.
 const COLLIDER_SAFE_CAP := 300  # validated packed-density ceiling (~78fps at the ~274-body crush)
 const LATE_RAMP_START := 0.367  # fraction of RUN_DURATION where the cap begins to climb (~11:00)
-const SPAWN_RING := 520.0
+const SPAWN_RING := 520.0        # floor radius (used when zoomed in far / before a camera exists)
+# Extra padding beyond the farthest visible corner so a spawned enemy's whole sprite clears the
+# screen edge before it appears, no matter the enemy's size.
+const SPAWN_MARGIN := 96.0
 # Chest-dropping treasure-boss cadence. Mad Forest's real "Bosses & Treasure" column
 # (.firecrawl/wiki-offline/Mad_Forest.md "Waves") names a SPECIFIC boss enemy at specific minute
 # marks (Glowing Bat 1:00/3:00, Mantichana 5:00, Giant Bat 8:00, Giant Mantichana 10:00, Giant
@@ -84,6 +87,23 @@ func _ready() -> void:
 	# shipped frame.
 	assert(MAX_ENEMIES_LATE <= COLLIDER_SAFE_CAP,
 		"MAX_ENEMIES_LATE > COLLIDER_SAFE_CAP: the packed-density crush is only validated to ~60fps up to COLLIDER_SAFE_CAP bodies (VSEnemy.MAX_OVERLAP_CHECKS keeps the overlap scan linear that far) — re-profile a real Web crush before raising the enemy cap further.")
+
+## Off-screen spawn-ring radius for the CURRENT camera zoom. Enemies must always enter from beyond
+## the visible screen, but the camera zoom is data-driven (data/balance.csv `camera_zoom`) and a
+## Camera2D zoom < 1 zooms OUT and enlarges the visible world — so a fixed ring can fall on screen.
+## This sizes the ring past the farthest visible corner at whatever the live zoom is (visible world
+## extent = screen pixels / zoom), plus SPAWN_MARGIN. SPAWN_RING is the floor (used when zoomed in
+## far, or before a current camera/viewport exists). Static so enemy recycling (VSEnemy._recycle)
+## shares the EXACT same ring, keeping recycled stragglers off screen too.
+static func offscreen_radius(node: Node) -> float:
+	var vp := node.get_viewport()
+	if vp == null:
+		return SPAWN_RING
+	var cam := vp.get_camera_2d()
+	if cam == null or cam.zoom.x <= 0.0 or cam.zoom.y <= 0.0:
+		return SPAWN_RING
+	var half: Vector2 = vp.get_visible_rect().size * 0.5 / cam.zoom
+	return maxf(SPAWN_RING, half.length() + SPAWN_MARGIN)
 
 ## Re-baseline the wave/elite/surge cadence timers to just after the current run clock. Used only
 ## by the debug `force_time_set` command: jumping run.elapsed forward by many minutes would otherwise
@@ -155,7 +175,7 @@ func _spawn_one(cap: int) -> void:
 	if get_tree().get_nodes_in_group("enemies").size() >= cap:
 		return
 	var ang := randf() * TAU
-	var pos := run.player.position + Vector2(cos(ang), sin(ang)) * SPAWN_RING
+	var pos := run.player.position + Vector2(cos(ang), sin(ang)) * offscreen_radius(self)
 	pos.x = clampf(pos.x, -run.arena_half.x, run.arena_half.x)
 	pos.y = clampf(pos.y, -run.arena_half.y, run.arena_half.y)
 	var e := VSEnemy.new()
@@ -173,7 +193,7 @@ func _spawn_one(cap: int) -> void:
 ## the boss always shows up, and tags its event so tooling can tell it apart.
 func _spawn_boss(boss_type: int) -> void:
 	var ang := randf() * TAU
-	var pos := run.player.position + Vector2(cos(ang), sin(ang)) * SPAWN_RING
+	var pos := run.player.position + Vector2(cos(ang), sin(ang)) * offscreen_radius(self)
 	pos.x = clampf(pos.x, -run.arena_half.x, run.arena_half.x)
 	pos.y = clampf(pos.y, -run.arena_half.y, run.arena_half.y)
 	var e := VSEnemy.new()
@@ -191,7 +211,7 @@ func _spawn_boss(boss_type: int) -> void:
 ## rather than the death-reaper the operator (rightly) did not want appearing early.
 func _spawn_glow_bat() -> void:
 	var ang := randf() * TAU
-	var pos := run.player.position + Vector2(cos(ang), sin(ang)) * SPAWN_RING
+	var pos := run.player.position + Vector2(cos(ang), sin(ang)) * offscreen_radius(self)
 	pos.x = clampf(pos.x, -run.arena_half.x, run.arena_half.x)
 	pos.y = clampf(pos.y, -run.arena_half.y, run.arena_half.y)
 	var e := VSEnemy.new()
@@ -210,12 +230,13 @@ func _spawn_wave(minute: int) -> void:
 	var count := WAVE_BASE + maxi(minute - 1, 0) * WAVE_GROWTH
 	var ceiling := _max_cap() + WAVE_OVERFLOW
 	var base_ang := randf() * TAU
+	var radius := offscreen_radius(self)
 	for i in count:
 		if get_tree().get_nodes_in_group("enemies").size() >= ceiling:
 			break
 		# Evenly space the ring (with a little jitter) so it reads as a coordinated surge.
 		var ang := base_ang + TAU * float(i) / float(count) + randf_range(-0.12, 0.12)
-		var pos := run.player.position + Vector2(cos(ang), sin(ang)) * SPAWN_RING
+		var pos := run.player.position + Vector2(cos(ang), sin(ang)) * radius
 		pos.x = clampf(pos.x, -run.arena_half.x, run.arena_half.x)
 		pos.y = clampf(pos.y, -run.arena_half.y, run.arena_half.y)
 		var e := VSEnemy.new()
@@ -256,7 +277,7 @@ func _spawn_surge() -> void:
 ## every enemy so a single wall — or a pincer's second wall — never blows the performance budget.
 func _spawn_wall(dir: Vector2, count: int) -> void:
 	var perp := dir.orthogonal()
-	var center := run.player.position + dir * SPAWN_RING
+	var center := run.player.position + dir * offscreen_radius(self)
 	for i in count:
 		if get_tree().get_nodes_in_group("enemies").size() >= _max_cap():
 			break
@@ -278,7 +299,7 @@ func _spawn_wall(dir: Vector2, count: int) -> void:
 ## node so the run can hand it to the HUD for the boss health bar.
 func spawn_reaper() -> VSEnemy:
 	var ang := randf() * TAU
-	var pos := run.player.position + Vector2(cos(ang), sin(ang)) * SPAWN_RING
+	var pos := run.player.position + Vector2(cos(ang), sin(ang)) * offscreen_radius(self)
 	pos.x = clampf(pos.x, -run.arena_half.x, run.arena_half.x)
 	pos.y = clampf(pos.y, -run.arena_half.y, run.arena_half.y)
 	var e := VSEnemy.new()

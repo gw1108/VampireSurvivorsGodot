@@ -40,10 +40,14 @@ const HEALTH_BAR_MIN_MAX_HEALTH := 40.0
 ## Without it a fleeing player (the game's core kiting verb) strands units at the far edge of the
 ## bounded arena forever; since those stragglers still count against the spawner's concurrent-enemy
 ## cap, the field *around* the player thins out — the swarm stops surrounding you. This is VS's own
-## enemy recycling. Sized past the farthest visible corner (~918px at the 0.8 zoom, 1280x720 view)
-## so a recycled straggler is always offscreen when it triggers; mini-bosses/Reaper are exempt (GDD:
-## bosses don't despawn).
+## enemy recycling. The live threshold is the max of this floor and the (zoom-aware) off-screen spawn
+## ring (VSSpawner.offscreen_radius) plus RECYCLE_HYSTERESIS, so a straggler is always past the visible
+## corner at ANY camera zoom before it recycles, and a freshly spawned / just-recycled enemy sitting on
+## that ring is never immediately re-recycled. Mini-bosses/Reaper are exempt (GDD: bosses don't despawn).
 const DESPAWN_RADIUS := 1000.0
+## Gap between the off-screen spawn ring and the recycle threshold, so an enemy re-entering exactly on
+## the ring stays comfortably inside the keep-alive band instead of ping-ponging back out on frame one.
+const RECYCLE_HYSTERESIS := 160.0
 
 ## Enemy archetypes. Each maps to a distinct pixel-art sprite plus stat tuning so
 ## waves have visual and mechanical variety. The spawner sets `type` before the
@@ -400,7 +404,9 @@ func _process(delta: float) -> void:
 	# Recycle a straggler the player has outrun: teleport it back onto the spawn ring around the
 	# player instead of leaving it stranded far offscreen eating the spawner's concurrent-enemy
 	# budget (which would thin the horde near a fleeing player). Mini-bosses/Reaper never recycle.
-	if d > DESPAWN_RADIUS and type != Type.ELITE and type != Type.REAPER:
+	# Threshold sits beyond the zoom-aware off-screen ring (+ hysteresis) so it holds at any zoom.
+	var despawn := maxf(DESPAWN_RADIUS, VSSpawner.offscreen_radius(self) + RECYCLE_HYSTERESIS)
+	if d > despawn and type != Type.ELITE and type != Type.REAPER:
 		_recycle()
 		return
 	var desired := to / d if d > 0.5 else Vector2.ZERO
@@ -513,7 +519,7 @@ func _recycle() -> void:
 	# falls back to fully random-feeling spread only when the player has never moved (heading RIGHT).
 	var heading := target.move_dir if target.move_dir.length_squared() > 0.0001 else Vector2.RIGHT
 	var ang := heading.angle() + (randf() - 0.5) * PI
-	position = target.position + Vector2(cos(ang), sin(ang)) * VSSpawner.SPAWN_RING
+	position = target.position + Vector2(cos(ang), sin(ang)) * VSSpawner.offscreen_radius(self)
 	if run:
 		position.x = clampf(position.x, -run.arena_half.x, run.arena_half.x)
 		position.y = clampf(position.y, -run.arena_half.y, run.arena_half.y)
