@@ -18,7 +18,7 @@ static var BASE_DAMAGE := BalanceData.get_value("runetracer_base_damage", 10.0)
 ## (The wiki level table only governs amount/damage/speed/duration — cadence stays a balance knob.)
 static var BASE_INTERVAL := BalanceData.get_value("runetracer_base_interval", 3.0)
 static var INTERVAL_PER_LEVEL := BalanceData.get_value("runetracer_interval_per_level", 0.15)
-const MIN_INTERVAL := 1.4
+static var MIN_INTERVAL := BalanceData.get_value("runetracer_min_interval", 1.4)
 const BASE_SPEED := 260.0             # px/sec at 100% speed_mult — a brisk carom, not a bullet
 
 ## Per-level level-up table (wiki Runetracer.md "Levels"), editable in res://data/runetracer_levels.csv —

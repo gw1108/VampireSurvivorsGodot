@@ -36,7 +36,7 @@ const STRIKE_RADIUS := 46.0          # AoE splash around each bolt's impact (bef
 ## "lightning_interval_per_level") so a designer can retune fire rate without touching this script.
 static var BASE_INTERVAL := BalanceData.get_value("lightning_base_interval", 4.5)
 static var INTERVAL_PER_LEVEL := BalanceData.get_value("lightning_interval_per_level", 0.3)
-const MIN_INTERVAL := 1.8
+static var MIN_INTERVAL := BalanceData.get_value("lightning_min_interval", 1.8)
 
 ## Strike VFX: SourceArt/pixel_art-animations-warrior "VFX 5", a jagged burst of spikes radiating
 ## from a point and fading — reads as a crackling discharge, unlike VFX3's smooth claw arc (used

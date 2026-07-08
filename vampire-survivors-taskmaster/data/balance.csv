@@ -11,12 +11,15 @@ fire_wand_base_damage,20,Fire Wand base damage before any levels (per-level grow
 whip_base_interval,1.2,Whip cooldown between swings (seconds; does not scale per level)
 king_bible_tick_interval,0.35,King Bible min seconds between a book's hits (does not scale per level)
 lightning_base_interval,4.5,Lightning Ring base cooldown between volleys before any levels
-lightning_interval_per_level,0.3,Lightning Ring cooldown shrink per level (floored at MIN_INTERVAL)
+lightning_interval_per_level,0.3,Lightning Ring cooldown shrink per level (floored at lightning_min_interval)
+lightning_min_interval,1.8,Lightning Ring cooldown floor — the volley cadence never drops below this many seconds no matter how many levels shrink it (keeps it a burst weapon, not a stream)
 knife_base_interval,1.0,Knife cooldown between volley throws (seconds; per wiki does not scale per level — only the intra-volley proj_interval tightens on L4/6/8, see data/knife_levels.csv)
 runetracer_base_interval,3.0,Runetracer base cooldown between volleys before any levels
-runetracer_interval_per_level,0.15,Runetracer cooldown shrink per level (floored at MIN_INTERVAL)
-fire_wand_base_interval,3,Fire Wand base cooldown between volleys before any levels
-fire_wand_interval_per_level,0.18,Fire Wand cooldown shrink per level (floored at MIN_INTERVAL)
+runetracer_interval_per_level,0.15,Runetracer cooldown shrink per level (floored at runetracer_min_interval)
+runetracer_min_interval,1.4,Runetracer cooldown floor — the volley cadence never drops below this many seconds no matter how many levels shrink it
+fire_wand_base_interval,3.0,Fire Wand base cooldown between volleys before any levels
+fire_wand_interval_per_level,0.18,Fire Wand cooldown shrink per level (floored at fire_wand_min_interval)
+fire_wand_min_interval,1.4,Fire Wand cooldown floor — the volley cadence never drops below this many seconds no matter how many levels shrink it
 gem_drop_floor_hp,15,Enemy max HP at/below which a kill has only the floor chance to drop an XP gem
 gem_drop_floor_chance,0.3,Floor chance (0-1) an XP gem drops from a kill at/below gem_drop_floor_hp
 gem_drop_ceil_hp,180,Enemy max HP at/above which a kill is guaranteed (100%) to drop an XP gem
