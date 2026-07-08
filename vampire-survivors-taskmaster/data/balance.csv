@@ -23,9 +23,9 @@ gem_drop_floor_chance,0.25,Floor chance (0-1) an XP gem drops from a kill at/bel
 gem_drop_ceil_hp,180,Enemy max HP at/above which a kill is guaranteed (100%) to drop an XP gem
 camera_zoom,0.8,Camera zoom factor for the whole run (less than 1 zooms out so everything reads smaller; greater than 1 zooms in)
 player_scale,1.0,Visual scale multiplier for the player avatar sprite (1 = native art size; does not change the hitbox)
-enemy_scale,1.0,Global visual scale multiplier applied on top of each enemy type's own scale (1 = per-type size; does not change collision radius)
-enemy_mantis_warrior_scale,1.4,Mantis Warrior base art scale before the global enemy_scale multiplier (does not change collision radius)
-enemy_elite_scale,2.0,Elite mini-boss base art scale before the global enemy_scale multiplier (does not change collision radius)
-enemy_reaper_scale,2.6,Reaper finale base art scale before the global enemy_scale multiplier (does not change collision radius)
-enemy_glow_bat_scale,1.5,Glow Bat mini-boss base art scale before the global enemy_scale multiplier (does not change collision radius)
+enemy_scale,1.0,Global scale multiplier applied on top of each enemy type's own scale (1 = per-type size); scales both the sprite and the collision radius by the same factor
+enemy_mantis_warrior_scale,1.4,Mantis Warrior base scale before the global enemy_scale multiplier; scales both the sprite and the collision radius (1.4 = the tuned baseline hitbox)
+enemy_elite_scale,2.0,Elite mini-boss base scale before the global enemy_scale multiplier; scales both the sprite and the collision radius (2.0 = the tuned baseline hitbox)
+enemy_reaper_scale,2.6,Reaper finale base scale before the global enemy_scale multiplier; scales both the sprite and the collision radius (2.6 = the tuned baseline hitbox)
+enemy_glow_bat_scale,1.5,Glow Bat mini-boss base scale before the global enemy_scale multiplier; scales both the sprite and the collision radius (1.5 = the tuned baseline hitbox)
 projectile_scale,1.0,Visual scale multiplier for flying projectile sprites — the dagger bolts thrown by Knife and fired by the Magic Wand (1 = native art size; does not change the hit radius)
