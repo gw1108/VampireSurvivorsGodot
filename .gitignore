@@ -61,6 +61,9 @@ agent_play/runs/
 # agent_play scratch/temp artifacts (throwaway scripts + screenshots, e.g. tmp_gemcheck*)
 agent_play/tmp_*
 
+# LibreOffice lock files (created while a spreadsheet/document is open, e.g. .~lock.balance.csv#)
+.~lock.*#
+
 # Secrets / local environment — never commit API keys
 .env
 .env.*
