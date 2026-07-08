@@ -31,3 +31,17 @@ enemy_elite_scale,2.0,Elite mini-boss base scale before the global enemy_scale m
 enemy_reaper_scale,2.6,Reaper finale base scale before the global enemy_scale multiplier; scales both the sprite and the collision radius (2.6 = the tuned baseline hitbox)
 enemy_glow_bat_scale,1.5,Glow Bat mini-boss base scale before the global enemy_scale multiplier; scales both the sprite and the collision radius (1.5 = the tuned baseline hitbox)
 projectile_scale,1.0,Scale multiplier for flying projectile sprites — the dagger bolts thrown by Knife and fired by the Magic Wand; scales both the sprite and the hit radius by the same factor (1 = native art size / tuned baseline hit radius)
+run_duration,1800,Survival goal in seconds — outlast the escalating waves to this many seconds and the run is WON (Mad Forest 30:00); the single knob to tune the run length
+reaper_duration,15,Extra seconds the player must outlast the summoned finale Reaper after run_duration before the win lands
+gold_fever_duration,10,Gilded Clover Gold Fever window length in seconds during which kills can drop bonus gold
+gold_fever_kill_chance,0.75,Chance (0-1) a kill drops an extra Gold Coin while a Gold Fever is active (Gilded_Clover.md 75%)
+skip_xp_fraction,0.25,Fraction of the next level's XP requirement granted when a level-up is Skipped (GDD forgo-for-partial-XP)
+bonus_gold_amount,30,Gold banked by the "Gold" consolation level-up card (padded when the upgrade pool is maxed)
+bonus_gold_big_amount,75,Gold banked by the larger "Gold Sack" consolation level-up card
+bonus_chicken_heal,30,HP healed by the "Roast Chicken" consolation level-up card (GDD Floor Chicken heals 30 HP)
+crit_chance_per_luck,0.005,Added crit chance per +1% Luck bonus (~+5% crit per Little Clover); base weapons have no native crit
+crit_chance_max,0.75,Maximum crit chance so crits stay a spike, not the norm
+crit_multiplier,2.0,Damage multiplier applied on a critical hit
+damage_variance,0.5,Per-hit base-damage variance (+/- fraction) rolled before per-level growth and Might multipliers (Damage.md)
+max_weapons,6,Inventory cap on owned weapons — the level-up roll stops offering a 7th weapon (GDD 6 weapons + 6 passives)
+max_passives,6,Inventory cap on owned passive items — the level-up roll stops offering a 7th passive (GDD 6 weapons + 6 passives)
