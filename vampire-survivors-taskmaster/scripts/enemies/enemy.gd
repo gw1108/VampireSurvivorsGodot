@@ -267,14 +267,19 @@ func _ready() -> void:
 	_show_health_bar = max_health >= HEALTH_BAR_MIN_MAX_HEALTH
 	contact_damage = cfg["damage"] * dmg_mult
 	xp_value = cfg["xp"]
-	radius = cfg.get("radius", RADIUS)
 	# Per-type art size (editable per archetype via an enemy_<name>_scale row in
 	# res://data/balance.csv, falling back to the hardcoded TYPES `scale`), times a global
 	# visual multiplier a designer can retune (default 1.0 = per-type size). Folded into
-	# base_scale so the node scale, cached half-extent, and death tween all inherit it;
-	# the collision radius is separate.
-	var type_scale: float = BalanceData.get_value(SCALE_KEYS.get(type, ""), cfg.get("scale", 1.0))
+	# base_scale so the node scale, cached half-extent, and death tween all inherit it.
+	var cfg_scale: float = cfg.get("scale", 1.0)
+	var type_scale: float = BalanceData.get_value(SCALE_KEYS.get(type, ""), cfg_scale)
 	base_scale = type_scale * BalanceData.get_value("enemy_scale", 1.0)
+	# The collision radius rides along with the visual scale so the solid body always matches the
+	# sprite a designer sees: a scale row (enemy_<name>_scale or global enemy_scale) grows/shrinks
+	# the hitbox by the same factor it grows/shrinks the art. cfg_scale is the hardcoded baseline the
+	# per-type `radius` was hand-tuned against, so at the default CSV values (base_scale == cfg_scale)
+	# the radius is exactly the tuned value — this only moves the hitbox when a scale row is edited.
+	radius = cfg.get("radius", RADIUS) * (base_scale / cfg_scale)
 	gem_drops = cfg.get("gems", 1)
 	# Scheduled treasure bosses (spawner sets is_boss) read as real bosses regardless of the
 	# art type they borrow: floor their HP and gem burst to the ELITE tier and force a health
@@ -423,7 +428,7 @@ func _process(delta: float) -> void:
 	# at the player's edge instead of visually marching inside the avatar sprite. Checked
 	# against the post-move (pre-clamp) distance so a horde pressed against this rim still
 	# chips the player on every contact tick, not just on the approach frame.
-	var min_dist := radius + VSPlayer.RADIUS
+	var min_dist := radius + target.radius
 	var from_player := position - target.position
 	var d_after := from_player.length()
 	var contact := d_after < min_dist
