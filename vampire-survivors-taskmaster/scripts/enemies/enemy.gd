@@ -518,11 +518,12 @@ func _recycle() -> void:
 	# than shaking the horde by simply outrunning it. Sample within +/-90deg of the flee direction;
 	# falls back to fully random-feeling spread only when the player has never moved (heading RIGHT).
 	var heading := target.move_dir if target.move_dir.length_squared() > 0.0001 else Vector2.RIGHT
-	var ang := heading.angle() + (randf() - 0.5) * PI
-	position = target.position + Vector2(cos(ang), sin(ang)) * VSSpawner.offscreen_radius(self)
-	if run:
-		position.x = clampf(position.x, -run.arena_half.x, run.arena_half.x)
-		position.y = clampf(position.y, -run.arena_half.y, run.arena_half.y)
+	# Sample within +/-90deg of the flee heading, but let ring_spawn_point reject any angle whose
+	# arena-clamped point would land on screen (the player may be fleeing straight into an edge), so
+	# a straggler re-enters ahead of the player yet still from off screen. arena_half falls back to a
+	# generous box when there is no run (bare-state tests) so no clamp shortens the ring there.
+	var half := run.arena_half if run else Vector2(1.0e9, 1.0e9)
+	position = VSSpawner.ring_spawn_point(self, target.position, half, heading.angle(), PI)
 	_knockback = Vector2.ZERO
 	_contact_cd = 0.0
 

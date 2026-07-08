@@ -88,22 +88,63 @@ func _ready() -> void:
 	assert(MAX_ENEMIES_LATE <= COLLIDER_SAFE_CAP,
 		"MAX_ENEMIES_LATE > COLLIDER_SAFE_CAP: the packed-density crush is only validated to ~60fps up to COLLIDER_SAFE_CAP bodies (VSEnemy.MAX_OVERLAP_CHECKS keeps the overlap scan linear that far) — re-profile a real Web crush before raising the enemy cap further.")
 
-## Off-screen spawn-ring radius for the CURRENT camera zoom. Enemies must always enter from beyond
-## the visible screen, but the camera zoom is data-driven (data/balance.csv `camera_zoom`) and a
-## Camera2D zoom < 1 zooms OUT and enlarges the visible world — so a fixed ring can fall on screen.
-## This sizes the ring past the farthest visible corner at whatever the live zoom is (visible world
-## extent = screen pixels / zoom), plus SPAWN_MARGIN. SPAWN_RING is the floor (used when zoomed in
-## far, or before a current camera/viewport exists). Static so enemy recycling (VSEnemy._recycle)
-## shares the EXACT same ring, keeping recycled stragglers off screen too.
-static func offscreen_radius(node: Node) -> float:
+## Half-extent (in world units) of the visible screen at the CURRENT camera zoom, or Vector2.ZERO
+## when there is no live camera/viewport yet (headless tests, before the world is built). Camera2D
+## zoom is data-driven (data/balance.csv `camera_zoom`) and a zoom < 1 zooms OUT and ENLARGES the
+## visible world, so this must be read live: visible world extent = screen pixels / zoom.
+static func _visible_half(node: Node) -> Vector2:
 	var vp := node.get_viewport()
 	if vp == null:
-		return SPAWN_RING
+		return Vector2.ZERO
 	var cam := vp.get_camera_2d()
 	if cam == null or cam.zoom.x <= 0.0 or cam.zoom.y <= 0.0:
+		return Vector2.ZERO
+	return vp.get_visible_rect().size * 0.5 / cam.zoom
+
+## Off-screen spawn-ring radius for the CURRENT camera zoom. Enemies must always enter from beyond
+## the visible screen, so this sizes the ring past the farthest visible CORNER at the live zoom,
+## plus SPAWN_MARGIN. SPAWN_RING is the floor (used when zoomed in far, or before a current
+## camera/viewport exists). Static so enemy recycling (VSEnemy._recycle) shares the EXACT same ring,
+## keeping recycled stragglers off screen too.
+static func offscreen_radius(node: Node) -> float:
+	var half := _visible_half(node)
+	if half == Vector2.ZERO:
 		return SPAWN_RING
-	var half: Vector2 = vp.get_visible_rect().size * 0.5 / cam.zoom
 	return maxf(SPAWN_RING, half.length() + SPAWN_MARGIN)
+
+## Number of ring angles ring_spawn_point() samples before falling back to its most-off-screen pick.
+const RING_SAMPLE_TRIES := 16
+
+## A ring point around `origin` (the player) chosen so that AFTER clamping to the arena bounds it is
+## still OFF the visible screen. offscreen_radius() already puts an un-clamped ring point beyond the
+## farthest visible corner, but the arena box (arena_half) is only a little larger than the
+## zoomed-out view, so a ring point past an arena edge gets clamped back onto that edge — and when
+## the player hugs the edge the clamped point lands on screen. Because the camera is centered on the
+## player, any point outside the visible rect around `origin` is off screen; so we sample angles
+## (from `base_ang` over a `spread`-wide arc; default a full circle) and return the first whose
+## clamped point clears the visible rect on some axis, steering spawns toward the arena interior only
+## when the player is near an edge. Falls back to the most-off-screen candidate in the degenerate
+## case none clear (e.g. no live camera, where visible_half is unknown and every point is accepted).
+## Shared by the spawner and VSEnemy._recycle so both obey the identical rule.
+static func ring_spawn_point(node: Node, origin: Vector2, arena_half: Vector2, base_ang := 0.0, spread := TAU) -> Vector2:
+	var r := offscreen_radius(node)
+	var vis := _visible_half(node)
+	var best := origin
+	var best_slack := -INF
+	for _i in RING_SAMPLE_TRIES:
+		var ang := base_ang + (randf() - 0.5) * spread
+		var p := origin + Vector2(cos(ang), sin(ang)) * r
+		p.x = clampf(p.x, -arena_half.x, arena_half.x)
+		p.y = clampf(p.y, -arena_half.y, arena_half.y)
+		# How far the clamped point sits OUTSIDE the visible rect on its most-visible axis. >= 0 means
+		# off screen (visible_half ZERO -> unknown camera -> every point accepted, prior behavior).
+		var slack := maxf(absf(p.x - origin.x) - vis.x, absf(p.y - origin.y) - vis.y)
+		if slack >= 0.0:
+			return p
+		if slack > best_slack:
+			best_slack = slack
+			best = p
+	return best
 
 ## Re-baseline the wave/elite/surge cadence timers to just after the current run clock. Used only
 ## by the debug `force_time_set` command: jumping run.elapsed forward by many minutes would otherwise
@@ -174,10 +215,7 @@ func _process(delta: float) -> void:
 func _spawn_one(cap: int) -> void:
 	if get_tree().get_nodes_in_group("enemies").size() >= cap:
 		return
-	var ang := randf() * TAU
-	var pos := run.player.position + Vector2(cos(ang), sin(ang)) * offscreen_radius(self)
-	pos.x = clampf(pos.x, -run.arena_half.x, run.arena_half.x)
-	pos.y = clampf(pos.y, -run.arena_half.y, run.arena_half.y)
+	var pos := ring_spawn_point(self, run.player.position, run.arena_half)
 	var e := VSEnemy.new()
 	e.type = _pick_type()
 	e.position = pos
@@ -192,10 +230,7 @@ func _spawn_one(cap: int) -> void:
 ## (VSRun._maybe_drop_chest), the faithful "Bosses & Treasure" payout. Bypasses the enemy cap so
 ## the boss always shows up, and tags its event so tooling can tell it apart.
 func _spawn_boss(boss_type: int) -> void:
-	var ang := randf() * TAU
-	var pos := run.player.position + Vector2(cos(ang), sin(ang)) * offscreen_radius(self)
-	pos.x = clampf(pos.x, -run.arena_half.x, run.arena_half.x)
-	pos.y = clampf(pos.y, -run.arena_half.y, run.arena_half.y)
+	var pos := ring_spawn_point(self, run.player.position, run.arena_half)
 	var e := VSEnemy.new()
 	e.type = boss_type
 	e.is_boss = true
@@ -210,10 +245,7 @@ func _spawn_boss(boss_type: int) -> void:
 ## outline — and drops NO chest (that stays an elite reward), so it reads as a beefy special bat
 ## rather than the death-reaper the operator (rightly) did not want appearing early.
 func _spawn_glow_bat() -> void:
-	var ang := randf() * TAU
-	var pos := run.player.position + Vector2(cos(ang), sin(ang)) * offscreen_radius(self)
-	pos.x = clampf(pos.x, -run.arena_half.x, run.arena_half.x)
-	pos.y = clampf(pos.y, -run.arena_half.y, run.arena_half.y)
+	var pos := ring_spawn_point(self, run.player.position, run.arena_half)
 	var e := VSEnemy.new()
 	e.type = VSEnemy.Type.GLOW_BAT
 	e.position = pos
@@ -298,10 +330,7 @@ func _spawn_wall(dir: Vector2, count: int) -> void:
 ## triggers at the survival time limit for the run's climactic last stand. Returns the
 ## node so the run can hand it to the HUD for the boss health bar.
 func spawn_reaper() -> VSEnemy:
-	var ang := randf() * TAU
-	var pos := run.player.position + Vector2(cos(ang), sin(ang)) * offscreen_radius(self)
-	pos.x = clampf(pos.x, -run.arena_half.x, run.arena_half.x)
-	pos.y = clampf(pos.y, -run.arena_half.y, run.arena_half.y)
+	var pos := ring_spawn_point(self, run.player.position, run.arena_half)
 	var e := VSEnemy.new()
 	e.type = VSEnemy.Type.REAPER
 	e.position = pos
