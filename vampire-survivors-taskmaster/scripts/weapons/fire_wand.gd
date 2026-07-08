@@ -17,7 +17,7 @@ static var BASE_DAMAGE := BalanceData.get_value("fire_wand_base_damage", 20.0)
 ## "fire_wand_interval_per_level") so a designer can retune fire rate without touching this script.
 static var BASE_INTERVAL := BalanceData.get_value("fire_wand_base_interval", 3.0)
 static var INTERVAL_PER_LEVEL := BalanceData.get_value("fire_wand_interval_per_level", 0.18)
-const MIN_INTERVAL := 1.4
+static var MIN_INTERVAL := BalanceData.get_value("fire_wand_min_interval", 1.4)
 
 ## Per-level level-up table (wiki Fire_Wand.md "Levels"), editable in res://data/fire_wand_levels.csv —
 ## one row per level with independently-tunable columns so a designer can retune ANY single level without
