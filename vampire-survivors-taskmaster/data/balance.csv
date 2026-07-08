@@ -12,8 +12,7 @@ whip_base_interval,1.2,Whip cooldown between swings (seconds; does not scale per
 king_bible_tick_interval,0.35,King Bible min seconds between a book's hits (does not scale per level)
 lightning_base_interval,4.5,Lightning Ring base cooldown between volleys before any levels
 lightning_interval_per_level,0.3,Lightning Ring cooldown shrink per level (floored at MIN_INTERVAL)
-knife_base_interval,1.0,Knife base cooldown between throws before any levels
-knife_interval_per_level,0.05,Knife cooldown shrink per level (floored at MIN_INTERVAL)
+knife_base_interval,1.0,Knife cooldown between volley throws (seconds; per wiki does not scale per level — only the intra-volley proj_interval tightens on L4/6/8, see data/knife_levels.csv)
 runetracer_base_interval,3.0,Runetracer base cooldown between volleys before any levels
 runetracer_interval_per_level,0.15,Runetracer cooldown shrink per level (floored at MIN_INTERVAL)
 fire_wand_base_interval,3.0,Fire Wand base cooldown between volleys before any levels

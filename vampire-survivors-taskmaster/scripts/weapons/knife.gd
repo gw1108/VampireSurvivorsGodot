@@ -18,12 +18,11 @@ extends Node2D
 ## Lv1 base damage lives in res://data/balance.csv ("knife_base_damage", wiki base 6.5); the flat
 ## per-level bonus on top of it lives per-level in data/knife_levels.csv (see LEVELS_CSV below).
 static var BASE_DAMAGE := BalanceData.get_value("knife_base_damage", 6.5)
-## Base cooldown between VOLLEYS + per-level tighten live in res://data/balance.csv
-## ("knife_base_interval" / "knife_interval_per_level"). This is the wait between throws, distinct
-## from the intra-volley "proj_interval" column below which spaces the knives WITHIN one throw.
+## Cooldown between VOLLEYS lives in res://data/balance.csv ("knife_base_interval"). This is the
+## wait between throws; per the wiki it is a flat 1.0s that does NOT scale per level — only the
+## intra-volley "proj_interval" column below (which spaces knives WITHIN one throw) tightens with
+## level, on L4/6/8.
 static var BASE_INTERVAL := BalanceData.get_value("knife_base_interval", 1.0)
-static var INTERVAL_PER_LEVEL := BalanceData.get_value("knife_interval_per_level", 0.05)
-const MIN_INTERVAL := 0.55
 const KNIFE_SPEED := 540.0            # faster than the aimed wand's bolt — the Knife's signature
 const KNIFE_LIFE := 1.1
 
@@ -86,12 +85,12 @@ func _process(delta: float) -> void:
 	_cd -= delta
 	if _cd <= 0.0 and _burst_left <= 0:
 		_start_burst(lvl)
-		_cd = _interval(lvl)
+		_cd = _interval()
 
-## Cooldown between VOLLEYS, shrinking modestly with level (never below MIN_INTERVAL so it stays
-## a fast stream rather than a solid wall of blades). Distinct from the intra-volley proj_interval.
-func _interval(lvl: int) -> float:
-	var base := maxf(MIN_INTERVAL, BASE_INTERVAL - INTERVAL_PER_LEVEL * float(lvl - 1))
+## Cooldown between VOLLEYS. Per the wiki this is a flat base (1.0s) that does not scale per level —
+## only the intra-volley proj_interval tightens with level. Evolution and Haste still modulate it.
+func _interval() -> float:
+	var base := BASE_INTERVAL
 	if _is_evolved():
 		return maxf(EVOLVED_MIN_INTERVAL, base * EVOLVED_INTERVAL_MULT) * run.haste_mult()
 	return base * run.haste_mult()
