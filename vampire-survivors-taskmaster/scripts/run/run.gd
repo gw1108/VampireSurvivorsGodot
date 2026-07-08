@@ -44,13 +44,14 @@ var elapsed := 0.0
 ## run is WON (VS's core loop is survive-to-the-clock, not endless). Matches the real Mad
 ## Forest stage's 30:00 run length (see .firecrawl/wiki-offline/Mad_Forest.htm's per-minute
 ## wave table), with the enemy HP/damage ramp reaching its ceiling right as the timer runs
-## out. Named so it's the single knob to tune the run length.
-const RUN_DURATION := 1800.0
+## out. Named so it's the single knob to tune the run length. Lives in data/balance.csv
+## (run_duration) so a designer can retune the run length without touching this script.
+static var RUN_DURATION := BalanceData.get_value("run_duration", 1800.0)
 
 ## The finale: rather than flipping straight to victory at RUN_DURATION, the run summons the
 ## Reaper (VS's death-at-the-clock enemy) and the player must outlast it for this many extra
 ## seconds before the win lands — a climactic last stand instead of a silent clock flip.
-const REAPER_DURATION := 15.0
+static var REAPER_DURATION := BalanceData.get_value("reaper_duration", 15.0)
 var reaper_active := false        # true once the Reaper has been summoned at the time limit
 var reaper_deadline := 0.0        # elapsed time at which surviving the Reaper wins the run
 var reaper_slain := false         # true if the player KILLED the Reaper (a kill-win) rather than outlasting it
@@ -71,8 +72,8 @@ var nduja_until := 0.0
 ## (VSGildedClover); measured in the run's own `elapsed` clock so it pauses cleanly during level-up,
 ## same as the freeze/nduja windows above.
 var gold_fever_until := 0.0
-const GOLD_FEVER_DURATION := 10.0     # Gilded_Clover.md: Gold Fever lasts 10 seconds
-const GOLD_FEVER_KILL_CHANCE := 0.75  # Gilded_Clover.md: 75% chance a kill drops a bonus coin
+static var GOLD_FEVER_DURATION := BalanceData.get_value("gold_fever_duration", 10.0)      # Gilded_Clover.md: Gold Fever lasts 10 seconds
+static var GOLD_FEVER_KILL_CHANCE := BalanceData.get_value("gold_fever_kill_chance", 0.75)  # Gilded_Clover.md: 75% chance a kill drops a bonus coin
 
 ## Luck stat (Luck.md): base is 100% ("TotalLuck"), and this holds the +N% additive bonus on
 ## top of that base — the wiki displays only this difference, e.g. a Little Clover pickup adds
@@ -157,7 +158,7 @@ var _xp_remainder := 0.0
 ## Fraction of the next level's XP requirement granted when a level-up is Skipped, matching
 ## the GDD's "forgo for partial XP" verb. Small so skipping a genuinely bad hand helps a
 ## little without ever undercutting the value of an actual pick.
-const SKIP_XP_FRACTION := 0.25
+static var SKIP_XP_FRACTION := BalanceData.get_value("skip_xp_fraction", 0.25)
 
 ## Consolation-pick rewards. When a build nears (or reaches) fully maxed, the upgrade pool can
 ## no longer fill a 3-card hand; per the GDD ("full & maxed → level-ups instead offer gold or
@@ -165,9 +166,9 @@ const SKIP_XP_FRACTION := 0.25
 ## Floor Chicken heals 30 HP (GDD Pickups table); the coin bag banks a flat run-gold reward.
 ## A third, larger "Gold Sack" reward keeps the three padded slots distinct — a fully-maxed hand
 ## needs to fill all three, and cycling only Gold/Chicken would repeat Gold twice (see _roll_upgrades).
-const BONUS_GOLD_AMOUNT := 30
-const BONUS_GOLD_BIG_AMOUNT := 75
-const BONUS_CHICKEN_HEAL := 30.0
+static var BONUS_GOLD_AMOUNT := int(BalanceData.get_value("bonus_gold_amount", 30.0))
+static var BONUS_GOLD_BIG_AMOUNT := int(BalanceData.get_value("bonus_gold_big_amount", 75.0))
+static var BONUS_CHICKEN_HEAL := BalanceData.get_value("bonus_chicken_heal", 30.0)
 
 ## Per-run reroll budget for the level-up picker (VS-style build agency). Each reroll
 ## re-rolls the current hand via _roll_upgrades(); Skip is always free. Kept small so it's
@@ -187,8 +188,8 @@ var upgrade_levels := {}
 ## weapons and six passives. Once six of a kind are owned, the level-up roll stops offering a
 ## seventh — only already-owned items of that kind keep appearing (for their upgrades) until
 ## maxed, at which point the hand pads with Gold/Floor Chicken consolation (see _roll_upgrades).
-const MAX_WEAPONS := 6
-const MAX_PASSIVES := 6
+static var MAX_WEAPONS := int(BalanceData.get_value("max_weapons", 6.0))
+static var MAX_PASSIVES := int(BalanceData.get_value("max_passives", 6.0))
 
 ## The eight auto-firing weapons in UPGRADE_POOL; every other pool id is a passive stat item.
 ## `multishot` is Antonio's Magic Wand (each pick levels it via data/magic_wand_levels.csv). Used to bucket a pool entry as
@@ -826,16 +827,16 @@ func _chance_fourth_option() -> float:
 ## giving Luck a raw-damage identity it previously lacked (it only nudged drop weights and spawns).
 ## One global run stat rather than per-weapon: the wiki's per-weapon crit tables are out of the
 ## slice's data scope. Capped below certainty so crits stay a spike, not the norm.
-const CRIT_CHANCE_PER_LUCK := 0.005   # +0.5% crit chance per +1% Luck bonus (~+5% per Little Clover)
-const CRIT_CHANCE_MAX := 0.75
-const CRIT_MULTIPLIER := 2.0
+static var CRIT_CHANCE_PER_LUCK := BalanceData.get_value("crit_chance_per_luck", 0.005)  # +0.5% crit chance per +1% Luck bonus (~+5% per Little Clover)
+static var CRIT_CHANCE_MAX := BalanceData.get_value("crit_chance_max", 0.75)
+static var CRIT_MULTIPLIER := BalanceData.get_value("crit_multiplier", 2.0)
 
 ## Per-hit damage variance (offline wiki Damage.md: "Base damage ... has a random variance").
 ## Every weapon rolls its BASE damage within +/-DAMAGE_VARIANCE each time it fires/strikes,
 ## BEFORE flat per-level growth and the Might/Power multipliers apply. So a base-10 weapon with
 ## no level-ups and no Might lands anywhere in 5-15 per hit. Weapons multiply their BASE_DAMAGE
 ## by this each attack; the flat per-level bonus is added AFTER (only the base varies, per design).
-const DAMAGE_VARIANCE := 0.5
+static var DAMAGE_VARIANCE := BalanceData.get_value("damage_variance", 0.5)
 func damage_variance() -> float:
 	return randf_range(1.0 - DAMAGE_VARIANCE, 1.0 + DAMAGE_VARIANCE)
 
