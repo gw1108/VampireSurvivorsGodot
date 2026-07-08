@@ -146,6 +146,72 @@ static func ring_spawn_point(node: Node, origin: Vector2, arena_half: Vector2, b
 			best = p
 	return best
 
+## Which outward (arena-edge) directions currently have NO off-screen room around `origin` — i.e. the
+## visible screen already reaches that arena edge, so a formation point pushed that way clamps onto the
+## near edge ON screen. Returns a bias pointing toward the arena INTERIOR on each boxed-in axis (0 on an
+## axis with off-screen room on both sides). Vector2.ZERO when the player is clear of every edge
+## (central) or the camera is unknown (headless). Shared by _spawn_wave and _spawn_wall so both steer a
+## whole coordinated formation toward the interior identically, keeping the formation intact off screen.
+static func _interior_bias(node: Node, origin: Vector2, arena_half: Vector2) -> Vector2:
+	var vis := _visible_half(node)
+	if vis == Vector2.ZERO:
+		return Vector2.ZERO
+	var bias := Vector2.ZERO
+	if origin.x + vis.x >= arena_half.x:   bias.x -= 1.0   # right edge on screen -> steer left
+	if origin.x - vis.x <= -arena_half.x:  bias.x += 1.0   # left edge on screen  -> steer right
+	if origin.y + vis.y >= arena_half.y:   bias.y -= 1.0   # bottom edge on screen -> steer up
+	if origin.y - vis.y <= -arena_half.y:  bias.y += 1.0   # top edge on screen    -> steer down
+	return bias
+
+## Positive CCW angular distance from `from` to `to` (in [0, TAU)). Used to size the off-screen gaps
+## between the on-screen wedges in _formation_arc.
+static func _arc_len(from: float, to: float) -> float:
+	var d := fmod(to - from, TAU)
+	if d < 0.0:
+		d += TAU
+	return d
+
+## Base angle + angular spread for a coordinated even ring (a wave surge) chosen so that EVERY point
+## stays off the visible screen even when the player hugs an arena edge. When the player is central it
+## returns a full even ring (spread = TAU, random base) — unchanged behavior. Off an edge the ring
+## collapses to the widest off-screen arc: because offscreen_radius() exceeds arena_half on both axes, a
+## ring point past an edge clamps onto that edge, and such a clamped point lands ON screen only in a
+## NARROW wedge around the blocked OUTWARD axis — where its offset on the PERPENDICULAR axis is still
+## within view (half-angle asin(vis_perp / radius)). We build one wedge per blocked axis, then repack the
+## surge evenly across the LARGEST gap between them (the arc's endpoints stay a small pad clear of the
+## wedges), so the ring stays evenly spaced AND fully off screen even at an asymmetric corner.
+static func _formation_arc(node: Node, origin: Vector2, arena_half: Vector2) -> Dictionary:
+	var bias := _interior_bias(node, origin, arena_half)
+	if bias == Vector2.ZERO:
+		return {"base_ang": randf() * TAU, "spread": TAU}
+	var vis := _visible_half(node)
+	var r := offscreen_radius(node)
+	# One on-screen wedge [center, half] per blocked outward axis (x blocked -> perpendicular axis is y,
+	# and vice-versa). Outward +x is angle 0 / -x is PI; outward +y (down) is PI/2 / -y is -PI/2.
+	var wedges: Array = []
+	if bias.x != 0.0:
+		wedges.append([0.0 if bias.x < 0.0 else PI, asin(clampf(vis.y / r, 0.0, 1.0))])
+	if bias.y != 0.0:
+		wedges.append([PI * 0.5 if bias.y < 0.0 else -PI * 0.5, asin(clampf(vis.x / r, 0.0, 1.0))])
+	# Pad exceeds the per-member jitter (randf_range(±0.12) ≈ ±6.9°) so a jittered endpoint still clears
+	# the wedge.
+	var pad := deg_to_rad(10.0)
+	if wedges.size() == 1:
+		# Single edge: the good arc is the whole circle minus the one wedge, centered opposite it.
+		var span: float = TAU - 2.0 * float(wedges[0][1]) - 2.0 * pad
+		return {"base_ang": float(wedges[0][0]) + PI, "spread": clampf(span, PI * 0.25, TAU)}
+	# Corner (two wedges): fill the LARGER of the two off-screen gaps between them. The wedge centers sit
+	# 90° apart and are far narrower than that, so the two gaps never vanish.
+	var a: Array = wedges[0]
+	var b: Array = wedges[1]
+	var gap1_start: float = a[0] + a[1]   # a's trailing edge -> b's leading edge (CCW)
+	var gap2_start: float = b[0] + b[1]   # b's trailing edge -> a's leading edge (CCW)
+	var g1 := _arc_len(gap1_start, b[0] - b[1])
+	var g2 := _arc_len(gap2_start, a[0] - a[1])
+	var gap_start := gap1_start if g1 >= g2 else gap2_start
+	var gap_len := maxf(g1, g2)
+	return {"base_ang": gap_start + gap_len * 0.5, "spread": clampf(gap_len - 2.0 * pad, PI * 0.25, TAU)}
+
 ## Re-baseline the wave/elite/surge cadence timers to just after the current run clock. Used only
 ## by the debug `force_time_set` command: jumping run.elapsed forward by many minutes would otherwise
 ## make _process fire one elite (and wave/surge) per frame to "catch up" from the old timers — dumping
@@ -261,13 +327,18 @@ func _spawn_glow_bat() -> void:
 func _spawn_wave(minute: int) -> void:
 	var count := WAVE_BASE + maxi(minute - 1, 0) * WAVE_GROWTH
 	var ceiling := _max_cap() + WAVE_OVERFLOW
-	var base_ang := randf() * TAU
+	# When the player hugs an arena edge the whole ring shifts to a wide arc over the interior so no
+	# member clamps onto the near edge ON screen; centered, this stays a full even ring (spread = TAU).
+	var arc := _formation_arc(self, run.player.position, run.arena_half)
+	var base_ang: float = arc.base_ang
+	var spread: float = arc.spread
 	var radius := offscreen_radius(self)
 	for i in count:
 		if get_tree().get_nodes_in_group("enemies").size() >= ceiling:
 			break
-		# Evenly space the ring (with a little jitter) so it reads as a coordinated surge.
-		var ang := base_ang + TAU * float(i) / float(count) + randf_range(-0.12, 0.12)
+		# Evenly space the members across the (full or interior) arc, with a little jitter, so it reads
+		# as a coordinated surge.
+		var ang := base_ang + spread * (float(i) / float(count) - 0.5) + randf_range(-0.12, 0.12)
 		var pos := run.player.position + Vector2(cos(ang), sin(ang)) * radius
 		pos.x = clampf(pos.x, -run.arena_half.x, run.arena_half.x)
 		pos.y = clampf(pos.y, -run.arena_half.y, run.arena_half.y)
@@ -308,6 +379,17 @@ func _spawn_surge() -> void:
 ## axis perpendicular to their approach and centered on the flank point. Honors MAX_ENEMIES on
 ## every enemy so a single wall — or a pincer's second wall — never blows the performance budget.
 func _spawn_wall(dir: Vector2, count: int) -> void:
+	# Steer the whole line's flank toward the arena interior on any axis where the player hugs an edge,
+	# so the flank point (and the line spread off it) clears the visible screen instead of clamping onto
+	# the near edge ON screen. Central / headless: bias is ZERO and `dir` is untouched. (A late-run
+	# pincer's mirror wall biases the same way, so near an edge both walls converge from the interior
+	# rather than one popping in on screen — an acceptable, rare degeneration of the two-flank shape.)
+	var bias := _interior_bias(self, run.player.position, run.arena_half)
+	if bias.x != 0.0:
+		dir.x = absf(dir.x) * signf(bias.x)
+	if bias.y != 0.0:
+		dir.y = absf(dir.y) * signf(bias.y)
+	dir = dir.normalized()
 	var perp := dir.orthogonal()
 	var center := run.player.position + dir * offscreen_radius(self)
 	for i in count:
