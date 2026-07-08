@@ -12,20 +12,20 @@ whip_base_interval,1.2,Whip cooldown between swings (seconds; does not scale per
 king_bible_tick_interval,0.35,King Bible min seconds between a book's hits (does not scale per level)
 lightning_base_interval,4.5,Lightning Ring base cooldown between volleys before any levels
 lightning_interval_per_level,0.3,Lightning Ring cooldown shrink per level (floored at MIN_INTERVAL)
-knife_base_interval,1.0,Knife base cooldown between throws before any levels
+knife_base_interval,1,Knife base cooldown between throws before any levels
 knife_interval_per_level,0.05,Knife cooldown shrink per level (floored at MIN_INTERVAL)
-runetracer_base_interval,3.0,Runetracer base cooldown between volleys before any levels
+runetracer_base_interval,3,Runetracer base cooldown between volleys before any levels
 runetracer_interval_per_level,0.15,Runetracer cooldown shrink per level (floored at MIN_INTERVAL)
-fire_wand_base_interval,3.0,Fire Wand base cooldown between volleys before any levels
+fire_wand_base_interval,3,Fire Wand base cooldown between volleys before any levels
 fire_wand_interval_per_level,0.18,Fire Wand cooldown shrink per level (floored at MIN_INTERVAL)
 gem_drop_floor_hp,15,Enemy max HP at/below which a kill has only the floor chance to drop an XP gem
-gem_drop_floor_chance,0.25,Floor chance (0-1) an XP gem drops from a kill at/below gem_drop_floor_hp
+gem_drop_floor_chance,0.3,Floor chance (0-1) an XP gem drops from a kill at/below gem_drop_floor_hp
 gem_drop_ceil_hp,180,Enemy max HP at/above which a kill is guaranteed (100%) to drop an XP gem
-camera_zoom,0.8,Camera zoom factor for the whole run (less than 1 zooms out so everything reads smaller; greater than 1 zooms in)
-player_scale,1.0,Visual scale multiplier for the player avatar sprite (1 = native art size; does not change the hitbox)
-enemy_scale,1.0,Global visual scale multiplier applied on top of each enemy type's own scale (1 = per-type size; does not change collision radius)
+camera_zoom,1,Camera zoom factor for the whole run (less than 1 zooms out so everything reads smaller; greater than 1 zooms in)
+player_scale,1,Visual scale multiplier for the player avatar sprite (1 = native art size; does not change the hitbox)
+enemy_scale,1,Global visual scale multiplier applied on top of each enemy type's own scale (1 = per-type size; does not change collision radius)
 enemy_mantis_warrior_scale,1.4,Mantis Warrior base art scale before the global enemy_scale multiplier (does not change collision radius)
-enemy_elite_scale,2.0,Elite mini-boss base art scale before the global enemy_scale multiplier (does not change collision radius)
+enemy_elite_scale,2,Elite mini-boss base art scale before the global enemy_scale multiplier (does not change collision radius)
 enemy_reaper_scale,2.6,Reaper finale base art scale before the global enemy_scale multiplier (does not change collision radius)
 enemy_glow_bat_scale,1.5,Glow Bat mini-boss base art scale before the global enemy_scale multiplier (does not change collision radius)
-projectile_scale,1.0,Visual scale multiplier for flying projectile sprites — the dagger bolts thrown by Knife and fired by the Magic Wand (1 = native art size; does not change the hit radius)
+projectile_scale,1,Visual scale multiplier for flying projectile sprites — the dagger bolts thrown by Knife and fired by the Magic Wand (1 = native art size; does not change the hit radius)
