@@ -143,7 +143,6 @@ enemy_base_radius,12.0,Default enemy collision-circle radius in px for types wit
 enemy_flash_duration,0.1,Seconds the white hit-flash (and mini-elite spawn glint) lasts on an enemy sprite
 enemy_immune_shimmer_freq,9.0,"Reaper freeze-immunity shimmer pulse frequency in rad/s of the sine, the fast alarming red flicker while an Orologion freeze is active"
 enemy_immune_shimmer_amount,0.7,How far (0-1) the Reaper immunity shimmer lerps toward hot red at the pulse peak
-enemy_health_bar_min_max_health,40.0,Enemy max HP at/above which a mini-boss health bar shows once damaged
 enemy_despawn_radius,1000.0,Floor distance in px beyond which an outrun base-trickle enemy recycles back onto the spawn ring (live threshold is max of this and the zoom-aware off-screen ring + hysteresis)
 enemy_recycle_hysteresis,160.0,Gap in px between the off-screen spawn ring and the recycle threshold so a fresh/recycled enemy on the ring is never immediately re-recycled
 enemy_knockback_impulse,230.0,Knockback velocity in px/s added to a normal-weight enemy on a weapon hit (scaled by per-type knock resist)

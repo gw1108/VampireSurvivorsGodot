@@ -32,9 +32,6 @@ const COLLIDE_CELL := 60.0
 ## separation is a per-frame relaxation that converges over successive frames anyway. Own cell is
 ## scanned first (see _CELL_OFFSETS) so the budget is always spent on the nearest, deepest overlaps.
 const MAX_OVERLAP_CHECKS := 16
-## Enemies at or above this max health (mini-bosses like ELITE) get a health bar
-## once damaged, so their long HP pool reads as visible progress.
-static var HEALTH_BAR_MIN_MAX_HEALTH := BalanceData.get_value("enemy_health_bar_min_max_health", 40.0)
 ## Enemy recycling: a base-trickle enemy the player has outrun by more than this distance is
 ## teleported back onto the spawn ring around the player rather than left stranded far offscreen.
 ## Without it a fleeing player (the game's core kiting verb) strands units at the far edge of the
@@ -62,7 +59,7 @@ static var RECYCLE_HYSTERESIS := BalanceData.get_value("enemy_recycle_hysteresis
 ## from later waves with modest HP but a sharp contact bite, so the horde gains an
 ## agile "outrun you" threat distinct from the slow tanky MUMMY.
 ## MANTIS_WARRIOR is the bug faction's mini-elite: an armored, upscaled Mantis with a
-## deep HP pool (enough to show its health bar) and a heavy contact bite, so it reads
+## deep HP pool and a heavy contact bite, so it reads
 ## as a fast-but-tanky striker rather than a slow wall. It
 ## surfaces in the late (t>=9min) band to deepen the insect threat without a full boss.
 ## It scatters its 10 XP across a 5-gem ring (small green gems) so felling this tanky
@@ -111,7 +108,7 @@ const TYPES := {
 	Type.ELITE:    {"tex": "res://art/enemy_elite.png",    "speed": 40.0, "health": 140.0, "damage": 20.0, "xp": 25, "scale": 2.0, "radius": 22.0, "gems": 5, "knock": 0.25},
 	Type.REAPER:   {"tex": "res://art/enemy_reaper.png",   "speed": 130.0, "health": 600.0, "damage": 34.0, "xp": 60, "scale": 2.6, "radius": 30.0, "gems": 10, "knock": 0.06},
 	# Glow bat: bat art, upscaled 1.5x (the wiki's Giant Bat is 1.5x) with a deep HP pool so it
-	# shows a health bar and reads as a beefy mini-boss, plus the pulsing blue outline shader.
+	# reads as a beefy mini-boss, plus the pulsing blue outline shader.
 	# The wiki Giant Bat is 270 HP against a normal bat's handful; scaled into this game's
 	# compressed economy (base bat 3, ELITE 140) that lands at ~60 — clearly "extra health",
 	# still killable with an early weapon. Semi-KB-resistant like the real Giant Bat.
@@ -190,7 +187,6 @@ var type: int = Type.BAT
 var speed := 62.0
 var health := 3.0
 var max_health := 3.0
-var _show_health_bar := false
 var contact_damage := 8.0
 var xp_value := 1
 var radius := RADIUS
@@ -305,7 +301,6 @@ func _ready() -> void:
 	var dmg_mult := 1.0 + minutes * 0.016              # +1.6% damage per minute, up to ~+48% by minute 30
 	health = cfg["health"] * hp_mult
 	max_health = health
-	_show_health_bar = max_health >= HEALTH_BAR_MIN_MAX_HEALTH
 	contact_damage = cfg["damage"] * dmg_mult
 	xp_value = cfg["xp"]
 	# Per-type art size (editable per archetype via an enemy_<name>_scale row in
@@ -323,13 +318,12 @@ func _ready() -> void:
 	radius = cfg.get("radius", RADIUS) * (base_scale / cfg_scale)
 	gem_drops = cfg.get("gems", 1)
 	# Scheduled treasure bosses (spawner sets is_boss) read as real bosses regardless of the
-	# art type they borrow: floor their HP and gem burst to the ELITE tier and force a health
-	# bar, so a Glowing-Bat- or Mummy-skinned boss is as tanky and rewarding as the armored
-	# elite it replaces on the wiki's per-minute boss beat (res://data/mad_forest_bosses.csv).
+	# art type they borrow: floor their HP and gem burst to the ELITE tier, so a Glowing-Bat- or
+	# Mummy-skinned boss is as tanky and rewarding as the armored elite it replaces on the wiki's
+	# per-minute boss beat (res://data/mad_forest_bosses.csv).
 	if is_boss:
 		health = maxf(health, TYPES[Type.ELITE]["health"] * hp_mult)
 		max_health = health
-		_show_health_bar = max_health >= HEALTH_BAR_MIN_MAX_HEALTH
 		gem_drops = maxi(gem_drops, int(TYPES[Type.ELITE]["gems"]))
 	attack_interval = BalanceData.get_value("enemy_attack_interval", attack_interval)
 	knock_resist = cfg.get("knock", 1.0)
@@ -505,9 +499,8 @@ func _overlap_correction() -> Vector2:
 	# drawn ON TOP of this one (higher sibling index → drawn later) fully covers this sprite's rect,
 	# this body is pure overdraw and its Sprite2D is skipped. Only small bodies can be fully covered
 	# (the solid collider keeps equal-size sprites' centres apart, so they never fully occlude each
-	# other) — so mini-bosses that show a health bar skip the test entirely.
+	# other) — a larger mini-boss sprite can never be covered, so it simply never trips the test.
 	var occluded := false
-	var scan_occlusion := not _show_health_bar
 	var my_index := get_index()
 	for offset in _CELL_OFFSETS:
 		var bucket: Variant = _grid.get(base + offset)
@@ -518,7 +511,7 @@ func _overlap_correction() -> Vector2:
 			# lack a collider radius; only solid VSEnemy bodies collide.
 			if other == self or not (other is VSEnemy):
 				continue
-			if scan_occlusion and not occluded and other.get_index() > my_index and other._covers(self):
+			if not occluded and other.get_index() > my_index and other._covers(self):
 				occluded = true
 			checked += 1
 			if checked > MAX_OVERLAP_CHECKS:
@@ -601,8 +594,6 @@ func hit(amount: float, from: Vector2) -> void:
 			VSFloatText.spawn(parent, at, str(int(round(amount))), CRIT_TEXT_COLOR, CRIT_TEXT_FONT_SIZE)
 		else:
 			VSFloatText.spawn(parent, at, str(int(round(amount))), Color(1, 1, 1))
-	if _show_health_bar:
-		queue_redraw()
 	if health <= 0.0:
 		_die()
 
@@ -619,19 +610,6 @@ func _die() -> void:
 	tw.tween_property(self, "scale", Vector2(base_scale * 1.4, base_scale * 1.4), 0.08)
 	tw.tween_property(self, "scale", Vector2.ZERO, 0.1)
 	tw.tween_callback(queue_free)
-
-## Draw a small health bar above mini-boss enemies once they've taken damage.
-## Coordinates are local, so the node's scale sizes the bar to the sprite.
-func _draw() -> void:
-	if not _show_health_bar or _dying or health <= 0.0 or health >= max_health:
-		return
-	var frac := clampf(health / max_health, 0.0, 1.0)
-	var w := radius * 2.0
-	var h := 3.0
-	var top := -radius - 8.0
-	var bg := Rect2(-w * 0.5, top, w, h)
-	draw_rect(bg, Color(0, 0, 0, 0.7))
-	draw_rect(Rect2(bg.position, Vector2(w * frac, h)), Color(0.85, 0.15, 0.15))
 
 ## Pop a red "IMMUNE" label above the REAPER the instant a Freeze Clock activates, spelling out
 ## that the boss ignores the time-stop. Spawned into the parent's space (like the damage numbers)
