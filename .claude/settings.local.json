@@ -19,13 +19,15 @@
       "Bash(awk '/^--- !u!1 &5732324774643088002$/,/^--- /' \"C:/GameDev/CozySim/Assets/Prefabs/Minigame/Clothes/Shirt_White.prefab\")",
       "Bash(echo \"Exit: $?\")",
       "Bash(echo \"Exit code: $?\")",
-      "Bash(python3 *)"
+      "Bash(python3 *)",
+      "Bash(git check-ignore *)",
+      "PowerShell(Get-Item *)"
     ]
-  },
-  "enabledPlugins": {
-    "taskmaster@taskmaster": true
   },
   "enabledMcpjsonServers": [
     "playwright"
-  ]
+  ],
+  "enabledPlugins": {
+    "taskmaster@taskmaster": true
+  }
 }

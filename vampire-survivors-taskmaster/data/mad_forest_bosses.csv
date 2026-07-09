@@ -1,0 +1,31 @@
+minute,boss_name,enemy_type,art_note
+0,,,
+1,Glowing Bat,GLOW_BAT,
+2,,,
+3,Glowing Bat,GLOW_BAT,
+4,,,
+5,Mantichana,MANTIS_WARRIOR,Mantichana reads as the mantis warrior (its faithful giant-mantis look)
+6,,,
+7,Glowing Bat,GLOW_BAT,
+8,Giant Bat,GLOW_BAT,GLOW_BAT already models the wiki's 1.5x Giant Bat
+9,Silver Bat,SILVER_BAT,pale steel-tinted bat with a near-white rim (distinct from the blue Glowing Bat)
+10,Giant Mantichana,GIANT_MANTICHANA,up-scaled green-cast mantis warrior
+11,Glowing Bat,GLOW_BAT,
+12,Glowing Bat,GLOW_BAT,
+13,,,
+14,Silver Bat,SILVER_BAT,pale steel-tinted bat with a near-white rim (distinct from the blue Glowing Bat)
+15,Giant Werewolf,GIANT_WEREWOLF,up-scaled werewolf
+16,Glowing Bat,GLOW_BAT,
+17,,,
+18,Silver Bat,SILVER_BAT,pale steel-tinted bat with a near-white rim (distinct from the blue Glowing Bat)
+19,,,
+20,Giant Mummy,GIANT_MUMMY,up-scaled sandy-cast mummy
+21,Venus;Glowing Bat,VENUS;GLOW_BAT,Venus is a carnivorous-flower boss on its own piranha-plant sprite
+22,Glowing Bat,GLOW_BAT,
+23,Silver Bat,SILVER_BAT,pale steel-tinted bat with a near-white rim (distinct from the blue Glowing Bat)
+24,Venus,VENUS,Venus is a carnivorous-flower boss on its own piranha-plant sprite
+25,Giant Blue Venus,GIANT_BLUE_VENUS,biggest blue-glowing piranha-plant boss (25:00 hyper-mode unlock)
+26,,,
+27,Glowing Bat,GLOW_BAT,
+28,,,
+29,Glowing Bat,GLOW_BAT,

@@ -4,6 +4,14 @@ The primary project guide is [`claude.md`](claude.md) (Project Map, operating ru
 Read it first. This repo is a Godot 4.6 Vampire Survivors vertical slice; the actual Godot project is
 `vampire-survivors-taskmaster/`.
 
+## Balance & tuning convention (hard rule)
+
+All tunable gameplay/visual scalars — player move speed, pickup radius, sprite scales, aura/light
+radii, damage, cooldowns, spawn pacing — live as `id,value,description` rows in
+`vampire-survivors-taskmaster/data/balance.csv`, read via
+`BalanceData.get_value("<id>", default)`. Never add them as hardcoded `.gd` consts; migrate any you
+touch. Full rule in [`claude.md`](claude.md) Operating Principles.
+
 ## Autonomous agent tooling (cosmic-agent-tools)
 
 Three installed tools for running coding agents autonomously. **Read the linked doc before you run,

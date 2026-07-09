@@ -19,6 +19,9 @@ will keep adding goal-driven items here / in `workshop/backlog.json`.
 - [x] Base auto-weapon: fires at the nearest enemy on a timer; projectile damages + despawns.
 - [ ] A second weapon with a different pattern (area/aura or spread) to make builds matter.
 - [ ] Weapon level-up effects (more projectiles / faster fire / more damage) driven by player level.
+- [ ] Make each weapon follow its wiki level-up table (like the Whip now does). One ready-to-enqueue
+      task per weapon — King Bible, Lightning Ring, Garlic, Fire Wand, Knife, Runetracer, Magic Wand —
+      with the wiki table + suggested `data/<weapon>_levels.csv` in `WEAPON-LEVELUP-TABLES.md`.
 
 ## UI / HUD / Level-up screen / Menus
 - [x] HUD: HP, survival time, kills, level + XP.

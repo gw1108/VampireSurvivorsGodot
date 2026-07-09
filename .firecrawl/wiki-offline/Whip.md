@@ -112,9 +112,14 @@ As a vampire-killing tool, it can be picked from  [Coat of Arms](Coat_of_Arms.md
 
 ## Effects {#Effects}
 
-Whip creates a slash horizontally that frontally originates from the character\'s torso, damaging all enemies in the area.
+Whip creates a slash horizontally that frontally originates from the character\'s torso, damaging all enemies in the area. It should be slightly smaller projectile than the player's height and about 3 times the player's width.
 
-Consecutive slashes from increased  [Amount](Amount.md) alternate between firing towards and away from the direction the character is facing, getting progressively higher.
+Consecutive slashes from increased  [Amount](Amount.md) alternate between firing towards and away from the direction the character is facing, getting progressively higher. The first backwards whip should be slightly offset higher than the first front whip projectile.
+
+For example, with 5 whip projectiles the whip should roughly look like the following where P is the player and W is the whip area damage:
+....WWW
+WWW.WWW
+WWWPWWW
 
 ### Arcanas {#Arcanas}
 

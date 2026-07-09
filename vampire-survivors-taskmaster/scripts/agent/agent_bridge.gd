@@ -102,6 +102,13 @@ func _build_meta(delta: float, existing: Dictionary) -> Dictionary:
 
 # ---- Public API used by the per-game adapter --------------------------------
 
+## True once the bridge is live (web export + agent gate). A game reads this to stay
+## harness-safe — e.g. auto-starting past a title screen so an autonomous playtest
+## never freezes on a menu the harness has no button for.
+func is_active() -> bool:
+	return _active
+
+
 func register_provider(provider: Callable) -> void:
 	state_provider = provider
 
@@ -154,6 +161,14 @@ func _on_js_command(args: Array) -> void:
 		command_handler.call(cmd)
 		return
 	# Default: synthesize input actions so existing _unhandled_input works unchanged.
+	_default_command(cmd)
+
+
+## Public: a registered command_handler can defer commands it doesn't recognize
+## (press/release/tap) back to the built-in input synthesizer. Without this, a handler
+## that only matches its own game-specific commands silently swallows movement/tap input,
+## because a registered handler short-circuits _default_command in _on_js_command above.
+func default_command(cmd: Dictionary) -> void:
 	_default_command(cmd)
 
 
