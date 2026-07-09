@@ -43,10 +43,10 @@ static var _levels_loaded := false
 # collapses toward a continuous stream (volley interval scaled right down, floor lowered far), it
 # hurls a wider volley per throw, and each blade bites much harder. The payoff for maxing the
 # Knife alongside Haste. Mirrors the Whip / King Bible / Holy Wand evolution pattern.
-const EVOLVED_INTERVAL_MULT := 0.30   # ~a third the cadence — a near-solid stream of blades
-const EVOLVED_MIN_INTERVAL := 0.14    # far lower floor so late Thousand Edges barely pauses
-const EVOLVED_AMOUNT_BONUS := 3       # +3 knives per volley over the base amount
-const EVOLVED_DAMAGE_MULT := 1.7      # each blade bites much deeper
+static var EVOLVED_INTERVAL_MULT := BalanceData.get_value("knife_evolved_interval_mult", 0.30)   # ~a third the cadence — a near-solid stream of blades
+static var EVOLVED_MIN_INTERVAL := BalanceData.get_value("knife_evolved_min_interval", 0.14)    # far lower floor so late Thousand Edges barely pauses
+static var EVOLVED_AMOUNT_BONUS: int = int(BalanceData.get_value("knife_evolved_amount_bonus", 3.0))       # +3 knives per volley over the base amount
+static var EVOLVED_DAMAGE_MULT := BalanceData.get_value("knife_evolved_damage_mult", 1.7)      # each blade bites much deeper
 
 var run: VSRun
 var _cd := 0.0

@@ -7,12 +7,12 @@ extends Node2D
 ## a Gold Fever is active (VSRun._maybe_drop_gold_fever_coin). Grants no XP or HP; it exists to
 ## bank currency for a future between-run meta-progression.
 
-const PICKUP := 26.0
-const MAGNET := 95.0
-const MAGNET_SPEED := 240.0
+static var PICKUP := BalanceData.get_value("coin_pickup_radius", 26.0)
+static var MAGNET := BalanceData.get_value("coin_magnet_radius", 95.0)
+static var MAGNET_SPEED := BalanceData.get_value("coin_magnet_speed", 240.0)
 # The source gold_coin.png is a 256px canvas — huge beside the ~40px player/enemies.
 # Scale it down to read as a proper grabbable pickup, matching the arena's sprite scale.
-const SPRITE_SCALE := 0.14
+static var SPRITE_SCALE := BalanceData.get_value("coin_sprite_scale", 0.14)
 
 ## What spawned this coin, which sets how much it tops up an active Gold Fever on collect
 ## (see _collect and Gilded_Clover.md) — it does NOT affect the banked gold, which is `value`.
@@ -22,8 +22,14 @@ const SPRITE_SCALE := 0.14
 ## base GOLD_COIN pickup tier.
 enum Tier { GOLD_COIN, COIN_BAG, RICH_COIN_BAG, KILL_DROP }
 
+# Seconds each tier tops an active Gold Fever back up by on collect (see fever_extension_seconds).
+static var FEVER_EXT_GOLD_COIN := BalanceData.get_value("coin_fever_ext_gold_coin", 0.5)
+static var FEVER_EXT_COIN_BAG := BalanceData.get_value("coin_fever_ext_coin_bag", 5.0)
+static var FEVER_EXT_RICH_COIN_BAG := BalanceData.get_value("coin_fever_ext_rich_coin_bag", 10.0)
+static var FEVER_EXT_KILL_DROP := BalanceData.get_value("coin_fever_ext_kill_drop", 0.01)
+
 var run: VSRun
-var value := 1                # gold banked on pickup
+var value: int = int(BalanceData.get_value("coin_value", 1.0))                # gold banked on pickup
 var tier: Tier = Tier.GOLD_COIN
 var _t := 0.0                 # bob timer
 
@@ -33,13 +39,13 @@ var _t := 0.0                 # bob timer
 func fever_extension_seconds() -> float:
 	match tier:
 		Tier.COIN_BAG:
-			return 5.0
+			return FEVER_EXT_COIN_BAG
 		Tier.RICH_COIN_BAG:
-			return 10.0
+			return FEVER_EXT_RICH_COIN_BAG
 		Tier.KILL_DROP:
-			return 0.01
+			return FEVER_EXT_KILL_DROP
 		_:
-			return 0.5
+			return FEVER_EXT_GOLD_COIN
 
 func _ready() -> void:
 	add_to_group("coins")

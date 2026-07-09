@@ -6,12 +6,12 @@ extends Node2D
 ## the ground and starts a Gold Fever"). See VSRun.start_gold_fever / is_gold_fever_active for
 ## the fever window itself.
 
-const PICKUP := 26.0
-const MAGNET := 110.0            # same wide grab as the Rosary/Nduja/Orologion treats
-const MAGNET_SPEED := 240.0
+static var PICKUP := BalanceData.get_value("gilded_clover_pickup_radius", 26.0)
+static var MAGNET := BalanceData.get_value("gilded_clover_magnet_radius", 110.0)            # same wide grab as the Rosary/Nduja/Orologion treats
+static var MAGNET_SPEED := BalanceData.get_value("gilded_clover_magnet_speed", 240.0)
 # The source clover_gold.png is a 256px canvas — huge beside the ~40px player/enemies.
 # Scale it down to read as a proper grabbable pickup, matching the arena's sprite scale.
-const SPRITE_SCALE := 0.14
+static var SPRITE_SCALE := BalanceData.get_value("gilded_clover_sprite_scale", 0.14)
 const GOLD_FEVER_COLOR := Color(1.0, 0.85, 0.2)
 
 var run: VSRun

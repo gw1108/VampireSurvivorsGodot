@@ -6,10 +6,10 @@ extends Node2D
 ## recovery lever instead of relying solely on the rare Vitality upgrade. Cosmetic-only
 ## otherwise; grants no XP.
 
-const PICKUP := 26.0
-const MAGNET := 95.0
-const MAGNET_SPEED := 240.0
-const HEAL := 30.0            # HP restored on pickup (VS roast-chicken convention)
+static var PICKUP := BalanceData.get_value("food_pickup_radius", 26.0)
+static var MAGNET := BalanceData.get_value("food_magnet_radius", 95.0)
+static var MAGNET_SPEED := BalanceData.get_value("food_magnet_speed", 240.0)
+static var HEAL := BalanceData.get_value("food_heal_amount", 30.0)            # HP restored on pickup (VS roast-chicken convention)
 
 var run: VSRun
 var _t := 0.0                 # bob timer

@@ -6,14 +6,14 @@ extends Node2D
 const RADIUS := 4.0
 ## Tuned baseline hit radius (at projectile_scale 1.0). The live hitbox is `hit_radius` below, set in
 ## _ready to scale with the CSV's projectile_scale so the strike range tracks the bolt's rendered size.
-const HIT_RADIUS := 10.0
+static var HIT_RADIUS := BalanceData.get_value("projectile_hit_radius", 10.0)
 # The dagger sprite's blade points up-right (-45deg / -PI/4) in the source art, so we
 # add PI/4 when aligning it to the travel direction.
 const ART_ANGLE_OFFSET := PI / 4.0
 
-var speed := 430.0
+var speed := BalanceData.get_value("projectile_base_speed", 430.0)   # default bolt travel speed (the Magic Wand fires at this; the Knife overrides it)
 var damage := 2.0
-var life := 1.4
+var life := BalanceData.get_value("projectile_base_life", 1.4)       # default seconds before a stray bolt despawns (Knife overrides it)
 var dir := Vector2.RIGHT
 var pierce := 0                  # extra enemies the bolt passes through (0 = despawn on first hit)
 var hit_radius := HIT_RADIUS     # live strike radius, set in _ready to HIT_RADIUS * projectile_scale

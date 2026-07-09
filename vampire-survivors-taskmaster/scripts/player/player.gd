@@ -8,17 +8,17 @@ signal damaged(amount: float)
 
 ## Base move speed lives in res://data/balance.csv (id "player_move_speed") so a designer
 ## can retune it without touching this script.
-static var SPEED := BalanceData.get_value("player_move_speed", 210.0)
+static var SPEED := BalanceData.get_value("player_move_speed", 147.0)
 ## Tuned baseline contact radius (the value the game was balanced against, at player_scale 1.0).
 ## The live hitbox is the instance `radius` below, which scales with the CSV's player_scale so the
-## solid body tracks the art. Kept as a const so callers without the player instance can still read
+## solid body tracks the art. Kept class-level so callers without the player instance can still read
 ## the baseline (VSPlayer.RADIUS), exactly as VSEnemy.RADIUS is the enemy's fallback.
-const RADIUS := 14.0
+static var RADIUS := BalanceData.get_value("player_contact_radius", 14.0)
 
 ## Hit feedback: on taking damage the avatar flashes red for a sliver of a second so a hit
 ## reads on the character itself, not just as a camera jolt — the same channel the enemies use
 ## for their white hit-flash, tuned red here to say "you're being hurt" at a glance.
-const HIT_FLASH_DURATION := 0.12
+static var HIT_FLASH_DURATION := BalanceData.get_value("player_hit_flash_duration", 0.12)
 const HIT_FLASH_COLOR := Color(1.7, 0.35, 0.35)
 
 ## Invulnerability frames: after a landed hit the player ignores all further contact damage
@@ -26,15 +26,15 @@ const HIT_FLASH_COLOR := Color(1.7, 0.35, 0.35)
 ## lets you tank *through* a crowd — without it, every enemy overlapping you the same instant
 ## lands its hit independently (each enemy has its own contact cooldown), stacking damage and
 ## deleting the player unfairly the moment the horde closes in. Ticks only while playing.
-const IFRAME_DURATION := 0.24
+static var IFRAME_DURATION := BalanceData.get_value("player_iframe_duration", 0.24)
 
 ## Nduja Fritta Tanta berserk: while VSRun.is_nduja_active() the avatar takes no contact damage
 ## and a burning aura sears every enemy within NDUJA_RADIUS, dealing NDUJA_DAMAGE on each
 ## NDUJA_TICK so charging through the horde melts it. The buff itself lives on the run clock
 ## (VSNduja pickup sets run.nduja_until); the player just reads it each frame.
-const NDUJA_RADIUS := 78.0
-const NDUJA_DAMAGE := 9.0
-const NDUJA_TICK := 0.2
+static var NDUJA_RADIUS := BalanceData.get_value("player_nduja_radius", 78.0)
+static var NDUJA_DAMAGE := BalanceData.get_value("player_nduja_damage", 9.0)
+static var NDUJA_TICK := BalanceData.get_value("player_nduja_tick_interval", 0.2)
 const NDUJA_TINT := Color(1.6, 0.6, 0.25)   # hot orange the sprite pulses toward while ablaze
 
 ## Health bar drawn right under the sprite, replacing the old HUD corner "HP N/N" text so the
@@ -45,8 +45,8 @@ const HEALTH_BAR_OFFSET_Y := 28.0   # clears the sprite's visible feet (art is 4
 const HEALTH_BAR_BG_COLOR := Color(0, 0, 0, 0.7)
 const HEALTH_BAR_FILL_COLOR := Color(0.85, 0.15, 0.15)
 # Once HP drops below this fraction the fill throbs toward the hot alarm red, in lockstep with the
-# HUD's low-health vignette. Mirrors hud.gd's LOWHP_THRESHOLD so both danger cues arm together.
-const LOWHP_THRESHOLD := 0.30
+# HUD's low-health vignette. Shares hud.gd's "hud_lowhp_threshold" CSV row so both danger cues arm together.
+static var LOWHP_THRESHOLD := BalanceData.get_value("hud_lowhp_threshold", 0.30)
 const HEALTH_BAR_ALARM_COLOR := Color(1.0, 0.3, 0.12)   # hot red the fill throbs toward while critical
 # Recovery (Pummarola): while HP regenerates and isn't yet full, the fill breathes faintly toward this
 # green so the top-up reads at a glance. Kept quiet (shallow blend, slow beat) and gated above the alarm
@@ -56,13 +56,13 @@ const HEALTH_BAR_HEAL_COLOR := Color(0.3, 0.9, 0.35)
 ## Living-avatar motion: a brisk two-step bounce while walking and a slow breathe when standing.
 ## Both are a couple of pixels of vertical offset on the sprite alone (position untouched), driven
 ## off the run's own `elapsed` clock so they pause cleanly with the game during level-up.
-const WALK_BOB_FREQ := 9.0     # rad/s-ish; a bounce per footfall
-const WALK_BOB_AMP := 2.0      # px, sprite rises on each step
-const IDLE_SWAY_FREQ := 2.2
-const IDLE_SWAY_AMP := 1.2
+static var WALK_BOB_FREQ := BalanceData.get_value("player_walk_bob_freq", 9.0)     # rad/s-ish; a bounce per footfall
+static var WALK_BOB_AMP := BalanceData.get_value("player_walk_bob_amp", 2.0)      # px, sprite rises on each step
+static var IDLE_SWAY_FREQ := BalanceData.get_value("player_idle_sway_freq", 2.2)
+static var IDLE_SWAY_AMP := BalanceData.get_value("player_idle_sway_amp", 1.2)
 
-var max_health := 100.0
-var health := 100.0
+var max_health := BalanceData.get_value("player_max_health", 100.0)
+var health := max_health
 var alive := true
 ## Live contact radius, set in _ready to RADIUS * player_scale so the solid body tracks the sprite a
 ## designer sizes via the CSV. Enemy contact tests this (enemy.gd), so growing/shrinking the art in

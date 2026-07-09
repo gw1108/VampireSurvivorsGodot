@@ -23,8 +23,8 @@ extends GdUnitTestSuite
 const FRAME_BUDGET_MS := 1000.0 / 60.0
 ## Enemies packed onto the player — the validated late-game ceiling (the real Mad Forest 300-alive cap).
 const HORDE := VSSpawner.COLLIDER_SAFE_CAP
-## Loose gems on the ground at once — the GDD on-ground cap.
-const GEMS := VSRun.MAX_GROUND_GEMS
+## Loose gems on the ground at once — the GDD on-ground cap (CSV-driven, so not a const).
+static var GEMS: int = VSRun.MAX_GROUND_GEMS
 const WARMUP_FRAMES := 24    # let the packed ball collapse into the steady crush wall before timing
 const SAMPLE_FRAMES := 40    # timed frames; the MEDIAN is the "typical FPS" the player sees
 

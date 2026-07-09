@@ -4,11 +4,11 @@ extends Node2D
 ## it self-frees and touches no gameplay state. Each shard flies outward, falls under a little
 ## gravity, spins, and fades — so breaking a light source reads as a satisfying pop of debris.
 
-const DURATION := 0.5
-const SHARDS := 9
-const SPEED_MIN := 70.0
-const SPEED_MAX := 190.0
-const GRAVITY := 260.0            # px/s^2 pulling debris back down as it arcs out
+static var DURATION := BalanceData.get_value("candelabra_shatter_duration", 0.5)
+static var SHARDS: int = int(BalanceData.get_value("candelabra_shatter_shards", 9.0))
+static var SPEED_MIN := BalanceData.get_value("candelabra_shatter_speed_min", 70.0)
+static var SPEED_MAX := BalanceData.get_value("candelabra_shatter_speed_max", 190.0)
+static var GRAVITY := BalanceData.get_value("candelabra_shatter_gravity", 260.0)            # px/s^2 pulling debris back down as it arcs out
 
 # Per-shard state, all indexed together.
 var _dirs: Array[Vector2] = []    # initial velocity (px/s)

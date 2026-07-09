@@ -15,16 +15,19 @@ func _make_enemy(at: Vector2) -> VSEnemy:
 
 func test_overlapping_neighbour_pushes_away() -> void:
 	var a := _make_enemy(Vector2.ZERO)
-	_make_enemy(Vector2(10, 0))            # 10px < combined radius (2 * RADIUS = 24)
+	var b := _make_enemy(Vector2(10, 0))   # 10px < combined radius: guaranteed overlap
+	# Radii are CSV-driven (enemy_base_radius * enemy_scale), so derive the expectation from the
+	# live bodies instead of pinning a scale: a is shoved left by HALF the overlap (b corrects
+	# its own half).
+	var expected := (a.radius + b.radius - 10.0) * 0.5
 	var push: Vector2 = a._overlap_correction()
-	# a sits left of b and they overlap, so it should be shoved further left (negative x) by
-	# half the overlap: half of (24 - 10) = 7px.
-	assert_float(push.length()).is_equal_approx(7.0, 0.001)
+	assert_float(push.length()).is_equal_approx(expected, 0.001)
 	assert_float(push.x).is_less(0.0)
 
 func test_non_overlapping_neighbour_no_push() -> void:
 	var a := _make_enemy(Vector2.ZERO)
-	_make_enemy(Vector2(30, 0))            # 30px > combined radius (24): bodies don't touch
+	var b := _make_enemy(Vector2(500, 0))  # far beyond any combined radius: bodies don't touch
+	assert_float(a.radius + b.radius).is_less(500.0)   # the premise, kept honest against retunes
 	var push: Vector2 = a._overlap_correction()
 	assert_float(push.length()).is_less(0.001)
 

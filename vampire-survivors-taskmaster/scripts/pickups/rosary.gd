@@ -7,13 +7,13 @@ extends Node2D
 ## elite mini-bosses merely take a big dent — faithful to VS, where the Rosary clears the
 ## rabble but bosses endure. Grants no XP or HP itself; its payout is the carnage it triggers.
 
-const PICKUP := 26.0
-const MAGNET := 110.0           # same wide grab as the Magnet — a treat worth reaching for
-const MAGNET_SPEED := 240.0
-const SMITE_DAMAGE := 120.0     # enough to clear every normal archetype; bosses (140/600 HP) endure
+static var PICKUP := BalanceData.get_value("rosary_pickup_radius", 26.0)
+static var MAGNET := BalanceData.get_value("rosary_magnet_radius", 110.0)           # same wide grab as the Magnet — a treat worth reaching for
+static var MAGNET_SPEED := BalanceData.get_value("rosary_magnet_speed", 240.0)
+static var SMITE_DAMAGE := BalanceData.get_value("rosary_smite_damage", 120.0)     # enough to clear every normal archetype; bosses (140/600 HP) endure
 # The source pickup_rosary.png is a 256px canvas — huge beside the ~40px player/enemies.
 # Scale it down to read as a proper grabbable pickup, matching the arena's sprite scale.
-const SPRITE_SCALE := 0.14
+static var SPRITE_SCALE := BalanceData.get_value("rosary_sprite_scale", 0.14)
 
 var run: VSRun
 var _t := 0.0                   # bob timer

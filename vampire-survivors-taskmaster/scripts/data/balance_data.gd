@@ -4,6 +4,11 @@ extends RefCounted
 ## one CSV — res://data/balance.csv, "id,value,description" — so a designer can rebalance
 ## without touching script code. Loaded once and cached; a missing/unreadable file or a
 ## missing row just falls back to the caller's `default` rather than crashing the run.
+##
+## CONVENTION (see repo-root CLAUDE.md): every tunable gameplay/visual scalar — speeds,
+## radii, scales, damage, cooldowns, spawn pacing — must be read from the CSV via
+## `static var X := BalanceData.get_value("<id>", <default>)`, never hardcoded as a script
+## const. The CSV row is the source of truth; `default` is only a missing-row fallback.
 
 const CSV_PATH := "res://data/balance.csv"
 

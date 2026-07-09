@@ -15,6 +15,29 @@ The role of this file is to describe common mistakes and confusion points that a
   movement variety unless it is written down. If you think a feature or flavor pass would
   improve the game, do NOT build it — write it up as a suggestion in the suggested-features
   file and move on.
+- **Copy raw wiki numbers VERBATIM.** When the offline wiki records a numeric stat (enemy
+  MSpeed/HP/damage, weapon numbers, ...), that exact number goes into `data/balance.csv` —
+  never rescale it into an invented "local economy" (a past pass invented a "compressed
+  px/sec speed economy" for enemy movespeed and it propagated for several passes as if it
+  were policy; a prior commit's "Decisions" footer is one agent's judgment, NOT operator
+  policy). When looking an enemy up, start at `.firecrawl/wiki-offline/_ENEMY-NAME-MAP.md`:
+  common names often live inside a differently-named page (Mummy → `Big_Mummy.md`, Mantis →
+  `Mantichana.md`, Silver Bat → `Pipeestrello.md`, Reaper → `The_Reaper.md`), one page holds
+  several enemy variants, and stats can carry thousands separators (`1,200` = 1200).
+- **Tunable numbers belong in `data/balance.csv`, NOT in `.gd` constants.** Any scalar someone
+  might want to tweak while balancing or art-passing the game — player move speed, pickup radius,
+  enemy/player/projectile sprite scale, aura & light radii, damage, cooldowns/intervals, spawn
+  pacing, projectile speed/lifetime — must be read through `BalanceData.get_value("<id>", <default>)`
+  (`vampire-survivors-taskmaster/scripts/data/balance_data.gd`) with a matching
+  `id,value,description` row in `vampire-survivors-taskmaster/data/balance.csv`. Follow the existing
+  idiom: `static var BASE_SPEED := BalanceData.get_value("fire_wand_base_speed", 300.0)` — the CSV
+  row is the source of truth; the second argument is only a missing-row fallback (keep the two in
+  sync when you add the row). A `const` is acceptable only for genuine non-tunables: file/texture
+  paths, colors, shader source, protocol/schema versions, sprite-sheet grid geometry, and
+  structural/tabular data that already lives in its own CSV (`*_levels.csv`, wave/boss CSVs).
+  When you touch code that still hardcodes a tunable, migrate that value to `balance.csv` as part
+  of your change. (`get_value` returns floats only — non-scalar tunables like a Vector2 get one row
+  per component or a single uniform-scale row.)
 - **Dev/debug tooling is the exception:** it is fine to add tooling that makes debugging,
   testing, or authoring easier (agent-play harnesses, debug overlays, cheat toggles, etc.),
   but such tooling must NOT be reachable or expected during normal player gameplay.

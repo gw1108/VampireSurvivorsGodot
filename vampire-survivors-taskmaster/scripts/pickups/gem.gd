@@ -3,10 +3,10 @@ extends Node2D
 ## XP gem dropped on enemy death. Magnetizes toward a nearby player and grants XP on
 ## pickup. Feeds the level counter (the upgrade/level-up screen is the next milestone).
 
-const RADIUS := 6.0
-const PICKUP := 24.0
-const MAGNET := 95.0
-const MAGNET_SPEED := 240.0
+static var RADIUS := BalanceData.get_value("gem_radius", 6.0)
+static var PICKUP := BalanceData.get_value("gem_pickup_radius", 24.0)
+static var MAGNET := BalanceData.get_value("gem_magnet_radius", 95.0)
+static var MAGNET_SPEED := BalanceData.get_value("gem_magnet_speed", 240.0)
 
 var run: VSRun
 var value := 1   # XP granted on pickup; scaled by the enemy that dropped it
@@ -25,7 +25,7 @@ const VALUE_COLORS := {
 ## Cap the per-value scale growth: an ordinary red gem tops out here, and a heavily-merged
 ## gem (from the on-ground cap folding many drops together) stays chunky instead of ballooning
 ## across the screen. 8 steps -> ~1.96x, matching the wiki's "Red 9+" tier feel.
-const MAX_VISUAL_STEPS := 8
+static var MAX_VISUAL_STEPS: int = int(BalanceData.get_value("gem_max_visual_steps", 8.0))
 
 func _ready() -> void:
 	add_to_group("gems")

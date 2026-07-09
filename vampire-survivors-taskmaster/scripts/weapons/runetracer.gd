@@ -33,12 +33,12 @@ static var _levels_loaded := false
 
 # NO FUTURE (evolved): the same bouncing rune, but MORE of them, caroming faster and longer,
 # each a bigger, harder-hitting hazard — set once run.runetracer_evolved flips (see run.gd).
-const EVO_BONUS_AMOUNT := 2          # extra runes per volley on top of the level count…
-const EVO_MAX_AMOUNT := 6            # …raising the cap so a maxed NO FUTURE saturates the arena
-const EVO_DAMAGE_MULT := 1.6         # each rune bites noticeably harder
-const EVO_SPEED_MULT := 1.35         # a faster carom covers the field quicker
-const EVO_LIFE_BONUS := 2.0          # runes linger far longer, ping-ponging through more of the horde
-const EVO_RADIUS := 14.0             # a fatter rune (base 9) sweeps a wider lane through the swarm
+static var EVO_BONUS_AMOUNT: int = int(BalanceData.get_value("runetracer_evo_bonus_amount", 2.0))          # extra runes per volley on top of the level count…
+static var EVO_MAX_AMOUNT: int = int(BalanceData.get_value("runetracer_evo_max_amount", 6.0))            # …raising the cap so a maxed NO FUTURE saturates the arena
+static var EVO_DAMAGE_MULT := BalanceData.get_value("runetracer_evo_damage_mult", 1.6)         # each rune bites noticeably harder
+static var EVO_SPEED_MULT := BalanceData.get_value("runetracer_evo_speed_mult", 1.35)         # a faster carom covers the field quicker
+static var EVO_LIFE_BONUS := BalanceData.get_value("runetracer_evo_life_bonus", 2.0)          # runes linger far longer, ping-ponging through more of the horde
+static var EVO_RADIUS := BalanceData.get_value("runetracer_evo_radius", 14.0)             # a fatter rune (base 9) sweeps a wider lane through the swarm
 
 var run: VSRun
 var _cd := 0.0
@@ -154,9 +154,9 @@ static func _ensure_levels() -> void:
 class Bolt:
 	extends Node2D
 
-	const BASE_RADIUS := 9.0        # rune's own hit radius (NO FUTURE runes set a fatter one)
-	const REHIT := 0.45            # seconds before a rune may strike the same enemy again
-	const SPRITE_SCALE := 0.9
+	static var BASE_RADIUS := BalanceData.get_value("runetracer_hit_radius", 9.0)        # rune's own hit radius (NO FUTURE runes set a fatter one)
+	static var REHIT := BalanceData.get_value("runetracer_rehit_interval", 0.45)            # seconds before a rune may strike the same enemy again
+	static var SPRITE_SCALE := BalanceData.get_value("runetracer_sprite_scale", 0.9)
 
 	var vel := Vector2.RIGHT
 	var damage := 10.0

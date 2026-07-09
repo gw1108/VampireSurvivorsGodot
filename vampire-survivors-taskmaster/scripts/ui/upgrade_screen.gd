@@ -234,8 +234,8 @@ func _compute_preview(run: VSRun, id: String) -> Dictionary:
 			var mhp := 0.0
 			var hp := 0.0
 			if run.player:
-				mhp = run.player.max_health + 20.0
-				hp = minf(mhp, run.player.health + 20.0)
+				mhp = run.player.max_health + VSRun.HOLLOW_HEART_HP
+				hp = minf(mhp, run.player.health + VSRun.HOLLOW_HEART_HP)
 			out["HP"] = "%d/%d" % [int(ceil(hp)), int(round(mhp))]
 		"multishot":
 			# Leveling the wand doesn't always add a bolt (data/magic_wand_levels.csv), so read the
@@ -253,9 +253,9 @@ func _compute_preview(run: VSRun, id: String) -> Dictionary:
 			var next_growth := int(run.upgrade_levels.get("growth", 0)) + 1
 			out["XP Gain"] = "%d%%" % int(round((1.0 + VSRun.GROWTH_PER_PICK * float(next_growth)) * 100.0))
 		"armor":
-			out["Armor"] = "%d" % (run.armor + 1)
+			out["Armor"] = "%d" % (run.armor + VSRun.ARMOR_PER_PICK)
 		"luck":
-			out["Luck"] = "%d%%" % int(round(run.total_luck() + 10.0))
+			out["Luck"] = "%d%%" % int(round(run.total_luck() + VSRun.CLOVER_LUCK_PER_PICK))
 	# Owned weapons/passives also advance their ITEMS "Lv N" line (only rendered when owned).
 	# A not-yet-owned pick (lvl == 0) with no dedicated stat row above (i.e. a weapon/passive, not a
 	# stat boost like Power/Haste) has nothing on the rail to change, so flag it under __new_item__ so

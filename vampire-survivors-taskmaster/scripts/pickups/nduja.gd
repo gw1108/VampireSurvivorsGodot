@@ -8,13 +8,13 @@ extends Node2D
 ## the Rosary's one-shot screen-clear or the Orologion's freeze, this is a mobile power fantasy —
 ## charge into the horde untouchable and melt it. Grants no XP or HP itself.
 
-const PICKUP := 26.0
-const MAGNET := 110.0            # same wide grab as the Rosary/Orologion — a treat worth reaching for
-const MAGNET_SPEED := 240.0
-const DURATION := 8.0            # seconds of game-time the fiery invincibility lasts
+static var PICKUP := BalanceData.get_value("nduja_pickup_radius", 26.0)
+static var MAGNET := BalanceData.get_value("nduja_magnet_radius", 110.0)            # same wide grab as the Rosary/Orologion — a treat worth reaching for
+static var MAGNET_SPEED := BalanceData.get_value("nduja_magnet_speed", 240.0)
+static var DURATION := BalanceData.get_value("nduja_duration", 8.0)            # seconds of game-time the fiery invincibility lasts
 # The source red_hot_chili_pepper.png is a 256px canvas — huge beside the ~40px player/enemies.
 # Scale it down to read as a proper grabbable pickup, matching the arena's sprite scale.
-const SPRITE_SCALE := 0.14
+static var SPRITE_SCALE := BalanceData.get_value("nduja_sprite_scale", 0.14)
 const FIRE := Color(1.5, 0.55, 0.2)   # hot orange so the berserk treat reads as a distinct event
 
 var run: VSRun

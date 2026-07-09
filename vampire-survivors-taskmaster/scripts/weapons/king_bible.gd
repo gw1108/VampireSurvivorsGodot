@@ -12,9 +12,9 @@ extends Node2D
 # ring let fast enemies camp inside, untouched), each book sweeps a wide band so few
 # enemies slip through the gaps, and the orbit spins briskly so it reads as active area
 # denial. Damage tracks the wiki (base ~10 scaled, ~30 at max level).
-const BASE_ORBIT_RADIUS := 88.0
-const ANGULAR_SPEED := 3.6          # rad/s the books orbit the player at Lv1 (~0.57 rev/s), scaled by the per-level speed_mult
-const BOOK_HIT_RADIUS := 27.0       # how close a book must pass to strike an enemy
+static var BASE_ORBIT_RADIUS := BalanceData.get_value("king_bible_orbit_radius", 88.0)
+static var ANGULAR_SPEED := BalanceData.get_value("king_bible_angular_speed", 3.6)          # rad/s the books orbit the player at Lv1 (~0.57 rev/s), scaled by the per-level speed_mult
+static var BOOK_HIT_RADIUS := BalanceData.get_value("king_bible_book_hit_radius", 27.0)       # how close a book must pass to strike an enemy
 ## Min seconds between a book's hits (avoids per-frame drain) lives in res://data/balance.csv
 ## ("king_bible_tick_interval") so a designer can retune fire rate without touching this script.
 static var TICK_INTERVAL := BalanceData.get_value("king_bible_tick_interval", 0.35)
@@ -31,8 +31,8 @@ static var _levels_loaded := false
 ## Lv1 base damage lives in res://data/balance.csv ("king_bible_base_damage", wiki base 10); the flat
 ## per-level bonus on top of it lives per-level in data/king_bible_levels.csv (see LEVELS_CSV above).
 static var BASE_DAMAGE := BalanceData.get_value("king_bible_base_damage", 10.0)
-const MAX_BOOKS := 4
-const BOOK_SCALE := 0.5             # 64px source -> ~32px book, legible beside enemies
+static var MAX_BOOKS: int = int(BalanceData.get_value("king_bible_max_books", 4.0))
+static var BOOK_SCALE := BalanceData.get_value("king_bible_book_scale", 0.5)             # 64px source -> ~32px book, legible beside enemies
 const BOOK_TEX := "res://art/up_bible.png"
 
 # The source up_bible.png is a near-full-frame, dark-brown book (avg RGB ~66,37,25) that
@@ -54,11 +54,11 @@ void fragment() {
 # Evolved (Unholy Vespers) profile — applied when run.bible_evolved: a full ring of extra
 # books orbiting faster, striking more often, harder, and with a wider reach. Gated on the
 # weapon already being maxed, so this is the run's payoff for maxing Bible + owning Power.
-const EVOLVED_EXTRA_BOOKS := 2      # 4 -> 6 books, a near-solid wall
-const EVOLVED_DAMAGE_MULT := 2.2
-const EVOLVED_ANGULAR_MULT := 1.35
-const EVOLVED_TICK_MULT := 0.6      # shorter cooldown between a book's hits
-const EVOLVED_HIT_BONUS := 8.0      # wider strike radius per book
+static var EVOLVED_EXTRA_BOOKS: int = int(BalanceData.get_value("king_bible_evolved_extra_books", 2.0))      # 4 -> 6 books, a near-solid wall
+static var EVOLVED_DAMAGE_MULT := BalanceData.get_value("king_bible_evolved_damage_mult", 2.2)
+static var EVOLVED_ANGULAR_MULT := BalanceData.get_value("king_bible_evolved_angular_mult", 1.35)
+static var EVOLVED_TICK_MULT := BalanceData.get_value("king_bible_evolved_tick_mult", 0.6)      # shorter cooldown between a book's hits
+static var EVOLVED_HIT_BONUS := BalanceData.get_value("king_bible_evolved_hit_bonus", 8.0)      # wider strike radius per book
 
 var run: VSRun
 var _angle := 0.0
