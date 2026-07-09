@@ -3,12 +3,12 @@ extends Node2D
 ## A basic enemy: walks straight at the player and deals periodic contact damage.
 ## Distance-based contact (no physics) — robust and cheap with many on screen.
 
-const RADIUS := 12.0
-const FLASH_DURATION := 0.1
+static var RADIUS := BalanceData.get_value("enemy_base_radius", 12.0)
+static var FLASH_DURATION := BalanceData.get_value("enemy_flash_duration", 0.1)
 ## REAPER "immune to freeze" shimmer: a red pulse layered over the boss while an Orologion
 ## time-stop is active, so its exemption reads as a deliberate design, not a stuck sprite.
-const IMMUNE_SHIMMER_FREQ := 9.0     # rad/s of the sine pulse — a fast, alarming flicker
-const IMMUNE_SHIMMER_AMOUNT := 0.7   # how far the pulse lerps toward the hot red at its peak
+static var IMMUNE_SHIMMER_FREQ := BalanceData.get_value("enemy_immune_shimmer_freq", 9.0)     # rad/s of the sine pulse — a fast, alarming flicker
+static var IMMUNE_SHIMMER_AMOUNT := BalanceData.get_value("enemy_immune_shimmer_amount", 0.7)   # how far the pulse lerps toward the hot red at its peak
 ## Enemy colliders: every enemy carries a solid circular body (RADIUS, or its per-type
 ## `radius`), so two units can never occupy the same space. Each enemy homes STRAIGHT at the
 ## player; after moving, a positional overlap-resolution pass (see _overlap_correction) shoves
@@ -34,7 +34,7 @@ const COLLIDE_CELL := 60.0
 const MAX_OVERLAP_CHECKS := 16
 ## Enemies at or above this max health (mini-bosses like ELITE) get a health bar
 ## once damaged, so their long HP pool reads as visible progress.
-const HEALTH_BAR_MIN_MAX_HEALTH := 40.0
+static var HEALTH_BAR_MIN_MAX_HEALTH := BalanceData.get_value("enemy_health_bar_min_max_health", 40.0)
 ## Enemy recycling: a base-trickle enemy the player has outrun by more than this distance is
 ## teleported back onto the spawn ring around the player rather than left stranded far offscreen.
 ## Without it a fleeing player (the game's core kiting verb) strands units at the far edge of the
@@ -44,10 +44,10 @@ const HEALTH_BAR_MIN_MAX_HEALTH := 40.0
 ## ring (VSSpawner.offscreen_radius) plus RECYCLE_HYSTERESIS, so a straggler is always past the visible
 ## corner at ANY camera zoom before it recycles, and a freshly spawned / just-recycled enemy sitting on
 ## that ring is never immediately re-recycled. Mini-bosses/Reaper are exempt (GDD: bosses don't despawn).
-const DESPAWN_RADIUS := 1000.0
+static var DESPAWN_RADIUS := BalanceData.get_value("enemy_despawn_radius", 1000.0)
 ## Gap between the off-screen spawn ring and the recycle threshold, so an enemy re-entering exactly on
 ## the ring stays comfortably inside the keep-alive band instead of ping-ponging back out on frame one.
-const RECYCLE_HYSTERESIS := 160.0
+static var RECYCLE_HYSTERESIS := BalanceData.get_value("enemy_recycle_hysteresis", 160.0)
 
 ## Enemy archetypes. Each maps to a distinct pixel-art sprite plus stat tuning so
 ## waves have visual and mechanical variety. The spawner sets `type` before the
@@ -173,16 +173,16 @@ const SPEED_KEYS := {
 ## impulse (px/s) that decays fast, so a strike reads as a real shove that buys the player
 ## a sliver of breathing room without launching enemies across the arena. `knock` per-type
 ## scales it (heavy ELITE/REAPER barely budge, staying the relentless threat they should be).
-const KNOCKBACK_IMPULSE := 230.0   # px/s velocity added on a normal-weight enemy hit
-const KNOCKBACK_DECAY := 1500.0    # px/s^2 the impulse bleeds off — stops in ~0.15s
+static var KNOCKBACK_IMPULSE := BalanceData.get_value("enemy_knockback_impulse", 230.0)   # px/s velocity added on a normal-weight enemy hit
+static var KNOCKBACK_DECAY := BalanceData.get_value("enemy_knockback_decay", 1500.0)    # px/s^2 the impulse bleeds off — stops in ~0.15s
 ## Hit-stop: on a weapon hit the enemy freezes in place for a sliver of a second (a couple of
 ## frames at 60fps) before resuming its march, so each impact reads as a weighty CRUNCH rather
 ## than a frictionless nudge — the classic freeze-frame juice, complementing knockback. Kept
 ## tiny so it's felt, not seen as a stutter, even when an AoE sweep freezes a whole pack at once.
-const HITSTOP_DURATION := 0.045    # seconds the enemy holds on hit — ~2-3 frames
+static var HITSTOP_DURATION := BalanceData.get_value("enemy_hitstop_duration", 0.045)    # seconds the enemy holds on hit — ~2-3 frames
 ## Crit damage numbers pop bigger and gold so a spike reads instantly against the white regular hits.
 const CRIT_TEXT_COLOR := Color(1.0, 0.82, 0.18)
-const CRIT_TEXT_FONT_SIZE := 22
+static var CRIT_TEXT_FONT_SIZE: int = int(BalanceData.get_value("enemy_crit_text_font_size", 22.0))
 
 var type: int = Type.BAT
 var speed := 62.0

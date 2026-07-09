@@ -9,7 +9,7 @@ extends Node2D
 ## picked: invisible and inert). This is the slice's third, mechanically-distinct weapon.
 
 static var BASE_RANGE := BalanceData.get_value("whip_base_range", 140.0)   # reach of the melee arc at Lv1 (before per-level area_mult)
-const ARC_HALF_ANGLE := deg_to_rad(50.0)   # half-width of the damage wedge
+static var ARC_HALF_ANGLE := deg_to_rad(BalanceData.get_value("whip_arc_half_angle_deg", 50.0))   # half-width of the damage wedge (CSV value in degrees)
 
 ## Per-level level-up table (wiki Whip.md "Levels"), editable in res://data/whip_levels.csv —
 ## one row per level with independently-tunable columns so a designer can retune ANY single level
@@ -35,7 +35,7 @@ const VFX_COLS := 2
 const VFX_ROWS := 5
 const VFX_FPS := 40.0                      # 10 frames / 40fps = 0.25s, matching the old sweep time
 const VFX_ROTATION := deg_to_rad(-135.0)
-const VFX_OFFSET_FRAC := 0.55              # how far out along the lash the VFX sits, as a fraction of range
+static var VFX_OFFSET_FRAC := BalanceData.get_value("whip_vfx_offset_frac", 0.55)              # how far out along the lash the VFX sits, as a fraction of range
 ## Lv1 base damage lives in res://data/balance.csv ("whip_base_damage", wiki base 10); the flat
 ## per-level bonus on top of it lives per-level in data/whip_levels.csv (see LEVELS_CSV above).
 static var BASE_DAMAGE := BalanceData.get_value("whip_base_damage", 10.0)
@@ -43,9 +43,9 @@ static var BASE_DAMAGE := BalanceData.get_value("whip_base_damage", 10.0)
 # Evolved (Bloody Tear) profile — applied when run.whip_evolved: a longer, wider, far deadlier
 # lash that always covers both flanks. Gated on Whip already being maxed, so this is the run's
 # payoff for maxing Whip + owning Vitality (Hollow Heart).
-const EVOLVED_DAMAGE_MULT := 2.2
-const EVOLVED_RANGE_BONUS := 60.0                 # px added to reach
-const EVOLVED_ARC_BONUS := deg_to_rad(20.0)       # widens each wedge's half-angle
+static var EVOLVED_DAMAGE_MULT := BalanceData.get_value("whip_evolved_damage_mult", 2.2)
+static var EVOLVED_RANGE_BONUS := BalanceData.get_value("whip_evolved_range_bonus", 60.0)                 # px added to reach
+static var EVOLVED_ARC_BONUS := deg_to_rad(BalanceData.get_value("whip_evolved_arc_bonus_deg", 20.0))       # widens each wedge's half-angle (CSV value in degrees)
 
 var run: VSRun
 var _cd := 0.0

@@ -28,7 +28,7 @@ static var MIN_INTERVAL := BalanceData.get_value("fire_wand_min_interval", 1.4)
 const LEVELS_CSV := "res://data/fire_wand_levels.csv"
 static var _levels: Dictionary = {}   # int level -> {"bonus_damage": float, "speed_mult": float}
 static var _levels_loaded := false
-const AMOUNT := 3                    # fireballs per volley (wiki Amount, constant at every level)
+static var AMOUNT: int = int(BalanceData.get_value("fire_wand_amount", 3.0))                    # fireballs per volley (wiki Amount, constant at every level)
 ## Movement/lifetime/blast tuning live in res://data/balance.csv (defaults = the wiki-tuned baselines).
 static var BASE_SPEED := BalanceData.get_value("fire_wand_base_speed", 300.0)   # px/sec at Lv1 — a lobbed bomb, slower than a bolt; scaled by the per-level speed_mult
 static var BASE_LIFE := BalanceData.get_value("fire_wand_base_life", 2.2)       # seconds a fireball flies before self-detonating if it hits nothing
@@ -37,9 +37,9 @@ static var BLAST_RADIUS := BalanceData.get_value("fire_wand_blast_radius", 58.0)
 ## Hellfire (Fire Wand + Might/Spinach EVOLVED): the fireball stops detonating and instead PIERCES,
 ## tearing straight through the horde and searing everything in its widened swath as it flies. Faithful
 ## to the wiki's non-detonating, piercing evolution. Applied on top of the level-scaled base profile.
-const HELLFIRE_DAMAGE_MULT := 1.6    # each searing pass hits far harder than a plain fireball
-const HELLFIRE_BLAST_MULT := 1.55    # a wider trail of flame reaches enemies it doesn't graze
-const HELLFIRE_LIFE_MULT := 1.7      # flies longer, since it no longer stops on the first body
+static var HELLFIRE_DAMAGE_MULT := BalanceData.get_value("fire_wand_hellfire_damage_mult", 1.6)    # each searing pass hits far harder than a plain fireball
+static var HELLFIRE_BLAST_MULT := BalanceData.get_value("fire_wand_hellfire_blast_mult", 1.55)    # a wider trail of flame reaches enemies it doesn't graze
+static var HELLFIRE_LIFE_MULT := BalanceData.get_value("fire_wand_hellfire_life_mult", 1.7)      # flies longer, since it no longer stops on the first body
 
 var run: VSRun
 var _cd := 0.0
@@ -162,7 +162,7 @@ static func _ensure_levels() -> void:
 class Fireball:
 	extends Node2D
 
-	const RADIUS := 10.0             # the ball's own contact radius (gameplay hitbox, not visual)
+	static var RADIUS := BalanceData.get_value("fire_wand_ball_radius", 10.0)             # the ball's own contact radius (gameplay hitbox, not visual)
 	const VFX_TEX := "res://art/fire_explosion.png"
 	const VFX_COLS := 2
 	const VFX_ROWS := 4
@@ -179,7 +179,7 @@ class Fireball:
 	## A brief hot over-bright pop on the first ~0.1s of the detonation, so a cluster of bursts
 	## flashes and pops against Mad Forest's muted grass and dark bat sprites before settling to
 	## normal smoke. Overbright modulate (>1) drives the already-yellow core toward hot white-yellow.
-	const DETONATE_FLASH_TIME := 0.1
+	static var DETONATE_FLASH_TIME := BalanceData.get_value("fire_wand_detonate_flash_time", 0.1)
 	const DETONATE_FLASH_TINT := Color(1.9, 1.75, 1.25)
 	const HELLFIRE_TINT := Color(1.3, 1.2, 1.0)  # Hellfire's comet burns hotter/whiter than the flame
 

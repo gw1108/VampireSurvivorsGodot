@@ -17,17 +17,17 @@ extends CanvasLayer
 signal continued           ## player pressed Continue — VSRun resumes the run
 
 ## Opening pop + final reveal are fixed-length; only the middle "spew" stage scales with gold.
-const OPEN_DUR := 0.45
-const REVEAL_DUR := 1.1
+static var OPEN_DUR := BalanceData.get_value("chest_screen_open_dur", 0.45)
+static var REVEAL_DUR := BalanceData.get_value("chest_screen_reveal_dur", 1.1)
 ## Spew stage seconds = clamp(gold * PER_GOLD, MIN, MAX) — "the length depends on how many coins".
-const SPEW_PER_GOLD := 0.09
-const SPEW_MIN := 1.2
-const SPEW_MAX := 5.0
+static var SPEW_PER_GOLD := BalanceData.get_value("chest_screen_spew_per_gold", 0.09)
+static var SPEW_MIN := BalanceData.get_value("chest_screen_spew_min", 1.2)
+static var SPEW_MAX := BalanceData.get_value("chest_screen_spew_max", 5.0)
 
 const BEAM_W := 46.0        # the bright rectangular core of the beam
 const GLOW_W := 132.0       # a wide faint halo behind it so the beam reads as light, not a bar
-const SPAWN_GAP := 0.07     # seconds between spewed items
-const PARTICLE_MAX := 44    # hard cap on live spew sprites
+static var SPAWN_GAP := BalanceData.get_value("chest_screen_spawn_gap", 0.07)     # seconds between spewed items
+static var PARTICLE_MAX := int(BalanceData.get_value("chest_screen_particle_max", 44.0))    # hard cap on live spew sprites
 
 var _active := false
 var _finished := false

@@ -27,10 +27,10 @@ const LEVELS_CSV := "res://data/lightning_levels.csv"
 static var _levels: Dictionary = {}   # int level -> {"amount": int, "bonus_damage": float, "area_mult": float}
 static var _levels_loaded := false
 
-const MAX_STRIKES := 6              # per-volley cap for the base ring (wiki Amount peaks at 6)
-const EVO_BONUS_STRIKES := 3        # Thunder Loop rains extra bolts on top of the level count…
-const EVO_MAX_STRIKES := 10         # …raising the per-volley cap so a maxed evolved ring saturates
-const EVO_SPLASH_MULT := 1.6        # Thunder Loop's blast is wider than the base ring's
+static var MAX_STRIKES: int = int(BalanceData.get_value("lightning_max_strikes", 6.0))              # per-volley cap for the base ring (wiki Amount peaks at 6)
+static var EVO_BONUS_STRIKES: int = int(BalanceData.get_value("lightning_evo_bonus_strikes", 3.0))        # Thunder Loop rains extra bolts on top of the level count…
+static var EVO_MAX_STRIKES: int = int(BalanceData.get_value("lightning_evo_max_strikes", 10.0))         # …raising the per-volley cap so a maxed evolved ring saturates
+static var EVO_SPLASH_MULT := BalanceData.get_value("lightning_evo_splash_mult", 1.6)        # Thunder Loop's blast is wider than the base ring's
 static var STRIKE_RADIUS := BalanceData.get_value("lightning_strike_radius", 46.0)  # AoE splash around each bolt's impact (before the per-level area_mult)
 ## Base cooldown + per-level shrink live in res://data/balance.csv ("lightning_base_interval" /
 ## "lightning_interval_per_level") so a designer can retune fire rate without touching this script.

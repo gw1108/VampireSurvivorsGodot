@@ -12,11 +12,11 @@ extends Node2D
 ## props (see VSWeapon._nearest_enemy) so it doesn't waste bolts on scenery, and the AgentBridge
 ## adapter reports candelabra as their own entity type, not as threats.
 
-const HEALTH := 6.0            # a couple of whip lashes / garlic pulses shatter it
-const RADIUS := 18.0           # hit radius the area weapons test against
+static var HEALTH := BalanceData.get_value("candelabra_health", 6.0)            # a couple of whip lashes / garlic pulses shatter it
+static var RADIUS := BalanceData.get_value("candelabra_radius", 18.0)           # hit radius the area weapons test against
 # The source candelabra.png is a 256px canvas — huge beside the ~40px player/enemies. Scale it
 # down to read as a believable tall light source (~1.5x player height), not a screen-filling prop.
-const SPRITE_SCALE := 0.28
+static var SPRITE_SCALE := BalanceData.get_value("candelabra_sprite_scale", 0.28)
 
 var run: VSRun
 var health := HEALTH

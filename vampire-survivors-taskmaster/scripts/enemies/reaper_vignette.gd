@@ -5,9 +5,9 @@ extends CanvasLayer
 ## needs a screen-space cue to read as an event (matching the HUD 'THE REAPER COMES'
 ## banner) rather than a silent pop-in. Purely cosmetic: self-frees, no gameplay state.
 
-const RISE := 0.15        # seconds to flash up to peak
-const FADE := 1.1         # seconds to bleed back out
-const PEAK_ALPHA := 0.55  # how solid the crimson edge gets at its height
+static var RISE := BalanceData.get_value("reaper_vignette_rise", 0.15)        # seconds to flash up to peak
+static var FADE := BalanceData.get_value("reaper_vignette_fade", 1.1)         # seconds to bleed back out
+static var PEAK_ALPHA := BalanceData.get_value("reaper_vignette_peak_alpha", 0.55)  # how solid the crimson edge gets at its height
 
 ## Flash a Reaper-arrival vignette over the whole screen, parented to `parent`.
 static func spawn(parent: Node) -> void:

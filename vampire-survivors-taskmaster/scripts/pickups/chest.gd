@@ -6,9 +6,9 @@ extends Node2D
 ## pixel-art chest sprite (art/pickup_chest.png) matching the other imported pickups, and does a
 ## quick lid-open pop when grabbed. Magnetizes at close range like the other pickups.
 
-const PICKUP := 26.0
-const MAGNET := 80.0
-const MAGNET_SPEED := 200.0
+static var PICKUP := BalanceData.get_value("chest_pickup_radius", 26.0)
+static var MAGNET := BalanceData.get_value("chest_magnet_radius", 80.0)
+static var MAGNET_SPEED := BalanceData.get_value("chest_magnet_speed", 200.0)
 
 var run: VSRun
 var _t := 0.0                 # bob timer

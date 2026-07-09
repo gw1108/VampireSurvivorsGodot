@@ -7,7 +7,7 @@ extends Node2D
 ## and inert). This is the slice's second, mechanically-distinct weapon so level-up
 ## "weapon choices" become real, not just stat buffs.
 
-const BASE_RADIUS := 74.0         # Lv1 aura radius; per-level Area growth lives in the CSV below
+static var BASE_RADIUS := BalanceData.get_value("garlic_base_radius", 74.0)         # Lv1 aura radius; per-level Area growth lives in the CSV below
 ## Per-level level-up table (wiki Garlic.md "Levels"), editable in res://data/garlic_levels.csv —
 ## one row per level with independently-tunable columns so a designer can retune ANY single level
 ## without touching this script. Values are cumulative absolutes (each row fully describes the
@@ -18,7 +18,7 @@ const BASE_RADIUS := 74.0         # Lv1 aura radius; per-level Area growth lives
 const LEVELS_CSV := "res://data/garlic_levels.csv"
 static var _levels: Dictionary = {}   # int level -> {"bonus_damage": float, "area_mult": float, "cooldown": float}
 static var _levels_loaded := false
-const FLASH_TIME := 0.18          # aura brightens briefly on each pulse
+static var FLASH_TIME := BalanceData.get_value("garlic_flash_time", 0.18)          # aura brightens briefly on each pulse
 
 ## Aura VFX: SourceArt/sheets/Poof.png, a puff that blooms into a solid ring then cracks
 ## apart into fragments — reads as a ground aura, unlike the warrior pack's claw-slash VFX
@@ -46,8 +46,8 @@ static var BASE_DAMAGE := BalanceData.get_value("garlic_base_damage", 5.0)
 # Evolved (Soul Eater) profile — applied when run.garlic_evolved: a wider, far deadlier
 # devouring aura. Gated on Garlic already being maxed, so this is the run's payoff for
 # maxing Garlic + owning Swift Boots.
-const EVOLVED_DAMAGE_MULT := 2.5
-const EVOLVED_RADIUS_BONUS := 40.0   # px added to the aura radius
+static var EVOLVED_DAMAGE_MULT := BalanceData.get_value("garlic_evolved_damage_mult", 2.5)
+static var EVOLVED_RADIUS_BONUS := BalanceData.get_value("garlic_evolved_radius_bonus", 40.0)   # px added to the aura radius
 
 var run: VSRun
 var _cd := 0.0

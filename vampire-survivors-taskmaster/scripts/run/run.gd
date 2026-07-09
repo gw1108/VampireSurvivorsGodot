@@ -23,16 +23,16 @@ var _cam: Camera2D
 # ~0.2s and the per-frame offset scales with trauma^2 so a small hit reads as a subtle
 # jolt, not nausea. Kept intentionally small — see FEEL-REVIEW's "no screen shake" note.
 var _shake_trauma := 0.0
-const SHAKE_DECAY := 5.0          # trauma/sec — full trauma dissipates in ~0.2s
-const SHAKE_MAX_OFFSET := 14.0    # px of offset at trauma 1.0
+static var SHAKE_DECAY := BalanceData.get_value("run_shake_decay", 5.0)          # trauma/sec — full trauma dissipates in ~0.2s
+static var SHAKE_MAX_OFFSET := BalanceData.get_value("run_shake_max_offset", 14.0)    # px of offset at trauma 1.0
 
 # Evolution slow-mo: on the run's rarest power spike (a weapon fusion) we dip Engine.time_scale
 # for a brief bullet-time beat, then ease it back to 1.0, so the moment lands with real heft.
 # Driven off the wall clock (Time.get_ticks_msec, unaffected by time_scale) rather than the
 # scaled process delta, so the recovery always finishes in SLOWMO_DURATION real seconds and
 # restores time_scale cleanly no matter how far it dipped. See _celebrate_evolution / _update_slowmo.
-const SLOWMO_SCALE := 0.4         # dip target — 40% speed at the instant of the fusion
-const SLOWMO_DURATION := 0.15     # real seconds to ease from SLOWMO_SCALE back up to 1.0
+static var SLOWMO_SCALE := BalanceData.get_value("run_slowmo_scale", 0.4)         # dip target — 40% speed at the instant of the fusion
+static var SLOWMO_DURATION := BalanceData.get_value("run_slowmo_duration", 0.15)     # real seconds to ease from SLOWMO_SCALE back up to 1.0
 var _slowmo_active := false
 var _slowmo_start_ms := 0
 
@@ -91,7 +91,7 @@ var xp := 0
 var level := 1
 var gold := 0                   # run coins banked from coin pickups; seed of the VS meta-currency
 var frame_tick := 0
-var arena_half := Vector2(900, 700)   # world half-extent around origin
+var arena_half := Vector2(BalanceData.get_value("run_arena_half_x", 900.0), BalanceData.get_value("run_arena_half_y", 700.0))   # world half-extent around origin
 
 # Run-level stats mutated by level-up upgrades. Weapon/projectile/player read these so
 # a single pickup meaningfully changes how the run plays.
@@ -149,6 +149,8 @@ var _pending_levels := 0        # level-ups queued but not yet chosen (XP can sp
 ## resolved (picked or skipped); rerolls don't advance it, so a rerolled first/second hand
 ## stays weapons-only. Read in _roll_upgrades.
 var _levelups_resolved := 0
+## How many of the first resolved level-up hands are weapons-only (see _roll_upgrades).
+static var WEAPONS_ONLY_LEVELUPS := int(BalanceData.get_value("run_weapons_only_levelups", 2.0))
 
 ## Carries the sub-integer remainder when xp_gain_mult scales a gem's XP, so the Growth
 ## passive isn't lost to rounding on the many 1-XP gems — fractions bank until they make a
@@ -175,7 +177,7 @@ static var BONUS_CHICKEN_HEAL := BalanceData.get_value("bonus_chicken_heal", 30.
 ## a meaningful choice, not a slot machine. This is the BASE budget; the Reroll PowerUp
 ## (see POWERUPS / _apply_meta_powerups) adds to it, and a rare candelabra bonus grants +1
 ## mid-run (see drop_candelabra_bonus), so build agency scales with investment.
-var rerolls_left := 3
+var rerolls_left := int(BalanceData.get_value("run_base_rerolls", 3.0))
 
 ## Discrete level per upgrade id (0 = never picked). Incremented on each pick and used
 ## to (a) cap upgrades at their `max` so the pool shrinks as things top out — no infinite
@@ -191,6 +193,11 @@ var upgrade_levels := {}
 static var MAX_WEAPONS := int(BalanceData.get_value("max_weapons", 6.0))
 static var MAX_PASSIVES := int(BalanceData.get_value("max_passives", 6.0))
 
+## How many cards a level-up hand offers, and the widened size a winning Luck "fourth option"
+## roll grants (see _roll_upgrades / _chance_fourth_option).
+static var UPGRADE_HAND_SIZE := int(BalanceData.get_value("run_upgrade_hand_size", 3.0))
+static var UPGRADE_HAND_SIZE_LUCKY := int(BalanceData.get_value("run_upgrade_hand_size_lucky", 4.0))
+
 ## The eight auto-firing weapons in UPGRADE_POOL; every other pool id is a passive stat item.
 ## `multishot` is Antonio's Magic Wand (each pick levels it via data/magic_wand_levels.csv). Used to bucket a pool entry as
 ## weapon-vs-passive when enforcing the inventory cap above.
@@ -199,24 +206,28 @@ const WEAPON_IDS := ["multishot", "garlic", "whip", "bible", "lightning", "knife
 ## Pool the level-up screen draws 3 distinct choices from each time. `max` is the highest
 ## level each upgrade reaches — weapons cap at 8 (VS convention), passives lower — after
 ## which it stops appearing in the roll.
-## Passive-item `desc` strings are the offline-wiki Passive_Items.md captions VERBATIM (punctuation
-## and pluralization included) — passive items show the same description at every level in VS, so the
-## static desc is wiki-exact for all levels. Weapon `desc` here is only a fallback: LEVEL_DESCRIPTIONS
-## overrides each weapon card with its per-level wiki caption (see _roll_upgrades). Armor drops the
-## wiki's "Increases retaliatory damage by 10%" clause because retaliatory damage isn't in the slice.
-const UPGRADE_POOL := [
-	{"id": "damage", "title": "Spinach", "desc": "Raises inflicted damage by 10%.", "max": 5},
-	{"id": "firerate", "title": "Empty Tome", "desc": "Reduces weapons cooldown by 8%.", "max": 5},
-	{"id": "speed", "title": "Wings", "desc": "Character moves 10% faster.", "max": 5},
-	{"id": "health", "title": "Hollow Heart", "desc": "Augments max health by 20%.", "max": 5},
+## Passive-item `desc` strings render the offline-wiki Passive_Items.md captions (punctuation and
+## pluralization included) — passive items show the same description at every level in VS. The
+## NUMBERS are templated from the same balance.csv rows that drive the effects (the *_PER_PICK
+## static vars further down — read via get_value here because static vars initialize in declaration
+## order), so at the default values each caption is wiki-exact and a retune keeps the text honest.
+## Weapon `desc` here is only a fallback: LEVEL_DESCRIPTIONS overrides each weapon card with its
+## per-level wiki caption (see _roll_upgrades). Armor drops the wiki's "Increases retaliatory
+## damage by 10%" clause because retaliatory damage isn't in the slice. Hollow Heart's effect is
+## FLAT HP in this slice, so its wiki percent caption is rendered as the flat gain over base max HP.
+static var UPGRADE_POOL := [
+	{"id": "damage", "title": "Spinach", "desc": "Raises inflicted damage by %d%%." % roundi(BalanceData.get_value("run_spinach_might_per_pick", 0.1) * 100), "max": 5},
+	{"id": "firerate", "title": "Empty Tome", "desc": "Reduces weapons cooldown by %d%%." % roundi(BalanceData.get_value("run_empty_tome_haste_per_pick", 0.08) * 100), "max": 5},
+	{"id": "speed", "title": "Wings", "desc": "Character moves %d%% faster." % roundi(BalanceData.get_value("run_wings_speed_per_pick", 0.1) * 100), "max": 5},
+	{"id": "health", "title": "Hollow Heart", "desc": "Augments max health by %d%%." % roundi(BalanceData.get_value("run_hollow_heart_hp", 20.0) / BalanceData.get_value("player_max_health", 100.0) * 100), "max": 5},
 	{"id": "multishot", "title": "Magic Wand", "desc": "Fires at the nearest enemy.", "max": 8},
-	{"id": "area", "title": "Candelabrador", "desc": "Augments area of attacks by 10%.", "max": 5},
-	{"id": "projspeed", "title": "Bracer", "desc": "Increases projectiles speed by 10%.", "max": 5},
+	{"id": "area", "title": "Candelabrador", "desc": "Augments area of attacks by %d%%." % roundi(BalanceData.get_value("run_candelabrador_area_per_pick", 0.1) * 100), "max": 5},
+	{"id": "projspeed", "title": "Bracer", "desc": "Increases projectiles speed by %d%%." % roundi(BalanceData.get_value("run_bracer_proj_speed_per_pick", 0.1) * 100), "max": 5},
 	{"id": "attract", "title": "Attractorb", "desc": "Character pickups items from further away.", "max": 5},
-	{"id": "growth", "title": "Crown", "desc": "Character gains 8% more experience.", "max": 5},
-	{"id": "armor", "title": "Armor", "desc": "Reduces incoming damage by 1.", "max": 5},
-	{"id": "recovery", "title": "Pummarola", "desc": "Character recovers 0.2 HP per second.", "max": 5},
-	{"id": "luck", "title": "Clover", "desc": "Character gets 10% luckier.", "max": 5},
+	{"id": "growth", "title": "Crown", "desc": "Character gains %d%% more experience." % roundi(BalanceData.get_value("run_crown_growth_per_pick", 0.08) * 100), "max": 5},
+	{"id": "armor", "title": "Armor", "desc": "Reduces incoming damage by %d." % int(BalanceData.get_value("run_armor_per_pick", 1.0)), "max": 5},
+	{"id": "recovery", "title": "Pummarola", "desc": "Character recovers %s HP per second." % String.num(BalanceData.get_value("run_pummarola_recovery_per_pick", 0.2)), "max": 5},
+	{"id": "luck", "title": "Clover", "desc": "Character gets %d%% luckier." % roundi(BalanceData.get_value("run_clover_luck_per_pick", 10.0)), "max": 5},
 	{"id": "garlic", "title": "Garlic", "desc": "Damaging aura around you (grows each pick)", "max": 8},
 	{"id": "whip", "title": "Whip", "desc": "Melee arc lashing your facing side; both sides at Lv 2+", "max": 8},
 	{"id": "bible", "title": "King Bible", "desc": "Holy books orbit you, striking enemies they pass through", "max": 8},
@@ -350,12 +361,15 @@ const EVOLUTIONS := [
 ## boosts a starting stat, applied fresh every run start via _apply_meta_powerups. Levels
 ## + coins persist in MetaSave (user://meta_save.json); the shop screen reads this catalog
 ## for its rows (title/desc/cost/max) exactly as the level-up screen reads UPGRADE_POOL.
-const POWERUPS := [
-	{"id": "might", "title": "Might", "desc": "+2 starting weapon damage per level", "cost": 60, "max": 5},
-	{"id": "armor", "title": "Armor", "desc": "+20 max HP per level", "cost": 80, "max": 5},
-	{"id": "haste", "title": "Cooldown", "desc": "-5% weapon cooldown per level", "cost": 100, "max": 5},
-	{"id": "boots", "title": "Moonwalker", "desc": "+5% move speed per level", "cost": 70, "max": 5},
-	{"id": "reroll", "title": "Reroll", "desc": "+1 level-up reroll per run per level", "cost": 90, "max": 5},
+## Descs are templated from the same balance.csv rows that drive the effects (declared as the
+## SHOP_*/META_* static vars further down — read via get_value here because static vars
+## initialize in declaration order), so a retune shows up in the shop text automatically.
+static var POWERUPS := [
+	{"id": "might", "title": "Might", "desc": "+%d%% weapon damage per level" % roundi(BalanceData.get_value("shop_might_per_level", 0.10) * 100), "cost": int(BalanceData.get_value("shop_might_cost", 60.0)), "max": 5},
+	{"id": "armor", "title": "Armor", "desc": "+%d max HP per level" % roundi(BalanceData.get_value("shop_armor_hp_per_level", 20.0)), "cost": int(BalanceData.get_value("shop_armor_cost", 80.0)), "max": 5},
+	{"id": "haste", "title": "Cooldown", "desc": "-%d%% weapon cooldown per level" % roundi((1.0 - BalanceData.get_value("shop_haste_mult_per_level", 0.95)) * 100), "cost": int(BalanceData.get_value("shop_haste_cost", 100.0)), "max": 5},
+	{"id": "boots", "title": "Moonwalker", "desc": "+%d%% move speed per level" % roundi((BalanceData.get_value("shop_boots_mult_per_level", 1.05) - 1.0) * 100), "cost": int(BalanceData.get_value("shop_boots_cost", 70.0)), "max": 5},
+	{"id": "reroll", "title": "Reroll", "desc": "+1 level-up reroll per run per level", "cost": int(BalanceData.get_value("shop_reroll_cost", 90.0)), "max": 5},
 ]
 
 ## Coin price of buying the NEXT PowerUp level, given its catalog `base` cost and the count
@@ -405,9 +419,8 @@ func _build_world() -> void:
 
 	_cam = Camera2D.new()
 	_cam.position_smoothing_enabled = true
-	# Zoom < 1 zooms the camera out, so the player and everything else read ~20% smaller.
-	# Editable via data/balance.csv (camera_zoom); defaults to 0.8.
-	var cam_zoom := BalanceData.get_value("camera_zoom", 0.8)
+	# Zoom < 1 zooms the camera out; the CSV row (camera_zoom) is the source of truth.
+	var cam_zoom := BalanceData.get_value("camera_zoom", 1.35)
 	_cam.zoom = Vector2(cam_zoom, cam_zoom)
 	player.add_child(_cam)
 	_cam.make_current()
@@ -524,12 +537,14 @@ func _build_world() -> void:
 ## (120 total) and +1 Armor, and gains +10% Might (a global weapon-damage multiplier, see
 ## might_mult) every 10 levels. Applied once at run start; upgrade_levels["whip"] is kept in
 ## lock-step with whip_level so the HUD build panel and level-up cap logic see the whip owned at Lv 1.
+static var ANTONIO_BONUS_HP := BalanceData.get_value("run_antonio_bonus_hp", 20.0)
+static var ANTONIO_BONUS_ARMOR := int(BalanceData.get_value("run_antonio_bonus_armor", 1.0))
 func _init_character() -> void:
 	whip_level = 1
 	upgrade_levels["whip"] = 1
-	armor += 1
+	armor += ANTONIO_BONUS_ARMOR
 	if player:
-		player.max_health += 20.0
+		player.max_health += ANTONIO_BONUS_HP
 		player.health = player.max_health
 
 ## Antonio's signature Might scaling: +10% weapon Damage for every 10 character levels,
@@ -542,10 +557,15 @@ func might_mult() -> float:
 ## The Spinach (Power) passive: "Raises inflicted damage by 10%" per pick — a flat +10% Might
 ## multiplier, max 5 picks => +50%, matching the offline wiki (Passive_Items.md / Spinach.md).
 ## Applied build-wide via power_mult() so EVERY owned weapon hits harder, the Magic Wand included.
-const POWER_MULT_PER_PICK := 0.1   # +10% Might per Spinach pick, max 5 picks => +50%
+static var POWER_MULT_PER_PICK := BalanceData.get_value("run_spinach_might_per_pick", 0.1)   # +10% Might per Spinach pick, max 5 picks => +50%
 ## Meta "Might" shop upgrade's build-wide slice: +10% weapon damage per level (max 5 levels => +50%),
 ## stacked into power_mult via meta_power_mult so it reaches EVERY weapon, the wand included.
-const META_MIGHT_MULT_PER_LEVEL := 0.10
+static var META_MIGHT_MULT_PER_LEVEL := BalanceData.get_value("shop_might_per_level", 0.10)
+## Meta shop per-level effect scalars for the other PowerUps (see POWERUPS descs — keep in sync):
+## Armor = flat max-HP per level; Cooldown / Moonwalker = the multiplier compounded per level.
+static var SHOP_ARMOR_HP_PER_LEVEL := BalanceData.get_value("shop_armor_hp_per_level", 20.0)
+static var SHOP_HASTE_MULT_PER_LEVEL := BalanceData.get_value("shop_haste_mult_per_level", 0.95)
+static var SHOP_BOOTS_MULT_PER_LEVEL := BalanceData.get_value("shop_boots_mult_per_level", 1.05)
 ## Spinach-only multiplier (the +10%/pick Might from Power picks), WITHOUT the meta Might slice.
 ## Folded into power_mult() below.
 func spinach_mult() -> float:
@@ -571,8 +591,8 @@ func _sync_wand_display() -> void:
 ## included, via weapon.gd) multiplies its base attack interval by this. Empty Tome is -8%
 ## Cooldown per level, additive, capped at -40% (5 levels) — see the wiki Empty_Tome.md. Additive
 ## (not compounding) so five picks land exactly on the wiki's -40%, not pow(0.92,5).
-const HASTE_REDUCTION_PER_PICK := 0.08   # -8% cooldown per Empty Tome pick
-const HASTE_REDUCTION_MAX := 0.40        # cap at -40% total (5 picks)
+static var HASTE_REDUCTION_PER_PICK := BalanceData.get_value("run_empty_tome_haste_per_pick", 0.08)   # -8% cooldown per Empty Tome pick
+static var HASTE_REDUCTION_MAX := BalanceData.get_value("run_empty_tome_haste_max", 0.40)        # cap at -40% total (5 picks)
 func haste_mult() -> float:
 	var reduction := minf(HASTE_REDUCTION_MAX, HASTE_REDUCTION_PER_PICK * float(upgrade_levels.get("firerate", 0)))
 	return meta_haste_mult * (1.0 - reduction)
@@ -581,10 +601,17 @@ func haste_mult() -> float:
 ## each pick adds a FIXED slice of the base, so 5 picks land exactly on the wiki's documented max
 ## (Wings/Candelabrador/Bracer +10%/pick -> +50%, Crown +8%/pick -> +40%) instead of compounding
 ## past it (1.1^5 = +61%). Applied in _apply_upgrade by recomputing the mult from upgrade_levels.
-const MOVE_SPEED_PER_PICK := 0.10   # Wings: +10% Move Speed per pick, max 5 => +50%
-const AREA_PER_PICK := 0.10         # Candelabrador: +10% Area per pick, max 5 => +50%
-const PROJ_SPEED_PER_PICK := 0.10   # Bracer: +10% projectile speed per pick, max 5 => +50%
-const GROWTH_PER_PICK := 0.08       # Crown: +8% Growth per pick, max 5 => +40%
+static var MOVE_SPEED_PER_PICK := BalanceData.get_value("run_wings_speed_per_pick", 0.10)   # Wings: +10% Move Speed per pick, max 5 => +50%
+static var AREA_PER_PICK := BalanceData.get_value("run_candelabrador_area_per_pick", 0.10)         # Candelabrador: +10% Area per pick, max 5 => +50%
+static var PROJ_SPEED_PER_PICK := BalanceData.get_value("run_bracer_proj_speed_per_pick", 0.10)   # Bracer: +10% projectile speed per pick, max 5 => +50%
+static var GROWTH_PER_PICK := BalanceData.get_value("run_crown_growth_per_pick", 0.08)       # Crown: +8% Growth per pick, max 5 => +40%
+## Flat per-pick passive gains for the remaining non-multiplier passives (wiki captions verbatim:
+## Armor "Reduces incoming damage by 1", Pummarola "+0.2 HP per second", Clover "10% luckier",
+## Hollow Heart flat +20 max HP per pick in this slice).
+static var HOLLOW_HEART_HP := BalanceData.get_value("run_hollow_heart_hp", 20.0)
+static var ARMOR_PER_PICK := int(BalanceData.get_value("run_armor_per_pick", 1.0))
+static var RECOVERY_PER_PICK := BalanceData.get_value("run_pummarola_recovery_per_pick", 0.2)
+static var CLOVER_LUCK_PER_PICK := BalanceData.get_value("run_clover_luck_per_pick", 10.0)
 
 ## Attractorb's per-level Magnet total (res://data/passive_attract.csv, "level,pickup_range_mult").
 ## Unlike the four additive passives above, each level is an absolute multiplier of a different size
@@ -642,18 +669,18 @@ func _apply_meta_powerups() -> void:
 		meta_power_mult *= 1.0 + META_MIGHT_MULT_PER_LEVEL * might
 	var armor := int(levels.get("armor", 0))
 	if armor > 0 and player:
-		player.max_health += 20.0 * armor
+		player.max_health += SHOP_ARMOR_HP_PER_LEVEL * armor
 		player.health = player.max_health
 	var haste := int(levels.get("haste", 0))
 	if haste > 0:
 		# Meta Cooldown folds into meta_haste_mult, which haste_mult() applies to EVERY weapon
 		# (the wand now reads haste_mult() too — see weapon.gd), so a single fold here reaches all.
-		meta_haste_mult *= pow(0.95, haste)
+		meta_haste_mult *= pow(SHOP_HASTE_MULT_PER_LEVEL, haste)
 	var boots := int(levels.get("boots", 0))
 	if boots > 0:
 		# Meta Boots is the multiplicative baseline; Wings picks stack additively on top of it in
 		# _apply_upgrade (player_speed_mult = meta_speed_mult * additive Wings total).
-		meta_speed_mult *= pow(1.05, boots)
+		meta_speed_mult *= pow(SHOP_BOOTS_MULT_PER_LEVEL, boots)
 		player_speed_mult = meta_speed_mult * (1.0 + MOVE_SPEED_PER_PICK * float(upgrade_levels.get("speed", 0)))
 	var reroll := int(levels.get("reroll", 0))
 	if reroll > 0:
@@ -746,7 +773,7 @@ func _on_player_damaged(_amount: float) -> void:
 ## Lives in res://data/balance.csv so a designer can retune the curve without touching this
 ## script, same as the weapon damage/interval and player speed tunables above.
 static var GEM_DROP_FLOOR_HP := BalanceData.get_value("gem_drop_floor_hp", 15.0)
-static var GEM_DROP_FLOOR_CHANCE := BalanceData.get_value("gem_drop_floor_chance", 0.25)
+static var GEM_DROP_FLOOR_CHANCE := BalanceData.get_value("gem_drop_floor_chance", 0.3)
 static var GEM_DROP_CEIL_HP := BalanceData.get_value("gem_drop_ceil_hp", 180.0)
 
 func _gem_drop_chance(enemy_max_health: float) -> float:
@@ -862,6 +889,14 @@ var chests_opened := 0
 ## chests settle to a single item. Luck scaling that would bump these is base-100% in this slice.
 const CHEST_LUCK_SEQ := [1, 1, 3, 1, 1, 5]
 
+## Chest coin payout: each granted item rolls gold in [min, max], and every item that COULDN'T be
+## granted (build fully maxed) converts to a flat extra gold instead (see open_chest).
+static var CHEST_GOLD_MIN := int(BalanceData.get_value("run_chest_gold_min", 4.0))
+static var CHEST_GOLD_MAX := int(BalanceData.get_value("run_chest_gold_max", 8.0))
+static var CHEST_MAXED_ITEM_GOLD := int(BalanceData.get_value("run_chest_maxed_item_gold", 12.0))
+## Chance an opened chest also coughs up a consumable treat (Nduja/Rosary/Orologion).
+static var CHEST_CONSUMABLE_CHANCE := BalanceData.get_value("run_chest_consumable_chance", 0.15)
+
 ## Drop a Treasure Chest at an elite (mini-boss) kill — the VS "bosses drop chests" build-spike.
 ## Guaranteed per elite so power ramps on the ~35s elite cadence (the GDD's answer to the lean
 ## slice being hard past the midpoint). Suppressed once the finale Reaper is loose: that kill ends
@@ -895,7 +930,7 @@ func open_chest(at: Vector2) -> void:
 		ids.append(id)
 		titles.append(_upgrade_title(id))
 		granted += 1
-	var gold_award := count * randi_range(4, 8) + (count - granted) * 12
+	var gold_award := count * randi_range(CHEST_GOLD_MIN, CHEST_GOLD_MAX) + (count - granted) * CHEST_MAXED_ITEM_GOLD
 	add_gold(gold_award)
 	# Freeze the run (entities gate on phase != "playing", like the level-up picker) and play the
 	# chest-open reveal animation; the player resumes it via Continue -> _on_chest_continue.
@@ -921,7 +956,7 @@ func _on_chest_continue() -> void:
 ## lucky surprise; when it fires it picks one of the three treats at random. Spawned at the
 ## player (the chest's own position, where they're standing) so it's grabbed almost instantly.
 func _maybe_drop_chest_consumable(at: Vector2) -> void:
-	if randf() >= 0.15:
+	if randf() >= CHEST_CONSUMABLE_CHANCE:
 		return
 	var here := player.position if (player != null and is_instance_valid(player)) else at
 	var node: Node2D
@@ -980,8 +1015,8 @@ func _maybe_drop_gold_fever_coin(at: Vector2) -> void:
 
 ## How many candelabra to scatter at run start, and how far from the player's origin the
 ## nearest may sit so they read as something to reach for rather than free at spawn.
-const CANDELABRA_COUNT := 6
-const CANDELABRA_MIN_DIST := 260.0
+static var CANDELABRA_COUNT := int(BalanceData.get_value("run_candelabra_count", 6.0))
+static var CANDELABRA_MIN_DIST := BalanceData.get_value("run_candelabra_min_dist", 260.0)
 
 ## Scatter the run's destructible candelabra across the arena (called once at run start).
 ## Placed at random interior points, nudged away from the player's start so they reward moving.
@@ -1138,7 +1173,7 @@ func _spawn_gems(at: Vector2, total_xp: int, count: int) -> void:
 ## GDD leveling rule: at most MAX_GROUND_GEMS loose XP gems exist on the ground at once; any
 ## excess merges into a single (red) gem. Bounds the live gem-node count so a late-game field
 ## that out-drops the player's pickup rate never balloons into thousands of per-frame nodes.
-const MAX_GROUND_GEMS := 400
+static var MAX_GROUND_GEMS := int(BalanceData.get_value("run_max_ground_gems", 400.0))
 
 func _spawn_gem(at: Vector2, xp_value: int = 1) -> void:
 	# On-ground gem cap: once the field already holds MAX_GROUND_GEMS gems, fold this drop's XP
@@ -1193,13 +1228,24 @@ func collect_xp(amount: int) -> void:
 # steepening at level 20 and 40, mirroring the game's formula changes so late
 # level-ups slow down and the weapon/passive max-level caps get approached over
 # a run rather than instantly. Level 1 still costs 5 to preserve the early pace.
+# The tier BASE rows are coupled to the steps for curve continuity (tier2 base =
+# the tier-1 cost at the level just before the tier-2 threshold, and likewise for
+# tier 3) — retune them together in balance.csv or the curve will jump at the seams.
+static var XP_BASE := int(BalanceData.get_value("run_xp_base", 5.0))
+static var XP_STEP_T1 := int(BalanceData.get_value("run_xp_step_t1", 10.0))
+static var XP_TIER2_LEVEL := int(BalanceData.get_value("run_xp_tier2_level", 20.0))
+static var XP_TIER2_BASE := int(BalanceData.get_value("run_xp_tier2_base", 185.0))
+static var XP_STEP_T2 := int(BalanceData.get_value("run_xp_step_t2", 13.0))
+static var XP_TIER3_LEVEL := int(BalanceData.get_value("run_xp_tier3_level", 40.0))
+static var XP_TIER3_BASE := int(BalanceData.get_value("run_xp_tier3_base", 445.0))
+static var XP_STEP_T3 := int(BalanceData.get_value("run_xp_step_t3", 16.0))
 func _xp_to_next(lv: int) -> int:
-	if lv < 20:
-		return 5 + (lv - 1) * 10
-	elif lv < 40:
-		return 185 + (lv - 19) * 13
+	if lv < XP_TIER2_LEVEL:
+		return XP_BASE + (lv - 1) * XP_STEP_T1
+	elif lv < XP_TIER3_LEVEL:
+		return XP_TIER2_BASE + (lv - XP_TIER2_LEVEL + 1) * XP_STEP_T2
 	else:
-		return 445 + (lv - 39) * 16
+		return XP_TIER3_BASE + (lv - XP_TIER3_LEVEL + 1) * XP_STEP_T3
 
 func _open_level_up() -> void:
 	var options := _roll_upgrades()
@@ -1244,7 +1290,7 @@ func _roll_upgrades() -> Array:
 	# Fill the remaining slots with normal not-yet-maxed upgrades.
 	# The first two resolved level-ups offer weapons only — passive stat items are withheld so a
 	# fresh run leads with weapon choices (see _levelups_resolved).
-	var weapons_only := _levelups_resolved < 2
+	var weapons_only := _levelups_resolved < WEAPONS_ONLY_LEVELUPS
 	var pool := []
 	for opt in UPGRADE_POOL:
 		if weapons_only and not WEAPON_IDS.has(opt["id"]):
@@ -1287,7 +1333,7 @@ func _roll_upgrades() -> Array:
 	# from 3 to 4 REAL cards. The extra slot is only granted when a genuine upgrade can fill it —
 	# it is never padded with consolation below, so stacking Luck feels like more real choices, not
 	# more filler. Base Luck (100) never triggers it; Clover / Little Clover / a Luck PowerUp do.
-	var max_real := 4 if randf() < _chance_fourth_option() else 3
+	var max_real := UPGRADE_HAND_SIZE_LUCKY if randf() < _chance_fourth_option() else UPGRADE_HAND_SIZE
 	for opt in pool:
 		if options.size() >= max_real:
 			break
@@ -1306,7 +1352,7 @@ func _roll_upgrades() -> Array:
 		{"id": "bonus_gold_big", "title": "Gold Sack", "desc": "+%d Gold" % BONUS_GOLD_BIG_AMOUNT},
 	]
 	var pi := 0
-	while options.size() < 3:
+	while options.size() < UPGRADE_HAND_SIZE:
 		options.append(pad[pi % pad.size()].duplicate())
 		pi += 1
 	return options.slice(0, max_real)
@@ -1406,8 +1452,8 @@ func _apply_upgrade(id: String) -> void:
 			player_speed_mult = meta_speed_mult * (1.0 + MOVE_SPEED_PER_PICK * float(upgrade_levels["speed"]))
 		"health":
 			if player:
-				player.max_health += 20.0
-				player.health = minf(player.max_health, player.health + 20.0)
+				player.max_health += HOLLOW_HEART_HP
+				player.health = minf(player.max_health, player.health + HOLLOW_HEART_HP)
 		"multishot":
 			# The Magic Wand's level-up card: level the wand (data/magic_wand_levels.csv drives its
 			# amount / bonus damage / pierce / cooldown), then mirror the new stats into the HUD.
@@ -1428,11 +1474,11 @@ func _apply_upgrade(id: String) -> void:
 			# Crown: additive +8%/pick (max 5 => +40%), not compounding.
 			xp_gain_mult = 1.0 + GROWTH_PER_PICK * float(upgrade_levels["growth"])
 		"armor":
-			armor += 1
+			armor += ARMOR_PER_PICK
 		"recovery":
-			recovery += 0.2   # +0.2 HP/s per level, additive; max level 5 = +1.0 HP/s (Pummarola)
+			recovery += RECOVERY_PER_PICK   # +0.2 HP/s per level, additive; max level 5 = +1.0 HP/s (Pummarola)
 		"luck":
-			luck_bonus += 10.0
+			luck_bonus += CLOVER_LUCK_PER_PICK
 		"garlic":
 			garlic_level += 1
 		"whip":

@@ -10,7 +10,7 @@ extends Node2D
 ## Antonio does not start with it — his starting weapon is the Whip, see VSRun._init_character).
 
 static var RANGE := BalanceData.get_value("magic_wand_range", 620.0)   # aim-acquire radius: nearest enemy within this is targeted
-const SPREAD := 0.14            # radians between extra multishot projectiles
+static var SPREAD := BalanceData.get_value("magic_wand_spread", 0.14)            # radians between extra multishot projectiles
 
 ## Lv1 base damage lives in res://data/balance.csv ("magic_wand_base_damage", wiki base 10); the flat
 ## per-level bonus on top of it lives per-level in data/magic_wand_levels.csv (see LEVELS_CSV below).
@@ -33,10 +33,10 @@ static var _levels_loaded := false
 # Evolved (Holy Wand) profile — applied when run.projectile_evolved: the Magic Wand becomes a
 # relentless piercing storm. Gated on Multishot being maxed + Haste owned, so this is the run's
 # payoff for maxing the projectile line. Mirrors the King Bible / Bloody Tear evolution pattern.
-const EVOLVED_EXTRA_SHOTS := 2      # +2 bolts on top of the current multishot count
-const EVOLVED_DAMAGE_MULT := 1.6
-const EVOLVED_CD_MULT := 0.6        # fires markedly faster
-const EVOLVED_PIERCE := 3           # each bolt passes through 3 further enemies
+static var EVOLVED_EXTRA_SHOTS: int = int(BalanceData.get_value("magic_wand_evolved_extra_shots", 2.0))      # +2 bolts on top of the current multishot count
+static var EVOLVED_DAMAGE_MULT := BalanceData.get_value("magic_wand_evolved_damage_mult", 1.6)
+static var EVOLVED_CD_MULT := BalanceData.get_value("magic_wand_evolved_cd_mult", 0.6)        # fires markedly faster
+static var EVOLVED_PIERCE: int = int(BalanceData.get_value("magic_wand_evolved_pierce", 3.0))           # each bolt passes through 3 further enemies
 
 var run: VSRun
 var _cd := 0.0

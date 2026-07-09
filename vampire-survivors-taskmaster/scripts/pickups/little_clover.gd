@@ -6,13 +6,13 @@ extends Node2D
 ## affected by Luck: No"), and it can be collected an unlimited number of times per run —
 ## there is no cap, so run.luck_bonus simply keeps stacking.
 
-const PICKUP := 26.0
-const MAGNET := 110.0            # same wide grab as the Rosary/Nduja/Orologion treats
-const MAGNET_SPEED := 240.0
-const LUCK_GAIN := 10.0          # % Luck granted per pickup (Little_Clover.md)
+static var PICKUP := BalanceData.get_value("little_clover_pickup_radius", 26.0)
+static var MAGNET := BalanceData.get_value("little_clover_magnet_radius", 110.0)            # same wide grab as the Rosary/Nduja/Orologion treats
+static var MAGNET_SPEED := BalanceData.get_value("little_clover_magnet_speed", 240.0)
+static var LUCK_GAIN := BalanceData.get_value("little_clover_luck_gain", 10.0)          # % Luck granted per pickup (Little_Clover.md)
 # The source clover_green.png is a 256px canvas — huge beside the ~40px player/enemies.
 # Scale it down to read as a proper grabbable pickup, matching the arena's sprite scale.
-const SPRITE_SCALE := 0.14
+static var SPRITE_SCALE := BalanceData.get_value("little_clover_sprite_scale", 0.14)
 const LUCKY_GREEN := Color(0.5, 1.0, 0.5)
 
 var run: VSRun
@@ -49,5 +49,5 @@ func _collect() -> void:
 	var parent := get_parent()
 	if parent != null:
 		VSPickupFlash.spawn(parent, position, LUCKY_GREEN)
-		VSFloatText.spawn(parent, position, "+10% Luck", LUCKY_GREEN)
+		VSFloatText.spawn(parent, position, "+%d%% Luck" % roundi(LUCK_GAIN), LUCKY_GREEN)
 	queue_free()

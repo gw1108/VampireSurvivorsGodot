@@ -4,7 +4,7 @@ extends Node2D
 ## player; the base trickle's rate and concurrent-count follow Mad Forest's real
 ## per-minute spawn table (see DENSITY_SCHEDULE). Capped for performance.
 
-const MAX_ENEMIES := 150        # baseline concurrent-enemy render budget for most of the run
+static var MAX_ENEMIES: int = int(BalanceData.get_value("spawner_max_enemies", 150.0))        # baseline concurrent-enemy render budget for most of the run
 # The mid-run DENSITY_SCHEDULE spikes (11:00 -> 300, 13:00 -> 150, 15:00/16:00/19:00/20:00 -> 100)
 # now read on screen: at 150 the authored 150-count surges crest fully, and even the 300-count
 # spikes read as a dense 150+ crush that keeps climbing (the cap ramps toward 300 from 11:00 on, see
@@ -17,7 +17,7 @@ const MAX_ENEMIES := 150        # baseline concurrent-enemy render budget for mo
 # Late-run escalation lever. The wiki's DENSITY_SCHEDULE climbs to 300 in the endgame; the cap ramps
 # up over the back half of the run so that late escalation shows on screen, up to the GDD's "periodic
 # spawns stop at 300 alive" — the real Mad Forest late population.
-const MAX_ENEMIES_LATE := 300   # cap the final-third ramp climbs toward (GDD: 300-alive periodic cap)
+static var MAX_ENEMIES_LATE: int = int(BalanceData.get_value("spawner_max_enemies_late", 300.0))   # cap the final-third ramp climbs toward (GDD: 300-alive periodic cap)
 # Perf gate. Enemies carry solid circular colliders (VSEnemy._overlap_correction), backed by a shared
 # uniform spatial grid (VSEnemy._ensure_grid / _grid): each enemy scans only the 3×3 block of cells
 # around it, and that scan is now bounded to VSEnemy.MAX_OVERLAP_CHECKS bodies per frame — so even
@@ -25,11 +25,11 @@ const MAX_ENEMIES_LATE := 300   # cap the final-third ramp climbs toward (GDD: 3
 # instead of reverting toward O(n²). A real Web run verified the packed 300-crush holds ~78fps at
 # ~274 bodies, so COLLIDER_SAFE_CAP=300 is a VALIDATED ceiling, not an aspiration.
 const COLLIDER_SAFE_CAP := 300  # validated packed-density ceiling (~78fps at the ~274-body crush)
-const LATE_RAMP_START := 0.367  # fraction of RUN_DURATION where the cap begins to climb (~11:00)
-const SPAWN_RING := 520.0        # floor radius (used when zoomed in far / before a camera exists)
+static var LATE_RAMP_START := BalanceData.get_value("spawner_late_ramp_start", 0.367)  # fraction of RUN_DURATION where the cap begins to climb (~11:00)
+static var SPAWN_RING := BalanceData.get_value("spawner_spawn_ring", 520.0)        # floor radius (used when zoomed in far / before a camera exists)
 # Extra padding beyond the farthest visible corner so a spawned enemy's whole sprite clears the
 # screen edge before it appears, no matter the enemy's size.
-const SPAWN_MARGIN := 96.0
+static var SPAWN_MARGIN := BalanceData.get_value("spawner_spawn_margin", 96.0)
 # Chest-dropping treasure-boss cadence. Mad Forest's real "Bosses & Treasure" column
 # (.firecrawl/wiki-offline/Mad_Forest.md "Waves") names a SPECIFIC boss enemy at specific minute
 # marks (Glowing Bat 1:00/3:00, Mantichana 5:00, Giant Bat 8:00, Giant Mantichana 10:00, Giant
@@ -41,29 +41,29 @@ const SPAWN_MARGIN := 96.0
 # its HP/gem burst to the ELITE tier and drops a chest — so it reads as a real treasure boss no
 # matter which enemy art it borrows (bats -> GLOW_BAT, Mantichana/Venus -> MANTIS_WARRIOR, etc;
 # the CSV's art_note column tracks which named bosses still want distinct art).
-const WAVE_INTERVAL := 60.0    # seconds between minute-milestone wave surges
-const WAVE_BASE := 8           # enemies in the first (1:00) surge
-const WAVE_GROWTH := 6         # extra enemies per subsequent minute mark
-const WAVE_OVERFLOW := 40      # headroom a surge may push past MAX_ENEMIES
+static var WAVE_INTERVAL := BalanceData.get_value("spawner_wave_interval", 60.0)    # seconds between minute-milestone wave surges
+static var WAVE_BASE: int = int(BalanceData.get_value("spawner_wave_base", 8.0))           # enemies in the first (1:00) surge
+static var WAVE_GROWTH: int = int(BalanceData.get_value("spawner_wave_growth", 6.0))         # extra enemies per subsequent minute mark
+static var WAVE_OVERFLOW: int = int(BalanceData.get_value("spawner_wave_overflow", 40.0))      # headroom a surge may push past MAX_ENEMIES
 
 # Directional swarm surge: a dense marching LINE that pours in from one random flank
 # (spaced perpendicular to its approach) rather than a surrounding ring — VS's iconic
 # "wall of enemies" you juke around, giving the move-only loop a directional threat to
 # flee instead of only concentric pressure. Fires on its own cadence between the minute
 # waves; count grows slowly with time survived and it shares the cap so it stays bounded.
-const SURGE_INTERVAL := 22.0   # seconds between directional swarm walls
-const SURGE_FIRST := 45.0      # delay before the first wall (after the early trickle finds its feet)
-const SURGE_BASE := 6          # enemies in the line at SURGE_FIRST
-const SURGE_GROWTH := 0.06     # extra line-members per second survived
-const SURGE_MAX := 16          # cap the line length so a wall never becomes a full encirclement
-const SURGE_SPACING := 46.0    # px between adjacent enemies along the wall
+static var SURGE_INTERVAL := BalanceData.get_value("spawner_surge_interval", 22.0)   # seconds between directional swarm walls
+static var SURGE_FIRST := BalanceData.get_value("spawner_surge_first", 45.0)      # delay before the first wall (after the early trickle finds its feet)
+static var SURGE_BASE: int = int(BalanceData.get_value("spawner_surge_base", 6.0))          # enemies in the line at SURGE_FIRST
+static var SURGE_GROWTH := BalanceData.get_value("spawner_surge_growth", 0.06)     # extra line-members per second survived
+static var SURGE_MAX: int = int(BalanceData.get_value("spawner_surge_max", 16.0))          # cap the line length so a wall never becomes a full encirclement
+static var SURGE_SPACING := BalanceData.get_value("spawner_surge_spacing", 46.0)    # px between adjacent enemies along the wall
 
 # Pincer variant: rarely, and only later in the run, a surge arrives as TWO mirrored walls
 # marching in from opposite flanks (dir and -dir) at once, so the player must thread the gap
 # between them along the shared perpendicular axis instead of simply fleeing one wall. Reuses
 # the single-wall math for each side and shares MAX_ENEMIES, so it stays bounded.
-const PINCER_FIRST := 150.0    # seconds survived before a surge may become a pincer
-const PINCER_CHANCE := 0.25    # chance an eligible (late-run) surge doubles into a pincer
+static var PINCER_FIRST := BalanceData.get_value("spawner_pincer_first", 150.0)    # seconds survived before a surge may become a pincer
+static var PINCER_CHANCE := BalanceData.get_value("spawner_pincer_chance", 0.25)    # chance an eligible (late-run) surge doubles into a pincer
 
 # Mad Forest "glow bat" events: a beefy, blue-rimmed Giant Bat (bat art + extra HP + outline
 # shader, see VSEnemy.Type.GLOW_BAT) drops in as a one-off mini-boss at 0:30 and again at 3:00.

@@ -3,9 +3,9 @@ extends Node2D
 ## One-shot expanding+fading ring spawned when an XP gem is collected. Purely
 ## cosmetic: it self-frees and touches no gameplay state.
 
-const DURATION := 0.28
-const START_RADIUS := 3.0
-const END_RADIUS := 15.0
+static var DURATION := BalanceData.get_value("pickup_flash_duration", 0.28)
+static var START_RADIUS := BalanceData.get_value("pickup_flash_start_radius", 3.0)
+static var END_RADIUS := BalanceData.get_value("pickup_flash_end_radius", 15.0)
 
 var _t := 0.0
 var _color := Color.WHITE

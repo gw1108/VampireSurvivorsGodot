@@ -21,8 +21,8 @@ var _pause_label: Label
 # Treasure-chest reveal banner: a transient centered gold banner naming the items + gold a chest
 # just granted, so a multi-item jackpot reads as one build spike rather than a scatter of floating
 # world labels. Shown by show_chest_reveal(); _process holds it bright then fades it out.
-const CHEST_REVEAL_HOLD := 1.8
-const CHEST_REVEAL_FADE := 0.9
+static var CHEST_REVEAL_HOLD := BalanceData.get_value("hud_chest_reveal_hold", 1.8)
+static var CHEST_REVEAL_FADE := BalanceData.get_value("hud_chest_reveal_fade", 0.9)
 const CHEST_REVEAL_COLOR := Color(1.0, 0.85, 0.3)   # treasure gold, matching the chest's floats
 var _chest_time := 0.0
 
@@ -30,8 +30,8 @@ var _chest_time := 0.0
 # a maxed weapon fusing with its passive into an evolved form. Shown by show_evolution(); held
 # bright then faded by _process_evolution. Arcane violet so it reads as distinct from the gold
 # chest/treasure banner, and pitched larger since an evolution is a rarer, bigger moment.
-const EVOLVE_HOLD := 2.0
-const EVOLVE_FADE := 1.1
+static var EVOLVE_HOLD := BalanceData.get_value("hud_evolve_hold", 2.0)
+static var EVOLVE_FADE := BalanceData.get_value("hud_evolve_fade", 1.1)
 const EVOLVE_COLOR := Color(0.86, 0.42, 1.0)   # arcane violet — the evolution "wow"
 var _evolve_time := 0.0
 
@@ -51,7 +51,7 @@ const XP_FILL_COLOR := Color(0.35, 0.8, 1.0)   # bright cyan = the XP/level iden
 # Level-up juice: on each level gained we punch the fill to white and decay back to the cyan
 # identity over XP_FLASH_TIME, so the bar itself flashes as a punchy beat of the level-up.
 const XP_FLASH_COLOR := Color(1.0, 1.0, 1.0)
-const XP_FLASH_TIME := 0.3
+static var XP_FLASH_TIME := BalanceData.get_value("hud_xp_flash_time", 0.3)
 var _xp_flash := 0.0     # seconds of flash remaining (0 = resting cyan)
 var _xp_level := -1      # last level seen, so a change (level-up) triggers the flash
 
@@ -92,7 +92,7 @@ void fragment() {
 # quickens as HP falls) via _lowhp_pulse so it reads as urgent danger, not a static tint.
 var _lowhp_vig: ColorRect
 var _lowhp_pulse := 0.0     # ever-advancing seconds accumulator driving the breathing sine
-const LOWHP_THRESHOLD := 0.30    # warning begins once HP drops to 30% of max
+static var LOWHP_THRESHOLD := BalanceData.get_value("hud_lowhp_threshold", 0.30)    # warning begins once HP drops to 30% of max (shared with VSPlayer's HP-bar throb)
 const LOWHP_TINT := Color(1.0, 0.15, 0.12)   # danger crimson, distinct from the icy freeze vignette
 # Same edge-vignette falloff as FREEZE_SHADER, red-tinted. `strength` (0..1) is set from how deep
 # below the threshold the player is; it scales the whole overlay's alpha so a near-death sliver of
@@ -144,8 +144,8 @@ const GOLD_FEVER_COLOR := Color(1.0, 0.85, 0.2)   # matches VSGildedClover.GOLD_
 # a Polygon2D dart rotated to `dir`, held bright then faded over SURGE_TELEGRAPH_HOLD+FADE.
 var _surge_arrow: Polygon2D
 var _surge_time := 0.0     # seconds of telegraph remaining (hold + fade)
-const SURGE_TELEGRAPH_HOLD := 0.8    # seconds at full alpha before it starts fading
-const SURGE_TELEGRAPH_FADE := 1.0    # seconds to fade out after the hold
+static var SURGE_TELEGRAPH_HOLD := BalanceData.get_value("hud_surge_telegraph_hold", 0.8)    # seconds at full alpha before it starts fading
+static var SURGE_TELEGRAPH_FADE := BalanceData.get_value("hud_surge_telegraph_fade", 1.0)    # seconds to fade out after the hold
 const SURGE_ARROW_COLOR := Color(1.0, 0.42, 0.18)   # danger orange-crimson, reads as "incoming"
 # Local arrow geometry, pointing +X; telegraph_surge rotates it to the flank direction.
 const SURGE_ARROW_POLY: PackedVector2Array = [

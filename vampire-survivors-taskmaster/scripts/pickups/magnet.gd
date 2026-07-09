@@ -6,12 +6,12 @@ extends Node2D
 ## homes in and is swept up at once. Grants no XP or HP itself; its payout is the gem harvest
 ## it triggers.
 
-const PICKUP := 26.0
-const MAGNET := 110.0          # slightly wider grab than food/gems — a treat worth reaching for
-const MAGNET_SPEED := 240.0
+static var PICKUP := BalanceData.get_value("magnet_pickup_radius", 26.0)
+static var MAGNET := BalanceData.get_value("magnet_magnet_radius", 110.0)          # slightly wider grab than food/gems — a treat worth reaching for
+static var MAGNET_SPEED := BalanceData.get_value("magnet_magnet_speed", 240.0)
 # The source magnet.png is a 256px canvas — huge beside the ~40px player/enemies.
 # Scale it down to read as a proper grabbable pickup, matching the arena's sprite scale.
-const SPRITE_SCALE := 0.14
+static var SPRITE_SCALE := BalanceData.get_value("magnet_sprite_scale", 0.14)
 
 var run: VSRun
 var _t := 0.0                 # bob timer

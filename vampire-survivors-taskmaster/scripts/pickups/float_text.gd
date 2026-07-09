@@ -3,9 +3,9 @@ extends Node2D
 ## One-shot floating text that rises and fades — the little "+30" heal pop. Purely
 ## cosmetic sibling to VSPickupFlash: it self-frees and touches no gameplay state.
 
-const DURATION := 0.7
-const RISE := 22.0            # pixels the label drifts upward over its life
-const FONT_SIZE := 14
+static var DURATION := BalanceData.get_value("float_text_duration", 0.7)
+static var RISE := BalanceData.get_value("float_text_rise", 22.0)            # pixels the label drifts upward over its life
+const FONT_SIZE := 14        # stays const: used as a default parameter value, which GDScript requires to be a constant expression
 
 var _label: Label
 
