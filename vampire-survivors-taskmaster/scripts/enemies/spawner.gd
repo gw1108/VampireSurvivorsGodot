@@ -41,6 +41,11 @@ static var SPAWN_MARGIN := BalanceData.get_value("spawner_spawn_margin", 96.0)
 # its HP/gem burst to the ELITE tier and drops a chest — so it reads as a real treasure boss no
 # matter which enemy art it borrows (bats -> GLOW_BAT, Mantichana/Venus -> MANTIS_WARRIOR, etc;
 # the CSV's art_note column tracks which named bosses still want distinct art).
+# Mad Forest's real "Starting spawns" beat: the wiki (.firecrawl/wiki-offline/Mad_Forest.md) lists
+# 10 enemies already present the instant the player loads into the stage, so the field is never empty
+# on frame one — the base trickle then fills in on top. Fired exactly once when the run first enters
+# "playing" (see _process / _did_start_spawn).
+static var STARTING_SPAWNS: int = int(BalanceData.get_value("spawner_starting_spawns", 10.0))
 static var WAVE_INTERVAL := BalanceData.get_value("spawner_wave_interval", 60.0)    # seconds between minute-milestone wave surges
 static var WAVE_BASE: int = int(BalanceData.get_value("spawner_wave_base", 8.0))           # enemies in the first (1:00) surge
 static var WAVE_GROWTH: int = int(BalanceData.get_value("spawner_wave_growth", 6.0))         # extra enemies per subsequent minute mark
@@ -77,6 +82,7 @@ var _accum := 0.0
 var _next_wave := WAVE_INTERVAL
 var _next_surge := SURGE_FIRST
 var _boss_idx := 0
+var _did_start_spawn := false   # guards the one-time Mad Forest "Starting spawns" beat
 
 func _ready() -> void:
 	# Enforce the perf gate at load. COLLIDER_SAFE_CAP is the validated packed-density ceiling: a real
@@ -234,6 +240,12 @@ func resync_timers() -> void:
 func _process(delta: float) -> void:
 	if run == null or run.phase != "playing" or run.player == null:
 		return
+	# Mad Forest's "Starting spawns": drop the wiki's initial population the instant the run begins
+	# (the first frame it is actually "playing"), so the field is already alive when the player loads
+	# in rather than starting empty and trickling up. Fires exactly once for the run.
+	if not _did_start_spawn:
+		_did_start_spawn = true
+		_spawn_starting()
 	# Base trickle paced by Mad Forest's real per-minute spawn table: the "spawn interval
 	# (seconds)" column sets how fast enemies enter (rate = 1/interval) and the "Enemy
 	# minimum" column sets the concurrent population this stretch maintains. Both come from
@@ -268,6 +280,21 @@ func _process(delta: float) -> void:
 	if run.elapsed >= _next_surge and _next_surge < VSRun.RUN_DURATION - WAVE_INTERVAL:
 		_next_surge += SURGE_INTERVAL
 		_spawn_surge()
+
+## Mad Forest's "Starting spawns" (wiki: 10): populate the field with STARTING_SPAWNS enemies the
+## instant the run begins, each on the off-screen ring around the player, so the stage is already
+## alive on frame one instead of empty. Uses the current minute-0 roster (_pick_type) and the same
+## ring placement as the base trickle; these count toward the population like any other enemy.
+func _spawn_starting() -> void:
+	for _i in STARTING_SPAWNS:
+		var pos := ring_spawn_point(self, run.player.position, run.arena_half)
+		var e := VSEnemy.new()
+		e.type = _pick_type()
+		e.position = pos
+		e.run = run
+		e.target = run.player
+		run.add_child(e)
+	AgentBridge.emit_event("start_spawns", {"count": STARTING_SPAWNS})
 
 ## Spawn a single base-trickle enemy on the ring, honoring the per-minute soft cap (the
 ## clamped "Enemy minimum" population target) so low-density minutes stay a genuine lull

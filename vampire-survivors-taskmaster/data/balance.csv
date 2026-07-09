@@ -149,6 +149,7 @@ enemy_knockback_impulse,230.0,Knockback velocity in px/s added to a normal-weigh
 enemy_knockback_decay,1500.0,Knockback bleed-off rate in px/s^2 (stops a shove in ~0.15s)
 enemy_hitstop_duration,0.045,Seconds an enemy freezes in place on a weapon hit (~2-3 frames of freeze-frame juice)
 enemy_crit_text_font_size,22,Font size of the gold floating crit damage number (regular hits use the default float-text size)
+spawner_starting_spawns,10,"Enemies present on the field the instant the player loads into Mad Forest (wiki 'Starting spawns' — see .firecrawl/wiki-offline/Mad_Forest.md)"
 spawner_max_enemies,150,Baseline concurrent-enemy render budget for most of the run
 spawner_max_enemies_late,300,"Concurrent-enemy cap the late-run ramp climbs toward (GDD: 300-alive periodic cap); must stay <= the code's COLLIDER_SAFE_CAP=300 perf-validated ceiling"
 spawner_late_ramp_start,0.367,Fraction of run_duration where the enemy cap begins to ramp from spawner_max_enemies toward spawner_max_enemies_late (~11:00)
