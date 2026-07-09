@@ -38,44 +38,52 @@ static var BASE_INTERVAL := BalanceData.get_value("lightning_base_interval", 4.5
 static var INTERVAL_PER_LEVEL := BalanceData.get_value("lightning_interval_per_level", 0.3)
 static var MIN_INTERVAL := BalanceData.get_value("lightning_min_interval", 1.8)
 
-## Strike VFX: SourceArt/pixel_art-animations-warrior "VFX 5", a jagged burst of spikes radiating
-## from a point and fading — reads as a crackling discharge, unlike VFX3's smooth claw arc (used
-## by the whip). All 8 cells are populated (unlike VFX2/VFX4, which have an empty cell), so no
-## blank frame ever plays. VFX5 is natively red/orange, which a plain modulate tint can't turn
-## blue (multiplying a near-zero blue channel by any tint still leaves it near zero — confirmed
-## by an in-game screenshot check: the tinted burst still read as dark maroon). Baked instead as
-## lightning_bolt.png: every pixel replaced by its own luminance times an electric-blue tint (hue-
-## agnostic, so the shape/gradient survive but the color is genuinely blue-white), then copied in.
-const VFX_TEX := "res://art/lightning_bolt.png"
-const VFX_COLS := 2
-const VFX_ROWS := 4
-const VFX_FPS := 40.0                     # 8 frames / 40fps = 0.2s, a punchy flash
-const VFX_TINT := Color(1.0, 1.0, 1.0)    # the baked texture is already electric blue-white
+## Strike VFX: a vertical lightning COLUMN that drops from off the top of the screen onto each
+## target, replacing the old radial burst — the bolt visibly comes down out of the sky, the way the
+## Lightning Ring reads in Vampire Survivors. Two art pieces stack:
+##   - lightning_vfx.png (64x240) — the branchy business end; its BOTTOM edge sits exactly on the
+##     impact point and it fans out just above it.
+##   - lightning_vfx_tileable.png (22x44) — a seamless vertical segment tiled up above the head for
+##     VFX_COLUMN_REACH px so the bolt's trail runs up past the top of the screen (impacts sit
+##     within RANGE=620px of the player, so a ~1640px column always clears the viewport top).
+## Both sprites are natively electric blue-white, so a white modulate keeps them blue; Thunder Loop
+## (evolved) tints brighter/whiter. The column doesn't animate frame-by-frame — it flashes in at full
+## alpha and fades over VFX_FLASH_TIME (a static bolt sold by a quick flash reads as a strike).
+const VFX_HEAD_TEX := "res://art/lightning_vfx.png"
+const VFX_TILE_TEX := "res://art/lightning_vfx_tileable.png"
+const VFX_HEAD_W := 64.0
+const VFX_HEAD_H := 240.0
+const VFX_TILE_W := 22.0
+const VFX_COLUMN_REACH := 1400.0          # px the tiled trail extends above the head — always past the screen top
+const VFX_FLASH_TIME := 0.22              # seconds the bolt holds before it has fully faded — a punchy flash
+const VFX_TINT := Color(1.0, 1.0, 1.0)    # the source art is already electric blue-white
 const EVO_VFX_TINT := Color(1.3, 1.2, 1.4)  # Thunder Loop's crack burns brighter/whiter
-## Radius (px, in the sheet's own pixels) the burst's alpha bounding box reaches at its widest
-## frame (measured directly: row2/col1 used_rect ~100x85, row3/col0 ~112x73) — calibrates
-## _vfx_pool scale so the sprite's visual reach lines up with each strike's actual splash radius.
-const VFX_REFERENCE_RADIUS_PX := 55.0
+## The head bottom edge marks the impact; scale the whole column with each bolt's splash radius so a
+## bigger blast drops a beefier bolt, clamped so even a maxed-area strike stays a readable streak
+## rather than a screen-wide sheet.
+const VFX_REFERENCE_RADIUS_PX := 46.0     # splash radius the column renders at native (1x) scale
+const VFX_MAX_SCALE := 2.2
 
 var run: VSRun
 var _cd := 0.0
-## Pooled strike VFX, one per possible simultaneous bolt (sized to the evolved cap so a maxed
-## Thunder Loop volley never runs out). Positioned and played per strike in _strike().
+## Pooled strike VFX, one column per possible simultaneous bolt (sized to the evolved cap so a maxed
+## Thunder Loop volley never runs out). Positioned and flashed per strike in _strike(); each carries a
+## remaining-life timer in _vfx_life so _process can fade it out.
 var _vfx_pool: Array = []
+var _vfx_life: Array = []
 
 func _ready() -> void:
-	var frames := _build_vfx_frames()
 	for i in EVO_MAX_STRIKES:
-		var vfx := AnimatedSprite2D.new()
-		vfx.sprite_frames = frames
+		var vfx := _build_strike_vfx()
 		vfx.visible = false
-		vfx.animation_finished.connect(func() -> void: vfx.visible = false)
 		add_child(vfx)
 		_vfx_pool.append(vfx)
+		_vfx_life.append(0.0)
 
 func _process(delta: float) -> void:
 	if run == null:
 		return
+	_fade_vfx(delta)
 	var lvl: int = run.lightning_level
 	if lvl <= 0:
 		return
@@ -85,6 +93,20 @@ func _process(delta: float) -> void:
 	if _cd <= 0.0:
 		_strike(lvl)
 		_cd = _interval(lvl)
+
+## Fade any live strike column toward transparent, hiding it once spent. A static bolt sold purely
+## by a quick alpha fade reads as a lightning flash without needing a frame animation.
+func _fade_vfx(delta: float) -> void:
+	for i in _vfx_pool.size():
+		if _vfx_life[i] <= 0.0:
+			continue
+		_vfx_life[i] -= delta
+		var vfx: Node2D = _vfx_pool[i]
+		if _vfx_life[i] <= 0.0:
+			vfx.visible = false
+			vfx.modulate.a = 0.0
+		else:
+			vfx.modulate.a = _vfx_life[i] / VFX_FLASH_TIME
 
 ## Cooldown between volleys, shrinking modestly with level so the ring keeps firing as the run
 ## escalates (never below MIN_INTERVAL so it stays a burst weapon, not a stream).
@@ -184,30 +206,38 @@ func _strike(lvl: int) -> void:
 				for _s in strikes_per_bolt:
 					other.hit(dmg, at)
 				hit_any = true
-		var vfx: AnimatedSprite2D = _vfx_pool[i]
-		vfx.position = at - global_position
-		vfx.rotation = randf() * TAU   # a fixed orientation would look mechanically repetitive
-		vfx.scale = Vector2.ONE * (splash / VFX_REFERENCE_RADIUS_PX)
-		vfx.modulate = tint
+		var vfx: Node2D = _vfx_pool[i]
+		vfx.position = at - global_position   # column bottom (head's bottom edge) lands on the impact
+		# Beefier bolt for a bigger blast, clamped so a maxed-area strike stays a readable streak.
+		var vscale := clampf(splash / VFX_REFERENCE_RADIUS_PX, 1.0, VFX_MAX_SCALE)
+		vfx.scale = Vector2(vscale, vscale)
+		vfx.modulate = Color(tint.r, tint.g, tint.b, 1.0)
 		vfx.visible = true
-		vfx.play("default")
+		_vfx_life[i] = VFX_FLASH_TIME
 	if hit_any:
 		run.add_camera_shake(0.12)   # a small jolt so the smite lands with weight
 		AgentBridge.emit_event("sfx_played", {"name": "lightning"})
 
-## Builds the strike VFX's frames from lightning_bolt.png (2 cols x 4 rows, read left->right
-## top->bottom), per the import_sprite_sheet_animation skill's in-code SpriteFrames pattern.
-func _build_vfx_frames() -> SpriteFrames:
-	var sf := SpriteFrames.new()
-	sf.set_animation_speed("default", VFX_FPS)
-	sf.set_animation_loop("default", false)
-	var tex := load(VFX_TEX) as Texture2D
-	var fw := tex.get_width() / VFX_COLS
-	var fh := tex.get_height() / VFX_ROWS
-	for row in VFX_ROWS:
-		for col in VFX_COLS:
-			var frame := AtlasTexture.new()
-			frame.atlas = tex
-			frame.region = Rect2(col * fw, row * fh, fw, fh)
-			sf.add_frame("default", frame)
-	return sf
+## Builds one vertical strike column: a branchy head (lightning_vfx.png) whose BOTTOM edge sits on the
+## node's origin (the impact point), and a seamless tiled trail (lightning_vfx_tileable.png) stacked
+## above it running up off the top of the screen. Both sprites hang above local y=0 so the origin lands
+## exactly on the target; the whole node is scaled/faded per strike in _strike()/_fade_vfx().
+func _build_strike_vfx() -> Node2D:
+	var root := Node2D.new()
+	# Trail first so it draws behind the head where they overlap at the seam.
+	var col := Sprite2D.new()
+	col.texture = load(VFX_TILE_TEX) as Texture2D
+	col.centered = false
+	col.region_enabled = true
+	col.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED   # let the region taller than the tile repeat it vertically
+	col.region_rect = Rect2(0.0, 0.0, VFX_TILE_W, VFX_COLUMN_REACH)
+	# Centered on x=0; its bottom overlaps the head's top by a few px so no seam gap shows.
+	col.position = Vector2(-VFX_TILE_W * 0.5, -VFX_HEAD_H - VFX_COLUMN_REACH + 6.0)
+	root.add_child(col)
+	var head := Sprite2D.new()
+	head.texture = load(VFX_HEAD_TEX) as Texture2D
+	head.centered = false
+	# Bottom edge on local y=0 (the impact), horizontally centered on x=0.
+	head.position = Vector2(-VFX_HEAD_W * 0.5, -VFX_HEAD_H)
+	root.add_child(head)
+	return root
