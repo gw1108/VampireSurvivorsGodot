@@ -151,25 +151,27 @@ static func _ensure_levels() -> void:
 ## independently, detonating on the first enemy it overlaps — or self-detonating when its life runs
 ## out — and dealing its full damage to every enemy within `blast` of the impact.
 ##
-## VFX: SourceArt/sheets/ExplosionSheet.png, a yellow-to-grey smoke/ember burst sheet (5 variants
-## x 8 frames, cells already an integer 854x480 — no non-integer-cell resize forced, but each frame
-## was still cropped from column 0 (one variant; the other 4 are unused) and downscaled 854x480 ->
-## 160x90 offline (premultiplied-alpha resize, so no dark fringing at the soft smoke edges) to keep
-## the sheet a sane in-project size, then repacked as fire_explosion.png, 2 cols x 4 rows, reading
-## left->right top->bottom in the sheet's own time order. Frame 1 (row0 col1) is a plain glowing
-## disc — used AS-IS for the ball's in-flight sprite, so no separate ember asset was needed; all 8
-## frames play in order as the "detonate" burst on impact.
+## Flight sprite: res://art/projectile_fireball.png — a small comet-shaped fireball (32x32, flame head
+## on the +X side so it points along its travel direction with no art-angle offset). Detonation VFX:
+## SourceArt/sheets/ExplosionSheet.png, a yellow-to-grey smoke/ember burst sheet (5 variants x 8 frames,
+## cells already an integer 854x480 — no non-integer-cell resize forced, but each frame was still cropped
+## from column 0 (one variant; the other 4 are unused) and downscaled 854x480 -> 160x90 offline
+## (premultiplied-alpha resize, so no dark fringing at the soft smoke edges) to keep the sheet a sane
+## in-project size, then repacked as fire_explosion.png, 2 cols x 4 rows, reading left->right top->bottom
+## in the sheet's own time order. All 8 frames play in order as the "detonate" burst the instant the
+## fireball's flight is stopped by hitting an enemy (or its life runs out).
 class Fireball:
 	extends Node2D
 
 	static var RADIUS := BalanceData.get_value("fire_wand_ball_radius", 10.0)             # the ball's own contact radius (gameplay hitbox, not visual)
-	const VFX_TEX := "res://art/fire_explosion.png"
+	const FLIGHT_TEX := "res://art/projectile_fireball.png"   # the in-flight comet fireball sprite
+	const VFX_TEX := "res://art/fire_explosion.png"           # the on-impact detonation burst sheet
 	const VFX_COLS := 2
 	const VFX_ROWS := 4
 	const VFX_DETONATE_FPS := 20.0   # 8 frames / 20fps = 0.4s blast
-	## Diameter (px, in the baked sheet's own pixels) of frame 1's (the flight disc) alpha bounding
-	## box — calibrates the flight sprite's scale so it matches the ball's own contact RADIUS.
-	const VFX_FLIGHT_RADIUS_PX := 38.0
+	## Half-width (px, in projectile_fireball.png's own pixels) of the fireball's flame alpha bounding
+	## box — calibrates the flight sprite's scale so its rendered size tracks the ball's contact RADIUS.
+	const VFX_FLIGHT_RADIUS_PX := 7.5
 	## Half-width (px) of the burst's DENSE/bright core — measured on the yellow detonation frame
 	## (the punchy body, halfW ~44px), NOT the full faint-wisp bbox (frame 7, ~55px). Calibrating
 	## against the dense core makes the visible burst FILL the fireball's actual `blast` footprint
@@ -249,6 +251,8 @@ class Fireball:
 		var pulse := 1.0 + 0.15 * sin(_flicker)
 		var r := RADIUS * (1.5 if pierce else 1.0) * pulse
 		_vfx.scale = Vector2.ONE * (r / VFX_FLIGHT_RADIUS_PX)
+		# The fireball art's flame head points +X, so aim it straight down its travel direction.
+		_vfx.rotation = vel.angle()
 		_vfx.modulate = HELLFIRE_TINT if pierce else Color.WHITE
 
 	## Hellfire's pass: burn every not-yet-seared enemy within `blast` of the ball and remember them
@@ -279,6 +283,7 @@ class Fireball:
 			run.add_camera_shake(0.16)   # a small jolt so the blast lands with weight
 		_flash = DETONATE_FLASH_TIME
 		_vfx.modulate = DETONATE_FLASH_TINT
+		_vfx.rotation = 0.0   # the flight sprite was aimed along travel; the radial burst is upright
 		_vfx.scale = Vector2.ONE * (blast / VFX_BLAST_REFERENCE_RADIUS_PX)
 		_vfx.play(&"detonate")
 
@@ -291,7 +296,7 @@ class Fireball:
 		var fh := tex.get_height() / VFX_ROWS
 		sf.add_animation(&"flight")
 		sf.set_animation_loop(&"flight", true)
-		sf.add_frame(&"flight", _vfx_cell(tex, fw, fh, 0, 1))
+		sf.add_frame(&"flight", load(FLIGHT_TEX) as Texture2D)
 		sf.add_animation(&"detonate")
 		sf.set_animation_loop(&"detonate", false)
 		sf.set_animation_speed(&"detonate", VFX_DETONATE_FPS)
