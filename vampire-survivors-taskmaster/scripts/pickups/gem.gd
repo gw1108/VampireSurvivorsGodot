@@ -66,7 +66,7 @@ func _process(delta: float) -> void:
 	var mag := MAGNET * run.pickup_range_mult
 	if (attracted or d < mag) and d > 0.5:
 		position += to / d * MAGNET_SPEED * delta
-	if d < PICKUP + VSPlayer.RADIUS:
+	if d < PICKUP + VSPlayer.PICKUP_RADIUS:
 		run.collect_xp(value)
 		AgentBridge.emit_event("pickup", {"type": "xp"})
 		# Cosmetic pickup pop: a ring bloom at the gem, parented to the world so it

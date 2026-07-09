@@ -14,6 +14,11 @@ static var SPEED := BalanceData.get_value("player_move_speed", 147.0)
 ## solid body tracks the art. Kept class-level so callers without the player instance can still read
 ## the baseline (VSPlayer.RADIUS), exactly as VSEnemy.RADIUS is the enemy's fallback.
 static var RADIUS := BalanceData.get_value("player_contact_radius", 14.0)
+## Base pickup radius: the player-radius component that each drop's own grab distance is added
+## to when it decides it has been collected (drop grabs when d < item_pickup_radius + this).
+## Kept SEPARATE from the contact hitbox above so retuning collection range never nudges the
+## solid body — halving this shrinks how close you must be to auto-grab drops, nothing else.
+static var PICKUP_RADIUS := BalanceData.get_value("player_pickup_radius", 7.0)
 
 ## Hit feedback: on taking damage the avatar flashes red for a sliver of a second so a hit
 ## reads on the character itself, not just as a camera jolt — the same channel the enemies use

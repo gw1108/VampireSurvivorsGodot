@@ -35,7 +35,7 @@ func _process(delta: float) -> void:
 	var d := to.length()
 	if d < MAGNET and d > 0.5:
 		position += to / d * MAGNET_SPEED * delta
-	if d < PICKUP + VSPlayer.RADIUS:
+	if d < PICKUP + VSPlayer.PICKUP_RADIUS:
 		_collect()
 
 func _collect() -> void:
