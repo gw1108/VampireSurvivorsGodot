@@ -131,6 +131,7 @@ nduja_magnet_radius,110,Nduja Fritta magnetize radius in px — same wide grab a
 nduja_magnet_speed,240,Nduja Fritta attraction speed in px/sec while magnetizing
 nduja_duration,8,Seconds of game-time the Nduja fiery invincibility/burn aura lasts
 nduja_sprite_scale,0.14,Nduja sprite scale (source PNG is a 256px canvas)
+player_pickup_radius,7,Player base pickup radius in px (added to each drop's own grab distance) — halved from the 14px contact radius so collection range is tuned independently of the hitbox
 pickup_flash_duration,0.28,Pickup ring-flash VFX lifetime in seconds
 pickup_flash_start_radius,3,Pickup ring-flash starting radius in px
 pickup_flash_end_radius,15,Pickup ring-flash ending radius in px
