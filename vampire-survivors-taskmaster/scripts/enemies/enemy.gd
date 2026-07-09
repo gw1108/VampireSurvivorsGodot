@@ -140,6 +140,8 @@ const SCALE_KEYS := {
 	Type.ELITE:          "enemy_elite_scale",
 	Type.REAPER:         "enemy_reaper_scale",
 	Type.GLOW_BAT:       "enemy_glow_bat_scale",
+	Type.SILVER_BAT:     "enemy_silver_bat_scale",
+	Type.GIANT_WEREWOLF: "enemy_giant_werewolf_scale",
 }
 
 ## Per-type move-speed CSV overrides. Each enemy's base march speed (its TYPES `speed`) can be
