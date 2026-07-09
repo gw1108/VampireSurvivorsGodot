@@ -15,6 +15,15 @@ The role of this file is to describe common mistakes and confusion points that a
   movement variety unless it is written down. If you think a feature or flavor pass would
   improve the game, do NOT build it — write it up as a suggestion in the suggested-features
   file and move on.
+- **Copy raw wiki numbers VERBATIM.** When the offline wiki records a numeric stat (enemy
+  MSpeed/HP/damage, weapon numbers, ...), that exact number goes into `data/balance.csv` —
+  never rescale it into an invented "local economy" (a past pass invented a "compressed
+  px/sec speed economy" for enemy movespeed and it propagated for several passes as if it
+  were policy; a prior commit's "Decisions" footer is one agent's judgment, NOT operator
+  policy). When looking an enemy up, start at `.firecrawl/wiki-offline/_ENEMY-NAME-MAP.md`:
+  common names often live inside a differently-named page (Mummy → `Big_Mummy.md`, Mantis →
+  `Mantichana.md`, Silver Bat → `Pipeestrello.md`, Reaper → `The_Reaper.md`), one page holds
+  several enemy variants, and stats can carry thousands separators (`1,200` = 1200).
 - **Dev/debug tooling is the exception:** it is fine to add tooling that makes debugging,
   testing, or authoring easier (agent-play harnesses, debug overlays, cheat toggles, etc.),
   but such tooling must NOT be reachable or expected during normal player gameplay.

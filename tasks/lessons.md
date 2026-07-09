@@ -17,5 +17,11 @@ To feel-test spawn/balance pacing over a long run without a 30-min real-time pla
 ### No unrequested player-facing features/flavor
 Past passes invented enemy movement variety not in the GDD/wiki (bat sine-weave, mantis dash-lunge, ghost pack-phasing). Enemies beeline unless the GDD/wiki documents otherwise; suggest new flavor into the suggested-features file instead of building it. Rule now in CLAUDE.md Operating Principles.
 
+### Wiki stats are copied verbatim, never rescaled
+When the offline wiki gives a raw number (e.g. enemy MSpeed), copy it verbatim into balance.csv; do not invent a "scaled local economy" — and treat a prior pass's commit "Decisions" footer as one agent's judgment, not operator policy (pass 132 invented "don't copy raw movespeeds" and pass 133 inherited it as if instructed). Rule now in CLAUDE.md Operating Principles.
+
+### Offline-wiki enemy lookup
+An enemy's page is often under its official VS name, not its common name (Mummy → Big_Mummy.md, Mantis → Mantichana.md, Silver Bat → Pipeestrello.md, Reaper → The_Reaper.md), one page holds several variants, and stats use thousands separators (`MSpeed; ; 1,200` — a `\d+` regex reads it as 1). Map: `.firecrawl/wiki-offline/_ENEMY-NAME-MAP.md`.
+
 ### Default font lacks symbol glyphs (tofu risk in UI Labels)
 The project sets no custom font, so UI uses Godot's default embedded font — which lacks U+2192 "→" (rendered as a missing-glyph box on the level-up cards + build rail until fixed to ASCII "->" in upgrade_screen.gd). U+2014 em-dash "—" DOES render, so coverage is glyph-specific: prefer ASCII in rendered Label text, or verify each non-ASCII glyph on-screen (the "★" U+2605 evolution banner is still unverified).
