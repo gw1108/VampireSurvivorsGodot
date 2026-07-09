@@ -20,6 +20,9 @@ Past passes invented enemy movement variety not in the GDD/wiki (bat sine-weave,
 ### Wiki stats are copied verbatim, never rescaled
 When the offline wiki gives a raw number (e.g. enemy MSpeed), copy it verbatim into balance.csv; do not invent a "scaled local economy" — and treat a prior pass's commit "Decisions" footer as one agent's judgment, not operator policy (pass 132 invented "don't copy raw movespeeds" and pass 133 inherited it as if instructed). Rule now in CLAUDE.md Operating Principles.
 
+### Tunables go in balance.csv, not .gd consts
+Any new or touched gameplay/visual scalar (move speed, pickup radius, sprite scale, light/aura radius, damage, cooldown, spawn pacing) gets an `id,value,description` row in data/balance.csv read via `BalanceData.get_value`, never a hardcoded script const. Rule now in CLAUDE.md Operating Principles.
+
 ### Offline-wiki enemy lookup
 An enemy's page is often under its official VS name, not its common name (Mummy → Big_Mummy.md, Mantis → Mantichana.md, Silver Bat → Pipeestrello.md, Reaper → The_Reaper.md), one page holds several variants, and stats use thousands separators (`MSpeed; ; 1,200` — a `\d+` regex reads it as 1). Map: `.firecrawl/wiki-offline/_ENEMY-NAME-MAP.md`.
 
