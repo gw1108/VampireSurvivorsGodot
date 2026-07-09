@@ -92,6 +92,10 @@ func _fire_at(t: VSEnemy) -> void:
 		var p := VSProjectile.new()
 		p.position = global_position
 		p.dir = base.rotated(offset)
+		# The Magic Wand fires a round blue magic dot, not the Knife's dagger; being round it has no
+		# meaningful facing, so clear the dagger's 45deg art offset.
+		p.texture_path = "res://art/projectile_blue_dot.png"
+		p.art_angle_offset = 0.0
 		p.speed *= run.projectile_speed_mult
 		p.damage = dmg
 		p.pierce = pierce

@@ -10,11 +10,16 @@ static var HIT_RADIUS := BalanceData.get_value("projectile_hit_radius", 10.0)
 # The dagger sprite's blade points up-right (-45deg / -PI/4) in the source art, so we
 # add PI/4 when aligning it to the travel direction.
 const ART_ANGLE_OFFSET := PI / 4.0
+# Default bolt art: the Knife's dagger. The Magic Wand overrides texture_path with its round blue
+# dot (which has no meaningful facing, so it clears art_angle_offset — see VSWeapon._fire_at).
+const DAGGER_TEXTURE := "res://art/projectile_dagger.png"
 
 var speed := BalanceData.get_value("projectile_base_speed", 430.0)   # default bolt travel speed (the Magic Wand fires at this; the Knife overrides it)
 var damage := 2.0
 var life := BalanceData.get_value("projectile_base_life", 1.4)       # default seconds before a stray bolt despawns (Knife overrides it)
 var dir := Vector2.RIGHT
+var texture_path := DAGGER_TEXTURE   # sprite the bolt renders (Knife keeps the dagger; the Magic Wand sets its blue dot)
+var art_angle_offset := ART_ANGLE_OFFSET   # rotation added when aligning the sprite to travel dir; 0 for rotationally-symmetric art
 var pierce := 0                  # extra enemies the bolt passes through (0 = despawn on first hit)
 var hit_radius := HIT_RADIUS     # live strike radius, set in _ready to HIT_RADIUS * projectile_scale
 var run: VSRun
@@ -24,8 +29,8 @@ var _hit := {}                   # enemies already struck, so a piercing bolt ne
 func _ready() -> void:
 	add_to_group("projectiles")
 	_sprite = Sprite2D.new()
-	_sprite.texture = load("res://art/projectile_dagger.png")
-	_sprite.rotation = dir.angle() + ART_ANGLE_OFFSET
+	_sprite.texture = load(texture_path)
+	_sprite.rotation = dir.angle() + art_angle_offset
 	# Bolt size knob a designer can retune in res://data/balance.csv (default 1.0 = native art size).
 	# Scales the sprite AND the hit radius by the same factor, so the strike range stays matched to the
 	# rendered bolt. At the default 1.0 hit_radius is exactly the tuned HIT_RADIUS baseline.
