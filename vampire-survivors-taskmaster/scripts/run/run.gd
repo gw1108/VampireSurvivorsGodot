@@ -1176,33 +1176,84 @@ func _spawn_gems(at: Vector2, total_xp: int, count: int) -> void:
 static var MAX_GROUND_GEMS := int(BalanceData.get_value("run_max_ground_gems", 400.0))
 
 func _spawn_gem(at: Vector2, xp_value: int = 1) -> void:
-	# On-ground gem cap: once the field already holds MAX_GROUND_GEMS gems, fold this drop's XP
-	# into the nearest existing gem (which reddens/fattens) instead of adding another node, so the
-	# reward is conserved and stays roughly where it fell while the node count holds at the cap.
+	# On-ground gem cap (wiki): once the field already holds MAX_GROUND_GEMS gems, no new gem drops
+	# — the XP is instead accumulated into a single RED gem. We fold it into the ON-SCREEN gem
+	# furthest from the player (the one least urgent to collect) and, when any gems are off screen,
+	# rescue one of those unreachable off-screen gems into that same accumulator (delete it + add its
+	# XP), so lost off-screen reward migrates onto a collectable on-screen gem over successive drops.
 	# Skipped when the run isn't in the scene tree (get_tree() null — only in standalone unit tests
 	# that new() a VSRun without adding it), where there's no group to query and no cap to enforce.
 	var tree := get_tree()
 	if tree != null:
 		var gems := tree.get_nodes_in_group("gems")
 		if gems.size() >= MAX_GROUND_GEMS:
-			var target: VSGem = null
-			var best_d := INF
-			for node in gems:
-				var gm := node as VSGem
-				if gm == null:
-					continue
-				var dd := gm.position.distance_squared_to(at)
-				if dd < best_d:
-					best_d = dd
-					target = gm
-			if target != null:
-				target.absorb(xp_value)
-				return
+			_fold_gem_into_cap(gems, xp_value)
+			return
 	var g := VSGem.new()
 	g.position = at
 	g.run = self
 	g.value = xp_value
 	add_child(g)
+
+## Fold an over-cap drop of `xp_value` into the accumulator gem instead of spawning a node.
+## `gems` is the current "gems" group (already known to be at/over the cap). Preference order for
+## the accumulator: the on-screen gem furthest from the player; if none are on screen (headless /
+## whole field off screen) fall back to the gem furthest from the player overall. When at least one
+## gem is off screen, one off-screen gem (the furthest from the player) is deleted and its XP merged
+## into the accumulator too, draining the unreachable off-screen field into a single red on-screen gem.
+func _fold_gem_into_cap(gems: Array, xp_value: int) -> void:
+	var center := _screen_center()
+	var half := VSSpawner._visible_half(self)
+	var target: VSGem = null
+	var target_d := -1.0
+	var fallback: VSGem = null   # furthest gem overall, used when nothing is on screen
+	var fallback_d := -1.0
+	var off_screen: VSGem = null   # furthest off-screen gem, drained into the accumulator
+	var off_d := -1.0
+	var pl := center
+	for node in gems:
+		var gm := node as VSGem
+		if gm == null:
+			continue
+		var d := gm.position.distance_squared_to(pl)
+		if d > fallback_d:
+			fallback_d = d
+			fallback = gm
+		var on_screen := half != Vector2.ZERO \
+			and absf(gm.position.x - center.x) <= half.x \
+			and absf(gm.position.y - center.y) <= half.y
+		if on_screen:
+			if d > target_d:
+				target_d = d
+				target = gm
+		else:
+			if d > off_d:
+				off_d = d
+				off_screen = gm
+	if target == null:
+		target = fallback
+	if target == null:
+		return   # no gems to fold into (shouldn't happen at cap); drop the XP rather than crash
+	var folded := xp_value
+	# Rescue one unreachable off-screen gem into the accumulator (don't cannibalise the accumulator
+	# itself if it happened to be picked as the off-screen candidate). Leave the group and zero the
+	# value BEFORE the deferred queue_free so a second over-cap drop in the SAME frame can't re-select
+	# this node and fold its XP in twice.
+	if off_screen != null and off_screen != target:
+		folded += off_screen.value
+		off_screen.value = 0
+		off_screen.remove_from_group("gems")
+		off_screen.queue_free()
+	target.absorb(folded, true)
+
+## Screen/camera center in world space (where the visible rect is centred). The camera rides the
+## player, so this is the player's position; falls back to the player node when no live camera.
+func _screen_center() -> Vector2:
+	if _cam != null and is_instance_valid(_cam):
+		return _cam.get_screen_center_position()
+	if player != null and is_instance_valid(player):
+		return player.position
+	return Vector2.ZERO
 
 func collect_xp(amount: int) -> void:
 	if phase != "playing":
