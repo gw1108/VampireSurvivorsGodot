@@ -13,6 +13,9 @@ var value := 1   # XP granted on pickup; scaled by the enemy that dropped it
 ## Set by a Magnet pickup: the gem homes on the player from anywhere on screen,
 ## ignoring the normal short-range MAGNET radius, so the whole field vacuums in.
 var attracted := false
+## Marks this gem as the on-ground-cap accumulator: the wiki's rule folds all excess XP into a
+## single RED gem, so once flagged it renders red regardless of its numeric value tier.
+var is_accumulator := false
 
 var _sprite: Sprite2D
 
@@ -36,16 +39,19 @@ func _ready() -> void:
 
 ## Fold another drop's XP into this gem. The GDD's on-ground gem cap merges excess drops into
 ## existing gems rather than spawning unbounded nodes; the absorbing gem reddens and fattens so
-## it reads as the richer reward it now carries.
-func absorb(extra: int) -> void:
+## it reads as the richer reward it now carries. When the cap folds a drop into an on-screen gem
+## (as_accumulator), that gem is forced red per the wiki's "single red gem" rule.
+func absorb(extra: int, as_accumulator: bool = false) -> void:
 	value += maxi(extra, 0)
+	if as_accumulator:
+		is_accumulator = true
 	_refresh_visual()
 
 ## Tint + size the gem from its current value (blue=1, green=2, red=3+; bigger = richer),
-## clamped so a merged gem never grows past MAX_VISUAL_STEPS.
+## clamped so a merged gem never grows past MAX_VISUAL_STEPS. A cap accumulator is always red.
 func _refresh_visual() -> void:
 	if _sprite:
-		_sprite.modulate = VALUE_COLORS.get(value, VALUE_COLORS[3])
+		_sprite.modulate = VALUE_COLORS[3] if is_accumulator else VALUE_COLORS.get(value, VALUE_COLORS[3])
 	# Higher-value gems read bigger (1.0 at value 1, +0.12 per extra point, capped).
 	var s := 1.0 + 0.12 * float(clampi(value - 1, 0, MAX_VISUAL_STEPS))
 	scale = Vector2(s, s)
