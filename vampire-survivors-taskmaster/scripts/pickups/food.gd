@@ -6,9 +6,6 @@ extends Node2D
 ## recovery lever instead of relying solely on the rare Vitality upgrade. Cosmetic-only
 ## otherwise; grants no XP.
 
-static var PICKUP := BalanceData.get_value("food_pickup_radius", 26.0)
-static var MAGNET := BalanceData.get_value("food_magnet_radius", 95.0)
-static var MAGNET_SPEED := BalanceData.get_value("food_magnet_speed", 240.0)
 static var HEAL := BalanceData.get_value("food_heal_amount", 30.0)            # HP restored on pickup (VS roast-chicken convention)
 
 var run: VSRun
@@ -18,6 +15,7 @@ func _ready() -> void:
 	add_to_group("food")
 	var sprite := Sprite2D.new()
 	sprite.texture = load("res://art/food_chicken.png")
+	VSPickup.apply(sprite)
 	add_child(sprite)
 
 func _process(delta: float) -> void:
@@ -30,9 +28,9 @@ func _process(delta: float) -> void:
 	var to := pl.position - position
 	var d := to.length()
 	# Attractorb passive widens the base magnet radius so food flies in from farther.
-	if d < MAGNET * run.pickup_range_mult and d > 0.5:
-		position += to / d * MAGNET_SPEED * delta
-	if d < PICKUP + VSPlayer.PICKUP_RADIUS:
+	if d < VSPickup.MAGNET_RADIUS * run.pickup_range_mult and d > 0.5:
+		position += to / d * VSPickup.MAGNET_SPEED * delta
+	if d < VSPickup.GRAB_RADIUS + VSPlayer.PICKUP_RADIUS:
 		var healed := 0.0
 		if pl.alive and pl.health < pl.max_health:
 			var before := pl.health

@@ -4,11 +4,13 @@ extends Node2D
 ## to open it: it grants a short burst of random upgrades plus gold (see VSRun.open_chest), the
 ## faithful "chest = burst of power" moment that carries the back half of a run. Uses a bespoke
 ## pixel-art chest sprite (art/pickup_chest.png) matching the other imported pickups, and does a
-## quick lid-open pop when grabbed. Magnetizes at close range like the other pickups.
+## quick lid-open pop when grabbed. The chest is the wiki exception among pickups (Pickups.md:
+## "Doesn't get attracted to the player"): it never magnetizes and ignores the shared grab
+## radius — the player must physically collide with it, body-on-body, like enemy contact.
 
-static var PICKUP := BalanceData.get_value("chest_pickup_radius", 26.0)
-static var MAGNET := BalanceData.get_value("chest_magnet_radius", 80.0)
-static var MAGNET_SPEED := BalanceData.get_value("chest_magnet_speed", 200.0)
+# Solid-body radius for the contact check (roughly half the chest's rendered footprint):
+# the chest opens when it overlaps the player's contact circle, like enemy collision.
+static var CONTACT_RADIUS := BalanceData.get_value("chest_contact_radius", 8.0)
 
 var run: VSRun
 var _t := 0.0                 # bob timer
@@ -21,6 +23,7 @@ func _ready() -> void:
 	z_index = 1               # read on top of the ground/aura, like the other reward pickups
 	_sprite = Sprite2D.new()
 	_sprite.texture = load("res://art/pickup_chest.png")
+	VSPickup.apply(_sprite)
 	add_child(_sprite)
 
 func _process(delta: float) -> void:
@@ -33,11 +36,11 @@ func _process(delta: float) -> void:
 	_t += delta
 	scale = Vector2.ONE * (1.0 + 0.07 * sin(_t * 3.5))
 	var pl := run.player
-	var to := pl.position - position
-	var d := to.length()
-	if d < MAGNET and d > 0.5:
-		position += to / d * MAGNET_SPEED * delta
-	if d < PICKUP + VSPlayer.PICKUP_RADIUS:
+	var d := (pl.position - position).length()
+	# Wiki exception: no magnet pull, no grab radius — opened only by body-on-body
+	# collision with the player's contact circle, the same combined-radii rule as
+	# enemy contact damage.
+	if d < CONTACT_RADIUS + pl.radius:
 		_open()
 
 func _open() -> void:

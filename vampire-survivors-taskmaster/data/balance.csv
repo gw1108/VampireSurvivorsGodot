@@ -1,5 +1,5 @@
 id,value,description,
-player_move_speed,147,Base player movement speed in px/sec (before Swift Boots / Moonwalker multipliers),
+player_move_speed,137,Base player movement speed in px/sec (before Swift Boots / Moonwalker multipliers),
 magic_wand_base_damage,10,Magic Wand base damage at Lv1 (wiki base 10); per-level bonus_damage/amount/pierce/cooldown live in data/magic_wand_levels.csv,
 garlic_base_damage,5,Garlic base damage at Lv1 (wiki base 5); per-level bonus_damage/area/cooldown live in data/garlic_levels.csv,
 whip_base_damage,10,Whip base damage at Lv1 (wiki base 10); per-level bonus_damage/projectiles/area live in data/whip_levels.csv,
@@ -23,11 +23,11 @@ fire_wand_min_interval,1.4,Fire Wand cooldown floor — the volley cadence never
 gem_drop_floor_hp,15,Enemy max HP at/below which a kill has only the floor chance to drop an XP gem,
 gem_drop_floor_chance,0.3,Floor chance (0-1) an XP gem drops from a kill at/below gem_drop_floor_hp,
 gem_drop_ceil_hp,180,Enemy max HP at/above which a kill is guaranteed (100%) to drop an XP gem,
-camera_zoom,1.35,Camera zoom factor for the whole run (less than 1 zooms out so everything reads smaller; greater than 1 zooms in),
+camera_zoom,1.3,Camera zoom factor for the whole run (less than 1 zooms out so everything reads smaller; greater than 1 zooms in),
 player_scale,1.2,Scale multiplier for the player avatar; scales both the sprite and the contact hitbox radius by the same factor (1 = native art size / tuned baseline hitbox),
 enemy_scale,1.25,Global scale multiplier applied on top of each enemy type's own scale (1 = per-type size); scales both the sprite and the collision radius by the same factor,
 enemy_attack_interval,0.25,Seconds between successive contact-damage ticks an enemy deals while touching the player (attack speed). Lower = faster = more DPS;,
-enemy_move_speed_mult,0.7,Global multiplier applied on top of every enemy type's own move speed (1 = per-type base; raise to speed the whole horde up so kiting gets harder),
+enemy_move_speed_mult,0.55,Global multiplier applied on top of every enemy type's own move speed (1 = per-type base; raise to speed the whole horde up so kiting gets harder),
 enemy_bat_speed,140,"Bat (wiki Pipeestrello) move speed in px/sec — raw wiki MSpeed 140, copied verbatim — before the global enemy_move_speed_mult",
 enemy_zombie_speed,100,"Zombie move speed in px/sec — raw wiki MSpeed 100, copied verbatim — before the global enemy_move_speed_mult",
 enemy_skeleton_speed,100,"Skeleton move speed in px/sec — raw wiki MSpeed 100, copied verbatim — before the global enemy_move_speed_mult",
@@ -47,11 +47,11 @@ enemy_giant_mantichana_speed,160,"Giant Mantichana treasure boss move speed in p
 enemy_venus_speed,80,"Venus carnivorous-flower boss move speed in px/sec — raw wiki MSpeed 80, copied verbatim — before the global enemy_move_speed_mult",
 enemy_giant_blue_venus_speed,160,"Giant Blue Venus 25:00 hyper boss move speed in px/sec — raw wiki MSpeed 160, copied verbatim — before the global enemy_move_speed_mult",
 enemy_mantis_warrior_scale,1.4,Mantis Warrior base scale before the global enemy_scale multiplier; scales both the sprite and the collision radius (1.4 = the tuned baseline hitbox),
-enemy_elite_scale,1.0,Elite mini-boss base scale before the global enemy_scale multiplier; scales both the sprite and the collision radius (normalized to 1.0 so it reads the same size as the common horde — only mantis/venus/giant mantis/giant mummy/reaper stay oversized),
+enemy_elite_scale,1,Elite mini-boss base scale before the global enemy_scale multiplier; scales both the sprite and the collision radius (normalized to 1.0 so it reads the same size as the common horde — only mantis/venus/giant mantis/giant mummy/reaper stay oversized),
 enemy_reaper_scale,2.6,Reaper finale base scale before the global enemy_scale multiplier; scales both the sprite and the collision radius (2.6 = the tuned baseline hitbox),
-enemy_glow_bat_scale,1.0,Glow/Giant Bat mini-boss base scale before the global enemy_scale multiplier; scales both the sprite and the collision radius (normalized to 1.0 so it reads the same size as the common horde),
-enemy_silver_bat_scale,1.0,Silver Bat treasure boss base scale before the global enemy_scale multiplier; scales both the sprite and the collision radius (normalized to 1.0 so it reads the same size as the common horde),
-enemy_giant_werewolf_scale,1.0,Giant Werewolf treasure boss base scale before the global enemy_scale multiplier; scales both the sprite and the collision radius (normalized to 1.0 so it reads the same size as the common horde),
+enemy_glow_bat_scale,1,Glow/Giant Bat mini-boss base scale before the global enemy_scale multiplier; scales both the sprite and the collision radius (normalized to 1.0 so it reads the same size as the common horde),
+enemy_silver_bat_scale,1,Silver Bat treasure boss base scale before the global enemy_scale multiplier; scales both the sprite and the collision radius (normalized to 1.0 so it reads the same size as the common horde),
+enemy_giant_werewolf_scale,1,Giant Werewolf treasure boss base scale before the global enemy_scale multiplier; scales both the sprite and the collision radius (normalized to 1.0 so it reads the same size as the common horde),
 projectile_scale,1,Scale multiplier for flying projectile sprites — the dagger bolts thrown by Knife and fired by the Magic Wand; scales both the sprite and the hit radius by the same factor (1 = native art size / tuned baseline hit radius),
 run_duration,1800,Survival goal in seconds — outlast the escalating waves to this many seconds and the run is WON (Mad Forest 30:00); the single knob to tune the run length,
 reaper_duration,15,Extra seconds the player must outlast the summoned finale Reaper after run_duration before the win lands,
@@ -77,220 +77,188 @@ magic_wand_range,620,Magic Wand aim-acquire radius in px — the nearest enemy w
 whip_base_range,140,Whip melee arc reach in px at Lv1 before the per-level area_mult,
 max_weapons,6,Inventory cap on owned weapons — the level-up roll stops offering a 7th weapon (GDD 6 weapons + 6 passives),
 max_passives,6,Inventory cap on owned passive items — the level-up roll stops offering a 7th passive (GDD 6 weapons + 6 passives),
-candelabra_health,6,Candelabra prop HP — a couple of whip lashes / garlic pulses shatter it
-candelabra_radius,18,Candelabra hit radius in px the area weapons test against
-candelabra_sprite_scale,0.28,Candelabra sprite scale (source PNG is a 256px canvas; ~1.5x player height at 0.28)
-candelabra_shatter_duration,0.5,Candelabra shatter VFX lifetime in seconds
-candelabra_shatter_shards,9,Number of debris shards in the candelabra shatter burst
-candelabra_shatter_speed_min,70,Minimum initial shard speed (px/sec) in the candelabra shatter burst
-candelabra_shatter_speed_max,190,Maximum initial shard speed (px/sec) in the candelabra shatter burst
-candelabra_shatter_gravity,260,Gravity (px/sec^2) pulling candelabra shatter debris back down as it arcs
-chest_pickup_radius,26,Treasure Chest grab distance in px (added to the player radius)
-chest_magnet_radius,80,Treasure Chest magnetize-toward-player radius in px
-chest_magnet_speed,200,Treasure Chest attraction speed in px/sec while magnetizing
-coin_value,1,Gold banked per base coin pickup (spawner may override per tier)
-coin_pickup_radius,26,Gold coin grab distance in px (added to the player radius)
-coin_magnet_radius,95,Gold coin magnetize radius in px before the Attractorb pickup_range_mult
-coin_magnet_speed,240,Gold coin attraction speed in px/sec while magnetizing
-coin_sprite_scale,0.14,Gold coin sprite scale (source PNG is a 256px canvas)
-coin_fever_ext_gold_coin,0.5,"Seconds a base Gold Coin tops an active Gold Fever back up by (Gilded_Clover.md, verbatim)"
-coin_fever_ext_coin_bag,5,"Seconds a Coin Bag tops an active Gold Fever back up by (Gilded_Clover.md, verbatim)"
-coin_fever_ext_rich_coin_bag,10,"Seconds a Rich Coin Bag tops an active Gold Fever back up by (Gilded_Clover.md, verbatim)"
-coin_fever_ext_kill_drop,0.01,"Seconds a fever kill-drop coin tops an active Gold Fever back up by (Gilded_Clover.md, verbatim)"
-float_text_duration,0.7,Floating +N / label text lifetime in seconds before it fades out
-float_text_rise,22,Pixels the floating text drifts upward over its life
-food_pickup_radius,26,Roast chicken grab distance in px (added to the player radius)
-food_magnet_radius,95,Roast chicken magnetize radius in px before the Attractorb pickup_range_mult
-food_magnet_speed,240,Roast chicken attraction speed in px/sec while magnetizing
-food_heal_amount,30,HP restored by the roast-chicken food pickup (VS convention)
-frozen_clock_pickup_radius,26,Orologion grab distance in px (added to the player radius)
-frozen_clock_magnet_radius,110,Orologion magnetize radius in px — same wide grab as the Rosary/Magnet treats
-frozen_clock_magnet_speed,240,Orologion attraction speed in px/sec while magnetizing
-frozen_clock_freeze_duration,4,Seconds of game-time every enemy stays frozen after grabbing the Orologion
-frozen_clock_sprite_scale,0.14,Orologion sprite scale (source PNG is a 256px canvas)
-gem_radius,6,XP gem body radius in px
-gem_pickup_radius,24,XP gem grab distance in px (added to the player radius)
-gem_magnet_radius,95,XP gem magnetize radius in px before the Attractorb pickup_range_mult
-gem_magnet_speed,240,XP gem attraction speed in px/sec while magnetizing
-gem_max_visual_steps,8,Cap on per-value gem scale growth steps (8 steps = ~1.96x; merged gems never balloon past this)
-gilded_clover_pickup_radius,26,Gilded Clover grab distance in px (added to the player radius)
-gilded_clover_magnet_radius,110,Gilded Clover magnetize radius in px — same wide grab as the other treats
-gilded_clover_magnet_speed,240,Gilded Clover attraction speed in px/sec while magnetizing
-gilded_clover_sprite_scale,0.14,Gilded Clover sprite scale (source PNG is a 256px canvas)
-little_clover_pickup_radius,26,Little Clover grab distance in px (added to the player radius)
-little_clover_magnet_radius,110,Little Clover magnetize radius in px — same wide grab as the other treats
-little_clover_magnet_speed,240,Little Clover attraction speed in px/sec while magnetizing
-little_clover_luck_gain,10,"% Luck permanently granted per Little Clover pickup (Little_Clover.md, verbatim)"
-little_clover_sprite_scale,0.14,Little Clover sprite scale (source PNG is a 256px canvas)
-magnet_pickup_radius,26,Magnet (Vacuum) grab distance in px (added to the player radius)
-magnet_magnet_radius,110,Magnet pickup's own magnetize radius in px — slightly wider than food/gems
-magnet_magnet_speed,240,Magnet pickup attraction speed in px/sec while magnetizing
-magnet_sprite_scale,0.14,Magnet sprite scale (source PNG is a 256px canvas)
-nduja_pickup_radius,26,Nduja Fritta grab distance in px (added to the player radius)
-nduja_magnet_radius,110,Nduja Fritta magnetize radius in px — same wide grab as the other treats
-nduja_magnet_speed,240,Nduja Fritta attraction speed in px/sec while magnetizing
-nduja_duration,8,Seconds of game-time the Nduja fiery invincibility/burn aura lasts
-nduja_sprite_scale,0.14,Nduja sprite scale (source PNG is a 256px canvas)
-player_pickup_radius,7,Player base pickup radius in px (added to each drop's own grab distance) — halved from the 14px contact radius so collection range is tuned independently of the hitbox
-pickup_flash_duration,0.28,Pickup ring-flash VFX lifetime in seconds
-pickup_flash_start_radius,3,Pickup ring-flash starting radius in px
-pickup_flash_end_radius,15,Pickup ring-flash ending radius in px
-rosary_pickup_radius,26,Rosary grab distance in px (added to the player radius)
-rosary_magnet_radius,110,Rosary magnetize radius in px — same wide grab as the Magnet treat
-rosary_magnet_speed,240,Rosary attraction speed in px/sec while magnetizing
-rosary_smite_damage,120,Rosary screen-clear damage per enemy — wipes normal archetypes; bosses (140/600 HP) endure
-rosary_sprite_scale,0.14,Rosary sprite scale (source PNG is a 256px canvas)
-enemy_base_radius,12.0,Default enemy collision-circle radius in px for types without a per-type radius in TYPES (scaled with the visual scale)
-enemy_flash_duration,0.1,Seconds the white hit-flash (and mini-elite spawn glint) lasts on an enemy sprite
-enemy_immune_shimmer_freq,9.0,"Reaper freeze-immunity shimmer pulse frequency in rad/s of the sine, the fast alarming red flicker while an Orologion freeze is active"
-enemy_immune_shimmer_amount,0.7,How far (0-1) the Reaper immunity shimmer lerps toward hot red at the pulse peak
-enemy_despawn_radius,1000.0,Floor distance in px beyond which an outrun base-trickle enemy recycles back onto the spawn ring (live threshold is max of this and the zoom-aware off-screen ring + hysteresis)
-enemy_recycle_hysteresis,160.0,Gap in px between the off-screen spawn ring and the recycle threshold so a fresh/recycled enemy on the ring is never immediately re-recycled
-enemy_knockback_impulse,230.0,Knockback velocity in px/s added to a normal-weight enemy on a weapon hit (scaled by per-type knock resist)
-enemy_knockback_decay,1500.0,Knockback bleed-off rate in px/s^2 (stops a shove in ~0.15s)
-enemy_hitstop_duration,0.045,Seconds an enemy freezes in place on a weapon hit (~2-3 frames of freeze-frame juice)
-enemy_crit_text_font_size,22,Font size of the gold floating crit damage number (regular hits use the default float-text size)
-spawner_starting_spawns,10,"Enemies present on the field the instant the player loads into Mad Forest (wiki 'Starting spawns' — see .firecrawl/wiki-offline/Mad_Forest.md)"
-spawner_max_enemies,150,Baseline concurrent-enemy render budget for most of the run
-spawner_max_enemies_late,300,"Concurrent-enemy cap the late-run ramp climbs toward (GDD: 300-alive periodic cap); must stay <= the code's COLLIDER_SAFE_CAP=300 perf-validated ceiling"
-spawner_late_ramp_start,0.367,Fraction of run_duration where the enemy cap begins to ramp from spawner_max_enemies toward spawner_max_enemies_late (~11:00)
-spawner_spawn_ring,520.0,Floor radius in px of the off-screen enemy spawn ring (used when zoomed in far / before a camera exists)
-spawner_spawn_margin,96.0,Extra padding in px beyond the farthest visible corner so a spawned enemy's whole sprite clears the screen edge
-spawner_wave_interval,60.0,Seconds between minute-milestone wave surges
-spawner_wave_base,8,Enemies in the first (1:00) minute-milestone wave surge
-spawner_wave_growth,6,Extra enemies per subsequent minute-mark wave surge
-spawner_wave_overflow,40,Headroom a wave surge may push past the concurrent-enemy cap so the crescendo lands
-spawner_surge_interval,22.0,Seconds between directional swarm walls
-spawner_surge_first,45.0,Delay in seconds before the first directional swarm wall
-spawner_surge_base,6,Enemies in the swarm wall line at its first appearance
-spawner_surge_growth,0.06,Extra swarm-wall line members per second survived
-spawner_surge_max,16,Cap on swarm-wall line length so a wall never becomes a full encirclement
-spawner_surge_spacing,46.0,Px between adjacent enemies along a swarm wall
-spawner_pincer_first,150.0,Seconds survived before a surge may double into a two-flank pincer
-spawner_pincer_chance,0.25,Chance (0-1) an eligible late-run surge doubles into a pincer
-reaper_vignette_rise,0.15,Seconds the Reaper-arrival crimson vignette takes to flash up to peak
-reaper_vignette_fade,1.1,Seconds the Reaper-arrival vignette takes to bleed back out
-reaper_vignette_peak_alpha,0.55,Peak alpha (0-1) of the crimson screen-edge vignette at the Reaper summon
-king_bible_orbit_radius,88,King Bible Lv1 orbit ring radius in px before the per-level area_mult and Candelabrador
-king_bible_angular_speed,3.6,King Bible orbit speed in rad/sec at Lv1 (~0.57 rev/s; scaled by the per-level speed_mult)
-king_bible_book_hit_radius,27,King Bible per-book strike radius in px (how close a book must pass to hit an enemy)
-king_bible_max_books,4,King Bible book cap for the base weapon (per-level amount clamps to this; evolution adds on top)
-king_bible_book_scale,0.5,King Bible book sprite scale (64px source = ~32px book)
-king_bible_evolved_extra_books,2,Unholy Vespers extra books added over the base cap (4 to 6)
-king_bible_evolved_damage_mult,2.2,Unholy Vespers damage multiplier
-king_bible_evolved_angular_mult,1.35,Unholy Vespers orbit-speed multiplier
-king_bible_evolved_tick_mult,0.6,Unholy Vespers multiplier on the per-book hit cooldown (shorter = hits more often)
-king_bible_evolved_hit_bonus,8,Unholy Vespers px added to each book's strike radius
-garlic_base_radius,74,Garlic Lv1 aura radius in px before the per-level area_mult and Candelabrador
-garlic_flash_time,0.18,Seconds the Garlic aura brightens after each damage pulse
-garlic_evolved_damage_mult,2.5,Soul Eater damage multiplier
-garlic_evolved_radius_bonus,40,Soul Eater px added to the aura radius
-projectile_hit_radius,10,Baseline bolt hit radius in px at projectile_scale 1 (live hitbox scales with projectile_scale)
-projectile_base_speed,430,Default bolt travel speed in px/sec — the Magic Wand's bolt (Knife overrides via knife_speed)
-projectile_base_life,1.4,Default bolt lifetime in seconds before a stray bolt despawns (Knife overrides via knife_life)
-fire_wand_amount,3,Fire Wand fireballs per volley (wiki Amount; constant at every level)
-fire_wand_hellfire_damage_mult,1.6,Hellfire (evolved) damage multiplier per searing pass
-fire_wand_hellfire_blast_mult,1.55,Hellfire (evolved) multiplier on the blast/sear swath radius
-fire_wand_hellfire_life_mult,1.7,Hellfire (evolved) multiplier on fireball lifetime
-fire_wand_ball_radius,10,Fireball's own in-flight contact radius in px (gameplay hitbox; not the blast)
-fire_wand_detonate_flash_time,0.1,Seconds of the hot over-bright flash at the start of a detonation burst
-knife_evolved_interval_mult,0.30,Thousand Edges multiplier on the volley cooldown (~a third the cadence)
-knife_evolved_min_interval,0.14,Thousand Edges cooldown floor in seconds
-knife_evolved_amount_bonus,3,Thousand Edges extra knives per volley over the base amount
-knife_evolved_damage_mult,1.7,Thousand Edges damage multiplier per blade
-lightning_max_strikes,6,Lightning Ring per-volley bolt cap for the base ring (wiki Amount peaks at 6)
-lightning_evo_bonus_strikes,3,Thunder Loop extra bolts on top of the level amount
-lightning_evo_max_strikes,10,Thunder Loop per-volley bolt cap (also sizes the pooled strike VFX)
-lightning_evo_splash_mult,1.6,Thunder Loop multiplier on each bolt's splash radius
-runetracer_evo_bonus_amount,2,NO FUTURE extra runes per volley on top of the level amount
-runetracer_evo_max_amount,6,NO FUTURE per-volley rune cap
-runetracer_evo_damage_mult,1.6,NO FUTURE damage multiplier per rune
-runetracer_evo_speed_mult,1.35,NO FUTURE multiplier on rune travel speed
-runetracer_evo_life_bonus,2,NO FUTURE seconds added to rune bounce lifetime
-runetracer_evo_radius,14,NO FUTURE rune hit radius in px (fatter than the base runetracer_hit_radius 9)
-runetracer_hit_radius,9,Runetracer rune base hit radius in px (evolved runes use runetracer_evo_radius)
-runetracer_rehit_interval,0.45,Seconds before one rune may strike the same enemy again
-runetracer_sprite_scale,0.9,Rune sprite scale at the base hit radius (auto-grows with a fatter evolved radius)
-magic_wand_spread,0.14,Magic Wand radians between extra multishot bolts in the fan
-magic_wand_evolved_extra_shots,2,Holy Wand extra bolts on top of the level amount
-magic_wand_evolved_damage_mult,1.6,Holy Wand damage multiplier per bolt
-magic_wand_evolved_cd_mult,0.6,Holy Wand multiplier on the wand's cooldown (fires markedly faster)
-magic_wand_evolved_pierce,3,Holy Wand extra enemies each bolt passes through
-whip_arc_half_angle_deg,50,Whip damage wedge half-angle in DEGREES (code converts with deg_to_rad)
-whip_evolved_damage_mult,2.2,Bloody Tear damage multiplier
-whip_evolved_range_bonus,60,Bloody Tear px added to lash reach
-whip_evolved_arc_bonus_deg,20,Bloody Tear DEGREES added to each wedge's half-angle (code converts with deg_to_rad)
-whip_vfx_offset_frac,0.55,Fraction of lash range at which the slash VFX sits along the lash
-player_max_health,100,Player starting max HP before Antonio's bonus and Hollow Heart / meta Armor boosts
-player_contact_radius,14,Tuned baseline player contact-hitbox radius in px at player_scale 1.0 (live radius = this * player_scale)
-player_hit_flash_duration,0.12,Seconds the avatar flashes red after taking a hit
-player_iframe_duration,0.24,Invulnerability window in seconds after a landed hit (GDD base 240 ms) during which all contact damage is ignored
-player_nduja_radius,78,Nduja Fritta Tanta burning-aura radius in px around the player
-player_nduja_damage,9,Damage each Nduja aura tick deals to every enemy inside the radius
-player_nduja_tick_interval,0.2,Seconds between Nduja aura burn ticks
-player_walk_bob_freq,9,Walk-cycle bob frequency (rad/s-ish; a bounce per footfall) on the player sprite
-player_walk_bob_amp,2,Walk-cycle bob amplitude in px the sprite rises on each step
-player_idle_sway_freq,2.2,Idle breathing sway frequency on the player sprite
-player_idle_sway_amp,1.2,Idle breathing sway amplitude in px
-hud_lowhp_threshold,0.3,HP fraction below which the low-health danger cues arm (HUD crimson vignette AND the avatar HP-bar alarm throb share this row)
-run_shake_decay,5,Camera-shake trauma decay per second (full trauma dissipates in ~0.2s)
-run_shake_max_offset,14,Camera-shake max offset in px at trauma 1.0
-run_slowmo_scale,0.4,Evolution slow-mo dip target — Engine.time_scale at the instant of a weapon fusion
-run_slowmo_duration,0.15,Real seconds the evolution slow-mo takes to ease from the dip back to 1.0
-run_arena_half_x,900,Arena half-extent around origin on X in px (player/enemy clamp bounds)
-run_arena_half_y,700,Arena half-extent around origin on Y in px (player/enemy clamp bounds)
-run_base_rerolls,3,Base per-run level-up reroll budget before the Reroll PowerUp and candelabra bonuses add to it
-run_weapons_only_levelups,2,How many of the first resolved level-up hands offer weapons only (passives withheld)
-run_upgrade_hand_size,3,Number of cards a level-up hand offers (consolation-padded when the pool runs short)
-run_upgrade_hand_size_lucky,4,Widened hand size granted by a winning Luck fourth-option roll
-run_spinach_might_per_pick,0.1,Spinach: +Might fraction per pick (wiki +10%; max 5 picks = +50%)
-run_empty_tome_haste_per_pick,0.08,Empty Tome: additive cooldown reduction per pick (wiki -8%)
-run_empty_tome_haste_max,0.4,Empty Tome: total cooldown-reduction cap (wiki -40% at 5 picks)
-run_wings_speed_per_pick,0.1,Wings: additive move-speed fraction per pick (wiki +10%; max 5 = +50%)
-run_candelabrador_area_per_pick,0.1,Candelabrador: additive area fraction per pick (wiki +10%; max 5 = +50%)
-run_bracer_proj_speed_per_pick,0.1,Bracer: additive projectile-speed fraction per pick (wiki +10%; max 5 = +50%)
-run_crown_growth_per_pick,0.08,Crown: additive XP-gain fraction per pick (wiki +8%; max 5 = +40%)
-run_hollow_heart_hp,20,Hollow Heart: flat max-HP added (and healed) per pick in this slice
-run_armor_per_pick,1,Armor passive: flat damage subtracted per pick (wiki Reduces incoming damage by 1)
-run_pummarola_recovery_per_pick,0.2,Pummarola: HP/sec regeneration added per pick (max 5 = +1.0 HP/s)
-run_clover_luck_per_pick,10,Clover: +N% Luck bonus per pick (wiki 10% luckier)
-run_antonio_bonus_hp,20,Antonio's starting +Max Health bonus (wiki +20 = 120 total)
-run_antonio_bonus_armor,1,Antonio's starting +Armor bonus (wiki +1)
-run_chest_gold_min,4,Chest gold: minimum gold rolled per granted item
-run_chest_gold_max,8,Chest gold: maximum gold rolled per granted item
-run_chest_maxed_item_gold,12,Flat gold each ungrantable (build fully maxed) chest item converts to instead
-run_chest_consumable_chance,0.15,Chance (0-1) an opened chest also drops a consumable treat (Nduja/Rosary/Orologion)
-run_candelabra_count,6,Destructible candelabra scattered across the arena at run start
-run_candelabra_min_dist,260,Minimum px from the player's spawn a candelabra may be placed so they reward moving
-run_max_ground_gems,400,Cap on loose XP gems on the ground; excess drops merge into the nearest existing gem
-run_xp_base,5,"XP curve: cost to advance from level 1 (tier-1 formula base, see run.gd _xp_to_next)"
-run_xp_step_t1,10,XP curve: per-level cost increment below the tier-2 level
-run_xp_tier2_level,20,"XP curve: level where the requirement steepens to tier 2 (retune the coupled tier bases with the steps, see run.gd)"
-run_xp_tier2_base,185,XP curve: tier-2 formula base (equals the tier-1 cost at the level just before tier 2 for continuity)
-run_xp_step_t2,13,XP curve: per-level cost increment in tier 2
-run_xp_tier3_level,40,XP curve: level where the requirement steepens to tier 3
-run_xp_tier3_base,445,XP curve: tier-3 formula base (equals the tier-2 cost at the level just before tier 3 for continuity)
-run_xp_step_t3,16,XP curve: per-level cost increment in tier 3
-shop_might_per_level,0.1,Meta Might PowerUp: build-wide +damage fraction per purchased level (reaches every weapon via meta_power_mult)
-shop_armor_hp_per_level,20,Meta Armor PowerUp: flat starting max-HP per purchased level
-shop_haste_mult_per_level,0.95,Meta Cooldown PowerUp: cooldown multiplier compounded per purchased level (0.95 = -5%/level)
-shop_boots_mult_per_level,1.05,Meta Moonwalker PowerUp: move-speed multiplier compounded per purchased level (1.05 = +5%/level)
-shop_might_cost,60,Might PowerUp base coin cost (next level costs base * (owned level + 1))
-shop_armor_cost,80,Armor PowerUp base coin cost (next level costs base * (owned level + 1))
-shop_haste_cost,100,Cooldown PowerUp base coin cost (next level costs base * (owned level + 1))
-shop_boots_cost,70,Moonwalker PowerUp base coin cost (next level costs base * (owned level + 1))
-shop_reroll_cost,90,Reroll PowerUp base coin cost (next level costs base * (owned level + 1))
-hud_chest_reveal_hold,1.8,Seconds the HUD fallback chest-reveal banner holds at full alpha before fading
-hud_chest_reveal_fade,0.9,Seconds the HUD chest-reveal banner takes to fade out after the hold
-hud_evolve_hold,2,Seconds the WEAPON EVOLVED! banner holds at full alpha before fading
-hud_evolve_fade,1.1,Seconds the WEAPON EVOLVED! banner takes to fade out after the hold
-hud_xp_flash_time,0.3,Seconds the XP bar's level-up white punch takes to decay back to cyan (the chest beam pulses on this too)
-hud_surge_telegraph_hold,0.8,Seconds the swarm-surge warning arrow holds at full alpha before fading
-hud_surge_telegraph_fade,1,Seconds the swarm-surge warning arrow takes to fade out after the hold
-chest_screen_open_dur,0.45,Chest reveal: seconds of the opening pop stage
-chest_screen_reveal_dur,1.1,Chest reveal: seconds of the final item-rise stage
-chest_screen_spew_per_gold,0.09,Chest reveal: spew-stage seconds per gold awarded (clamped between spew_min and spew_max)
-chest_screen_spew_min,1.2,Chest reveal: minimum spew-stage length in seconds
-chest_screen_spew_max,5,Chest reveal: maximum spew-stage length in seconds
-chest_screen_spawn_gap,0.07,Chest reveal: seconds between spewed item sprites
-chest_screen_particle_max,44,Chest reveal: hard cap on live spew sprites
+candelabra_health,6,Candelabra prop HP — a couple of whip lashes / garlic pulses shatter it,
+candelabra_radius,18,Candelabra hit radius in px the area weapons test against,
+candelabra_sprite_scale,0.28,Candelabra sprite scale (source PNG is a 256px canvas; ~1.5x player height at 0.28),
+candelabra_shatter_duration,0.5,Candelabra shatter VFX lifetime in seconds,
+candelabra_shatter_shards,9,Number of debris shards in the candelabra shatter burst,
+candelabra_shatter_speed_min,70,Minimum initial shard speed (px/sec) in the candelabra shatter burst,
+candelabra_shatter_speed_max,190,Maximum initial shard speed (px/sec) in the candelabra shatter burst,
+candelabra_shatter_gravity,260,Gravity (px/sec^2) pulling candelabra shatter debris back down as it arcs,
+chest_contact_radius,8,"Treasure Chest solid-body radius in px — the wiki exception among pickups: never magnetizes, opens only on body contact (this + the player's contact radius, like enemy collision)",
+coin_value,1,Gold banked per base coin pickup (spawner may override per tier),
+coin_fever_ext_gold_coin,0.5,"Seconds a base Gold Coin tops an active Gold Fever back up by (Gilded_Clover.md, verbatim)",
+coin_fever_ext_coin_bag,5,"Seconds a Coin Bag tops an active Gold Fever back up by (Gilded_Clover.md, verbatim)",
+coin_fever_ext_rich_coin_bag,10,"Seconds a Rich Coin Bag tops an active Gold Fever back up by (Gilded_Clover.md, verbatim)",
+coin_fever_ext_kill_drop,0.01,"Seconds a fever kill-drop coin tops an active Gold Fever back up by (Gilded_Clover.md, verbatim)",
+float_text_duration,0.7,Floating +N / label text lifetime in seconds before it fades out,
+float_text_rise,22,Pixels the floating text drifts upward over its life,
+food_heal_amount,30,HP restored by the roast-chicken food pickup (VS convention),
+frozen_clock_freeze_duration,4,Seconds of game-time every enemy stays frozen after grabbing the Orologion,
+gem_radius,6,XP gem body radius in px,
+gem_max_visual_steps,8,Cap on per-value gem scale growth steps (8 steps = ~1.96x; merged gems never balloon past this),
+little_clover_luck_gain,10,"% Luck permanently granted per Little Clover pickup (Little_Clover.md, verbatim)",
+nduja_duration,8,Seconds of game-time the Nduja fiery invincibility/burn aura lasts,
+player_pickup_radius,7,Player base pickup radius in px (added to each drop's own grab distance) — halved from the 14px contact radius so collection range is tuned independently of the hitbox,
+pickup_sprite_size,16,Rendered size in px of every pickup sprite's longest side (matches the XP gem's 12x16 footprint; VSPickup scales each texture to this),
+pickup_grab_radius,26,Grab distance in px shared by EVERY pickup (added to player_pickup_radius; VSPickup.GRAB_RADIUS),
+pickup_magnet_radius,95,Magnetize radius in px shared by EVERY pickup before the magnet stat (run.pickup_range_mult) scales it (VSPickup.MAGNET_RADIUS),
+pickup_magnet_speed,240,Attraction speed in px/sec shared by EVERY pickup while magnetizing (VSPickup.MAGNET_SPEED),
+pickup_flash_duration,0.28,Pickup ring-flash VFX lifetime in seconds,
+pickup_flash_start_radius,3,Pickup ring-flash starting radius in px,
+pickup_flash_end_radius,15,Pickup ring-flash ending radius in px,
+rosary_smite_damage,120,Rosary screen-clear damage per enemy — wipes normal archetypes; bosses (140/600 HP) endure,
+enemy_base_radius,12,Default enemy collision-circle radius in px for types without a per-type radius in TYPES (scaled with the visual scale),
+enemy_flash_duration,0.1,Seconds the white hit-flash (and mini-elite spawn glint) lasts on an enemy sprite,
+enemy_immune_shimmer_freq,9,"Reaper freeze-immunity shimmer pulse frequency in rad/s of the sine, the fast alarming red flicker while an Orologion freeze is active",
+enemy_immune_shimmer_amount,0.7,How far (0-1) the Reaper immunity shimmer lerps toward hot red at the pulse peak,
+enemy_despawn_radius,1000,Floor distance in px beyond which an outrun base-trickle enemy recycles back onto the spawn ring (live threshold is max of this and the zoom-aware off-screen ring + hysteresis),
+enemy_recycle_hysteresis,160,Gap in px between the off-screen spawn ring and the recycle threshold so a fresh/recycled enemy on the ring is never immediately re-recycled,
+enemy_knockback_impulse,230,Knockback velocity in px/s added to a normal-weight enemy on a weapon hit (scaled by per-type knock resist),
+enemy_knockback_decay,1500,Knockback bleed-off rate in px/s^2 (stops a shove in ~0.15s),
+enemy_hitstop_duration,0.045,Seconds an enemy freezes in place on a weapon hit (~2-3 frames of freeze-frame juice),
+enemy_crit_text_font_size,22,Font size of the gold floating crit damage number (regular hits use the default float-text size),
+spawner_starting_spawns,10,Enemies present on the field the instant the player loads into Mad Forest (wiki 'Starting spawns' — see .firecrawl/wiki-offline/Mad_Forest.md),
+spawner_max_enemies,150,Baseline concurrent-enemy render budget for most of the run,
+spawner_max_enemies_late,300,Concurrent-enemy cap the late-run ramp climbs toward (GDD: 300-alive periodic cap); must stay <= the code's COLLIDER_SAFE_CAP=300 perf-validated ceiling,
+spawner_late_ramp_start,0.367,Fraction of run_duration where the enemy cap begins to ramp from spawner_max_enemies toward spawner_max_enemies_late (~11:00),
+spawner_spawn_ring,520,Floor radius in px of the off-screen enemy spawn ring (used when zoomed in far / before a camera exists),
+spawner_spawn_margin,96,Extra padding in px beyond the farthest visible corner so a spawned enemy's whole sprite clears the screen edge,
+spawner_wave_interval,60,Seconds between minute-milestone wave surges,
+spawner_wave_base,8,Enemies in the first (1:00) minute-milestone wave surge,
+spawner_wave_growth,6,Extra enemies per subsequent minute-mark wave surge,
+spawner_wave_overflow,40,Headroom a wave surge may push past the concurrent-enemy cap so the crescendo lands,
+spawner_surge_interval,22,Seconds between directional swarm walls,
+spawner_surge_first,45,Delay in seconds before the first directional swarm wall,
+spawner_surge_base,6,Enemies in the swarm wall line at its first appearance,
+spawner_surge_growth,0.06,Extra swarm-wall line members per second survived,
+spawner_surge_max,16,Cap on swarm-wall line length so a wall never becomes a full encirclement,
+spawner_surge_spacing,46,Px between adjacent enemies along a swarm wall,
+spawner_pincer_first,150,Seconds survived before a surge may double into a two-flank pincer,
+spawner_pincer_chance,0.25,Chance (0-1) an eligible late-run surge doubles into a pincer,
+reaper_vignette_rise,0.15,Seconds the Reaper-arrival crimson vignette takes to flash up to peak,
+reaper_vignette_fade,1.1,Seconds the Reaper-arrival vignette takes to bleed back out,
+reaper_vignette_peak_alpha,0.55,Peak alpha (0-1) of the crimson screen-edge vignette at the Reaper summon,
+king_bible_orbit_radius,88,King Bible Lv1 orbit ring radius in px before the per-level area_mult and Candelabrador,
+king_bible_angular_speed,3.6,King Bible orbit speed in rad/sec at Lv1 (~0.57 rev/s; scaled by the per-level speed_mult),
+king_bible_book_hit_radius,27,King Bible per-book strike radius in px (how close a book must pass to hit an enemy),
+king_bible_max_books,4,King Bible book cap for the base weapon (per-level amount clamps to this; evolution adds on top),
+king_bible_book_scale,0.5,King Bible book sprite scale (64px source = ~32px book),
+king_bible_evolved_extra_books,2,Unholy Vespers extra books added over the base cap (4 to 6),
+king_bible_evolved_damage_mult,2.2,Unholy Vespers damage multiplier,
+king_bible_evolved_angular_mult,1.35,Unholy Vespers orbit-speed multiplier,
+king_bible_evolved_tick_mult,0.6,Unholy Vespers multiplier on the per-book hit cooldown (shorter = hits more often),
+king_bible_evolved_hit_bonus,8,Unholy Vespers px added to each book's strike radius,
+garlic_base_radius,74,Garlic Lv1 aura radius in px before the per-level area_mult and Candelabrador,
+garlic_flash_time,0.18,Seconds the Garlic aura brightens after each damage pulse,
+garlic_evolved_damage_mult,2.5,Soul Eater damage multiplier,
+garlic_evolved_radius_bonus,40,Soul Eater px added to the aura radius,
+projectile_hit_radius,10,Baseline bolt hit radius in px at projectile_scale 1 (live hitbox scales with projectile_scale),
+projectile_base_speed,430,Default bolt travel speed in px/sec — the Magic Wand's bolt (Knife overrides via knife_speed),
+projectile_base_life,1.4,Default bolt lifetime in seconds before a stray bolt despawns (Knife overrides via knife_life),
+fire_wand_amount,3,Fire Wand fireballs per volley (wiki Amount; constant at every level),
+fire_wand_hellfire_damage_mult,1.6,Hellfire (evolved) damage multiplier per searing pass,
+fire_wand_hellfire_blast_mult,1.55,Hellfire (evolved) multiplier on the blast/sear swath radius,
+fire_wand_hellfire_life_mult,1.7,Hellfire (evolved) multiplier on fireball lifetime,
+fire_wand_ball_radius,10,Fireball's own in-flight contact radius in px (gameplay hitbox; not the blast),
+fire_wand_detonate_flash_time,0.1,Seconds of the hot over-bright flash at the start of a detonation burst,
+knife_evolved_interval_mult,0.3,Thousand Edges multiplier on the volley cooldown (~a third the cadence),
+knife_evolved_min_interval,0.14,Thousand Edges cooldown floor in seconds,
+knife_evolved_amount_bonus,3,Thousand Edges extra knives per volley over the base amount,
+knife_evolved_damage_mult,1.7,Thousand Edges damage multiplier per blade,
+lightning_max_strikes,6,Lightning Ring per-volley bolt cap for the base ring (wiki Amount peaks at 6),
+lightning_evo_bonus_strikes,3,Thunder Loop extra bolts on top of the level amount,
+lightning_evo_max_strikes,10,Thunder Loop per-volley bolt cap (also sizes the pooled strike VFX),
+lightning_evo_splash_mult,1.6,Thunder Loop multiplier on each bolt's splash radius,
+runetracer_evo_bonus_amount,2,NO FUTURE extra runes per volley on top of the level amount,
+runetracer_evo_max_amount,6,NO FUTURE per-volley rune cap,
+runetracer_evo_damage_mult,1.6,NO FUTURE damage multiplier per rune,
+runetracer_evo_speed_mult,1.35,NO FUTURE multiplier on rune travel speed,
+runetracer_evo_life_bonus,2,NO FUTURE seconds added to rune bounce lifetime,
+runetracer_evo_radius,14,NO FUTURE rune hit radius in px (fatter than the base runetracer_hit_radius 9),
+runetracer_hit_radius,9,Runetracer rune base hit radius in px (evolved runes use runetracer_evo_radius),
+runetracer_rehit_interval,0.45,Seconds before one rune may strike the same enemy again,
+runetracer_sprite_scale,0.9,Rune sprite scale at the base hit radius (auto-grows with a fatter evolved radius),
+magic_wand_spread,0.14,Magic Wand radians between extra multishot bolts in the fan,
+magic_wand_evolved_extra_shots,2,Holy Wand extra bolts on top of the level amount,
+magic_wand_evolved_damage_mult,1.6,Holy Wand damage multiplier per bolt,
+magic_wand_evolved_cd_mult,0.6,Holy Wand multiplier on the wand's cooldown (fires markedly faster),
+magic_wand_evolved_pierce,3,Holy Wand extra enemies each bolt passes through,
+whip_arc_half_angle_deg,50,Whip damage wedge half-angle in DEGREES (code converts with deg_to_rad),
+whip_evolved_damage_mult,2.2,Bloody Tear damage multiplier,
+whip_evolved_range_bonus,60,Bloody Tear px added to lash reach,
+whip_evolved_arc_bonus_deg,20,Bloody Tear DEGREES added to each wedge's half-angle (code converts with deg_to_rad),
+whip_vfx_offset_frac,0.55,Fraction of lash range at which the slash VFX sits along the lash,
+player_max_health,100,Player starting max HP before Antonio's bonus and Hollow Heart / meta Armor boosts,
+player_contact_radius,14,Tuned baseline player contact-hitbox radius in px at player_scale 1.0 (live radius = this * player_scale),
+player_hit_flash_duration,0.12,Seconds the avatar flashes red after taking a hit,
+player_iframe_duration,0.24,Invulnerability window in seconds after a landed hit (GDD base 240 ms) during which all contact damage is ignored,
+player_nduja_radius,78,Nduja Fritta Tanta burning-aura radius in px around the player,
+player_nduja_damage,9,Damage each Nduja aura tick deals to every enemy inside the radius,
+player_nduja_tick_interval,0.2,Seconds between Nduja aura burn ticks,
+player_walk_bob_freq,9,Walk-cycle bob frequency (rad/s-ish; a bounce per footfall) on the player sprite,
+player_walk_bob_amp,2,Walk-cycle bob amplitude in px the sprite rises on each step,
+player_idle_sway_freq,2.2,Idle breathing sway frequency on the player sprite,
+player_idle_sway_amp,1.2,Idle breathing sway amplitude in px,
+hud_lowhp_threshold,0.3,HP fraction below which the low-health danger cues arm (HUD crimson vignette AND the avatar HP-bar alarm throb share this row),
+run_shake_decay,5,Camera-shake trauma decay per second (full trauma dissipates in ~0.2s),
+run_shake_max_offset,14,Camera-shake max offset in px at trauma 1.0,
+run_slowmo_scale,0.4,Evolution slow-mo dip target — Engine.time_scale at the instant of a weapon fusion,
+run_slowmo_duration,0.15,Real seconds the evolution slow-mo takes to ease from the dip back to 1.0,
+run_arena_half_x,900,Arena half-extent around origin on X in px (player/enemy clamp bounds),
+run_arena_half_y,700,Arena half-extent around origin on Y in px (player/enemy clamp bounds),
+run_base_rerolls,3,Base per-run level-up reroll budget before the Reroll PowerUp and candelabra bonuses add to it,
+run_weapons_only_levelups,2,How many of the first resolved level-up hands offer weapons only (passives withheld),
+run_upgrade_hand_size,3,Number of cards a level-up hand offers (consolation-padded when the pool runs short),
+run_upgrade_hand_size_lucky,4,Widened hand size granted by a winning Luck fourth-option roll,
+run_spinach_might_per_pick,0.1,Spinach: +Might fraction per pick (wiki +10%; max 5 picks = +50%),
+run_empty_tome_haste_per_pick,0.08,Empty Tome: additive cooldown reduction per pick (wiki -8%),
+run_empty_tome_haste_max,0.4,Empty Tome: total cooldown-reduction cap (wiki -40% at 5 picks),
+run_wings_speed_per_pick,0.1,Wings: additive move-speed fraction per pick (wiki +10%; max 5 = +50%),
+run_candelabrador_area_per_pick,0.1,Candelabrador: additive area fraction per pick (wiki +10%; max 5 = +50%),
+run_bracer_proj_speed_per_pick,0.1,Bracer: additive projectile-speed fraction per pick (wiki +10%; max 5 = +50%),
+run_crown_growth_per_pick,0.08,Crown: additive XP-gain fraction per pick (wiki +8%; max 5 = +40%),
+run_hollow_heart_hp,20,Hollow Heart: flat max-HP added (and healed) per pick in this slice,
+run_armor_per_pick,1,Armor passive: flat damage subtracted per pick (wiki Reduces incoming damage by 1),
+run_pummarola_recovery_per_pick,0.2,Pummarola: HP/sec regeneration added per pick (max 5 = +1.0 HP/s),
+run_clover_luck_per_pick,10,Clover: +N% Luck bonus per pick (wiki 10% luckier),
+run_antonio_bonus_hp,20,Antonio's starting +Max Health bonus (wiki +20 = 120 total),
+run_antonio_bonus_armor,1,Antonio's starting +Armor bonus (wiki +1),
+run_chest_gold_min,4,Chest gold: minimum gold rolled per granted item,
+run_chest_gold_max,8,Chest gold: maximum gold rolled per granted item,
+run_chest_maxed_item_gold,12,Flat gold each ungrantable (build fully maxed) chest item converts to instead,
+run_chest_consumable_chance,0.15,Chance (0-1) an opened chest also drops a consumable treat (Nduja/Rosary/Orologion),
+run_candelabra_count,6,Destructible candelabra scattered across the arena at run start,
+run_candelabra_min_dist,260,Minimum px from the player's spawn a candelabra may be placed so they reward moving,
+run_max_ground_gems,400,Cap on loose XP gems on the ground; excess drops merge into the nearest existing gem,
+run_xp_base,5,"XP curve: cost to advance from level 1 (tier-1 formula base, see run.gd _xp_to_next)",
+run_xp_step_t1,10,XP curve: per-level cost increment below the tier-2 level,
+run_xp_tier2_level,20,"XP curve: level where the requirement steepens to tier 2 (retune the coupled tier bases with the steps, see run.gd)",
+run_xp_tier2_base,185,XP curve: tier-2 formula base (equals the tier-1 cost at the level just before tier 2 for continuity),
+run_xp_step_t2,13,XP curve: per-level cost increment in tier 2,
+run_xp_tier3_level,40,XP curve: level where the requirement steepens to tier 3,
+run_xp_tier3_base,445,XP curve: tier-3 formula base (equals the tier-2 cost at the level just before tier 3 for continuity),
+run_xp_step_t3,16,XP curve: per-level cost increment in tier 3,
+shop_might_per_level,0.1,Meta Might PowerUp: build-wide +damage fraction per purchased level (reaches every weapon via meta_power_mult),
+shop_armor_hp_per_level,20,Meta Armor PowerUp: flat starting max-HP per purchased level,
+shop_haste_mult_per_level,0.95,Meta Cooldown PowerUp: cooldown multiplier compounded per purchased level (0.95 = -5%/level),
+shop_boots_mult_per_level,1.05,Meta Moonwalker PowerUp: move-speed multiplier compounded per purchased level (1.05 = +5%/level),
+shop_might_cost,60,Might PowerUp base coin cost (next level costs base * (owned level + 1)),
+shop_armor_cost,80,Armor PowerUp base coin cost (next level costs base * (owned level + 1)),
+shop_haste_cost,100,Cooldown PowerUp base coin cost (next level costs base * (owned level + 1)),
+shop_boots_cost,70,Moonwalker PowerUp base coin cost (next level costs base * (owned level + 1)),
+shop_reroll_cost,90,Reroll PowerUp base coin cost (next level costs base * (owned level + 1)),
+hud_chest_reveal_hold,1.8,Seconds the HUD fallback chest-reveal banner holds at full alpha before fading,
+hud_chest_reveal_fade,0.9,Seconds the HUD chest-reveal banner takes to fade out after the hold,
+hud_evolve_hold,2,Seconds the WEAPON EVOLVED! banner holds at full alpha before fading,
+hud_evolve_fade,1.1,Seconds the WEAPON EVOLVED! banner takes to fade out after the hold,
+hud_xp_flash_time,0.3,Seconds the XP bar's level-up white punch takes to decay back to cyan (the chest beam pulses on this too),
+hud_surge_telegraph_hold,0.8,Seconds the swarm-surge warning arrow holds at full alpha before fading,
+hud_surge_telegraph_fade,1,Seconds the swarm-surge warning arrow takes to fade out after the hold,
+chest_screen_open_dur,0.45,Chest reveal: seconds of the opening pop stage,
+chest_screen_reveal_dur,1.1,Chest reveal: seconds of the final item-rise stage,
+chest_screen_spew_per_gold,0.09,Chest reveal: spew-stage seconds per gold awarded (clamped between spew_min and spew_max),
+chest_screen_spew_min,1.2,Chest reveal: minimum spew-stage length in seconds,
+chest_screen_spew_max,5,Chest reveal: maximum spew-stage length in seconds,
+chest_screen_spawn_gap,0.07,Chest reveal: seconds between spewed item sprites,
+chest_screen_particle_max,44,Chest reveal: hard cap on live spew sprites,

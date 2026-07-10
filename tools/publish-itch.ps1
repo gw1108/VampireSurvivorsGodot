@@ -20,7 +20,7 @@
 [CmdletBinding()]
 param(
     [ValidateSet("patch", "minor", "major")]
-    [string]$Bump = "patch",
+    [string]$Bump = "minor",
 
     [switch]$SkipExport
 )
@@ -33,14 +33,19 @@ $Uploader    = Join-Path $PSScriptRoot "upload-itch.ps1"
 
 # --- Read + bump version ---------------------------------------------------
 if (Test-Path $VersionFile) {
-    $current = (Get-Content $VersionFile -Raw).Trim()
+    $raw = (Get-Content $VersionFile -Raw).Trim()
 } else {
-    $current = "0.1.0"
+    $raw = "0.1.0"
 }
-if ($current -notmatch '^\d+\.\d+\.\d+$') {
-    throw "itch-version.txt is malformed ('$current'); expected MAJOR.MINOR.PATCH"
+# Be tolerant of stale/malformed values: take the first three integer groups,
+# padding missing ones with 0 (so "0.2", "0.2.0.1", or "v0.2.0" all normalize).
+$nums = [regex]::Matches($raw, '\d+') | ForEach-Object { [int]$_.Value }
+if ($nums.Count -eq 0) {
+    throw "itch-version.txt has no version number ('$raw'); expected MAJOR.MINOR.PATCH"
 }
-$parts = $current.Split('.') | ForEach-Object { [int]$_ }
+$parts = @(0, 0, 0)
+for ($i = 0; $i -lt [Math]::Min(3, $nums.Count); $i++) { $parts[$i] = $nums[$i] }
+$current = ($parts -join '.')
 switch ($Bump) {
     "major" { $parts = @($parts[0] + 1, 0, 0) }
     "minor" { $parts = @($parts[0], $parts[1] + 1, 0) }

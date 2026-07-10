@@ -6,12 +6,6 @@ extends Node2D
 ## the ground and starts a Gold Fever"). See VSRun.start_gold_fever / is_gold_fever_active for
 ## the fever window itself.
 
-static var PICKUP := BalanceData.get_value("gilded_clover_pickup_radius", 26.0)
-static var MAGNET := BalanceData.get_value("gilded_clover_magnet_radius", 110.0)            # same wide grab as the Rosary/Nduja/Orologion treats
-static var MAGNET_SPEED := BalanceData.get_value("gilded_clover_magnet_speed", 240.0)
-# The source clover_gold.png is a 256px canvas — huge beside the ~40px player/enemies.
-# Scale it down to read as a proper grabbable pickup, matching the arena's sprite scale.
-static var SPRITE_SCALE := BalanceData.get_value("gilded_clover_sprite_scale", 0.14)
 const GOLD_FEVER_COLOR := Color(1.0, 0.85, 0.2)
 
 var run: VSRun
@@ -21,7 +15,7 @@ func _ready() -> void:
 	add_to_group("gilded_clovers")
 	var sprite := Sprite2D.new()
 	sprite.texture = load("res://art/clover_gold.png")
-	sprite.scale = Vector2(SPRITE_SCALE, SPRITE_SCALE)
+	VSPickup.apply(sprite)
 	add_child(sprite)
 
 func _process(delta: float) -> void:
@@ -33,9 +27,9 @@ func _process(delta: float) -> void:
 	var pl := run.player
 	var to := pl.position - position
 	var d := to.length()
-	if d < MAGNET and d > 0.5:
-		position += to / d * MAGNET_SPEED * delta
-	if d < PICKUP + VSPlayer.PICKUP_RADIUS:
+	if d < VSPickup.MAGNET_RADIUS * run.pickup_range_mult and d > 0.5:
+		position += to / d * VSPickup.MAGNET_SPEED * delta
+	if d < VSPickup.GRAB_RADIUS + VSPlayer.PICKUP_RADIUS:
 		_collect()
 
 func _collect() -> void:

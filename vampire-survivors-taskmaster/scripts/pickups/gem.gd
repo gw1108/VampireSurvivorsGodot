@@ -4,14 +4,11 @@ extends Node2D
 ## pickup. Feeds the level counter (the upgrade/level-up screen is the next milestone).
 
 static var RADIUS := BalanceData.get_value("gem_radius", 6.0)
-static var PICKUP := BalanceData.get_value("gem_pickup_radius", 24.0)
-static var MAGNET := BalanceData.get_value("gem_magnet_radius", 95.0)
-static var MAGNET_SPEED := BalanceData.get_value("gem_magnet_speed", 240.0)
 
 var run: VSRun
 var value := 1   # XP granted on pickup; scaled by the enemy that dropped it
 ## Set by a Magnet pickup: the gem homes on the player from anywhere on screen,
-## ignoring the normal short-range MAGNET radius, so the whole field vacuums in.
+## ignoring the normal short-range magnet radius, so the whole field vacuums in.
 var attracted := false
 ## Marks this gem as the on-ground-cap accumulator: the wiki's rule folds all excess XP into a
 ## single RED gem, so once flagged it renders red regardless of its numeric value tier.
@@ -34,6 +31,7 @@ func _ready() -> void:
 	add_to_group("gems")
 	_sprite = Sprite2D.new()
 	_sprite.texture = load("res://art/gem.png")
+	VSPickup.apply(_sprite)
 	add_child(_sprite)
 	_refresh_visual()
 
@@ -63,10 +61,10 @@ func _process(delta: float) -> void:
 	var to := pl.position - position
 	var d := to.length()
 	# Attractorb passive widens the base magnet radius so gems fly in from farther.
-	var mag := MAGNET * run.pickup_range_mult
+	var mag := VSPickup.MAGNET_RADIUS * run.pickup_range_mult
 	if (attracted or d < mag) and d > 0.5:
-		position += to / d * MAGNET_SPEED * delta
-	if d < PICKUP + VSPlayer.PICKUP_RADIUS:
+		position += to / d * VSPickup.MAGNET_SPEED * delta
+	if d < VSPickup.GRAB_RADIUS + VSPlayer.PICKUP_RADIUS:
 		run.collect_xp(value)
 		AgentBridge.emit_event("pickup", {"type": "xp"})
 		# Cosmetic pickup pop: a ring bloom at the gem, parented to the world so it

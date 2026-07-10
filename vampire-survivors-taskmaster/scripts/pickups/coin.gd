@@ -7,12 +7,6 @@ extends Node2D
 ## a Gold Fever is active (VSRun._maybe_drop_gold_fever_coin). Grants no XP or HP; it exists to
 ## bank currency for a future between-run meta-progression.
 
-static var PICKUP := BalanceData.get_value("coin_pickup_radius", 26.0)
-static var MAGNET := BalanceData.get_value("coin_magnet_radius", 95.0)
-static var MAGNET_SPEED := BalanceData.get_value("coin_magnet_speed", 240.0)
-# The source gold_coin.png is a 256px canvas — huge beside the ~40px player/enemies.
-# Scale it down to read as a proper grabbable pickup, matching the arena's sprite scale.
-static var SPRITE_SCALE := BalanceData.get_value("coin_sprite_scale", 0.14)
 
 ## What spawned this coin, which sets how much it tops up an active Gold Fever on collect
 ## (see _collect and Gilded_Clover.md) — it does NOT affect the banked gold, which is `value`.
@@ -51,7 +45,7 @@ func _ready() -> void:
 	add_to_group("coins")
 	var sprite := Sprite2D.new()
 	sprite.texture = load("res://art/gold_coin.png")
-	sprite.scale = Vector2(SPRITE_SCALE, SPRITE_SCALE)
+	VSPickup.apply(sprite)
 	add_child(sprite)
 
 func _process(delta: float) -> void:
@@ -64,9 +58,9 @@ func _process(delta: float) -> void:
 	var to := pl.position - position
 	var d := to.length()
 	# Attractorb passive widens the base magnet radius so coins fly in from farther.
-	if d < MAGNET * run.pickup_range_mult and d > 0.5:
-		position += to / d * MAGNET_SPEED * delta
-	if d < PICKUP + VSPlayer.PICKUP_RADIUS:
+	if d < VSPickup.MAGNET_RADIUS * run.pickup_range_mult and d > 0.5:
+		position += to / d * VSPickup.MAGNET_SPEED * delta
+	if d < VSPickup.GRAB_RADIUS + VSPlayer.PICKUP_RADIUS:
 		_collect()
 
 func _collect() -> void:

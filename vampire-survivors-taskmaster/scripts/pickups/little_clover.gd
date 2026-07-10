@@ -6,13 +6,7 @@ extends Node2D
 ## affected by Luck: No"), and it can be collected an unlimited number of times per run —
 ## there is no cap, so run.luck_bonus simply keeps stacking.
 
-static var PICKUP := BalanceData.get_value("little_clover_pickup_radius", 26.0)
-static var MAGNET := BalanceData.get_value("little_clover_magnet_radius", 110.0)            # same wide grab as the Rosary/Nduja/Orologion treats
-static var MAGNET_SPEED := BalanceData.get_value("little_clover_magnet_speed", 240.0)
 static var LUCK_GAIN := BalanceData.get_value("little_clover_luck_gain", 10.0)          # % Luck granted per pickup (Little_Clover.md)
-# The source clover_green.png is a 256px canvas — huge beside the ~40px player/enemies.
-# Scale it down to read as a proper grabbable pickup, matching the arena's sprite scale.
-static var SPRITE_SCALE := BalanceData.get_value("little_clover_sprite_scale", 0.14)
 const LUCKY_GREEN := Color(0.5, 1.0, 0.5)
 
 var run: VSRun
@@ -22,7 +16,7 @@ func _ready() -> void:
 	add_to_group("little_clovers")
 	var sprite := Sprite2D.new()
 	sprite.texture = load("res://art/clover_green.png")
-	sprite.scale = Vector2(SPRITE_SCALE, SPRITE_SCALE)
+	VSPickup.apply(sprite)
 	add_child(sprite)
 
 func _process(delta: float) -> void:
@@ -34,9 +28,9 @@ func _process(delta: float) -> void:
 	var pl := run.player
 	var to := pl.position - position
 	var d := to.length()
-	if d < MAGNET and d > 0.5:
-		position += to / d * MAGNET_SPEED * delta
-	if d < PICKUP + VSPlayer.PICKUP_RADIUS:
+	if d < VSPickup.MAGNET_RADIUS * run.pickup_range_mult and d > 0.5:
+		position += to / d * VSPickup.MAGNET_SPEED * delta
+	if d < VSPickup.GRAB_RADIUS + VSPlayer.PICKUP_RADIUS:
 		_collect()
 
 func _collect() -> void:

@@ -23,7 +23,7 @@ AgentBridge="*res://scripts/agent/agent_bridge.gd"
 [display]
 
 window/size/viewport_width=1024
-window/size/viewport_height=600
+window/size/viewport_height=650
 window/stretch/mode="canvas_items"
 
 [editor_plugins]

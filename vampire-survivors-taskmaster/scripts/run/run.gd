@@ -119,7 +119,7 @@ var weapon_level := 0            # 0 = Magic Wand not yet chosen; each Multishot
 var weapon_count := 0            # HUD mirror: the wand's current bolts-per-volley at weapon_level (synced by _sync_wand_display)
 var area_mult := 1.0             # Candelabrador: scales AoE weapon reach/radius (garlic, whip, bible, lightning)
 var projectile_speed_mult := 1.0  # Bracer: scales how fast thrown/fired projectiles travel
-var pickup_range_mult := 1.0     # Attractorb: scales the magnet radius of gems/coins/food so pickups fly in from farther
+var pickup_range_mult := 1.0     # Attractorb: scales the magnet radius of every pickup so they fly in from farther
 var xp_gain_mult := 1.0          # Growth: multiplies XP collected from gems so leveling accelerates as it stacks
 var armor := 0                   # Armor: flat damage subtracted from each hit the player takes (min 1 gets through)
 var recovery := 0.0              # Recovery (Pummarola): HP regenerated per second, ticked in _process while playing
