@@ -21,7 +21,8 @@
       "Bash(echo \"Exit code: $?\")",
       "Bash(python3 *)",
       "Bash(git check-ignore *)",
-      "PowerShell(Get-Item *)"
+      "PowerShell(Get-Item *)",
+      "Bash(where butler *)"
     ]
   },
   "enabledMcpjsonServers": [
